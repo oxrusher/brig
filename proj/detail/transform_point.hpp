@@ -5,7 +5,7 @@
 
 #include <brig/detail/ogc.hpp>
 #include <brig/proj/detail/lib.hpp>
-#include <brig/proj/detail/transform.hpp>
+#include <brig/proj/transform.hpp>
 #include <cstdint>
 
 namespace brig { namespace proj { namespace detail {

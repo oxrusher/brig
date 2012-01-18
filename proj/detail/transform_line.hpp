@@ -5,8 +5,8 @@
 
 #include <brig/detail/ogc.hpp>
 #include <brig/proj/detail/lib.hpp>
-#include <brig/proj/detail/transform.hpp>
 #include <brig/proj/detail/transform_point.hpp>
+#include <brig/proj/transform.hpp>
 #include <cstdint>
 #include <cstring>
 

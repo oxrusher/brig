@@ -1,13 +1,13 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_PROJ_DETAIL_TRANSFORM_HPP
-#define BRIG_PROJ_DETAIL_TRANSFORM_HPP
+#ifndef BRIG_PROJ_TRANSFORM_HPP
+#define BRIG_PROJ_TRANSFORM_HPP
 
 #include <brig/proj/detail/lib.hpp>
 #include <cstdint>
 #include <stdexcept>
 
-namespace brig { namespace proj { namespace detail {
+namespace brig { namespace proj {
 
 inline void transform(double* point_xy_begin, uint32_t point_xy_count, projPJ in_pj, projPJ out_pj)
 {
@@ -23,6 +23,6 @@ inline void transform(double* point_xy_begin, uint32_t point_xy_count, projPJ in
       point_xy_begin[i] *= RAD_TO_DEG;
 }
 
-} } } // brig::proj::detail
+} } // brig::proj
 
-#endif // BRIG_PROJ_DETAIL_TRANSFORM_HPP
+#endif // BRIG_PROJ_TRANSFORM_HPP
