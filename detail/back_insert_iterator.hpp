@@ -11,8 +11,14 @@ template <typename Container>
 struct back_insert_iterator : std::back_insert_iterator<Container>
 {
   typedef typename Container::value_type value_type;
-  back_insert_iterator(Container& c) : std::back_insert_iterator<Container>(c)  {}
+  back_insert_iterator(Container& cont) : std::back_insert_iterator<Container>(cont)  {}
 }; // back_insert_iterator
+
+template<class Container>
+back_insert_iterator<Container> back_inserter(Container& cont)
+{
+  return back_insert_iterator<Container>(cont);
+}
 
 } } // brig::detail
 

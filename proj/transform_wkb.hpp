@@ -9,9 +9,9 @@
 namespace brig { namespace proj {
 
 template <typename InputIterator, typename OutputIterator>
-void transform_wkb(InputIterator& in_itr, OutputIterator& out_itr, projPJ in_pj, projPJ out_pj)
+void transform_wkb(InputIterator& in_iter, OutputIterator& out_iter, projPJ in_pj, projPJ out_pj)
 {
-  detail::transform_geom(in_itr, out_itr, in_pj, out_pj);
+  detail::transform_geom(in_iter, out_iter, in_pj, out_pj);
 }
 
 } } // brig::proj

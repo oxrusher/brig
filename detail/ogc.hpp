@@ -1,6 +1,6 @@
 // Andrew Naplavkov
 
-// Document 99-049: http://www.opengeospatial.org/standards/sfs
+// OpenGIS Document 99-049: http://www.opengeospatial.org/standards/sfs
 
 #ifndef BRIG_DETAIL_OGC_HPP
 #define BRIG_DETAIL_OGC_HPP
@@ -25,40 +25,40 @@ inline uint8_t system_byte_order()
 }
 
 template <typename InputIterator>
-uint8_t get_byte_order(InputIterator& in_itr)
+uint8_t get_byte_order(InputIterator& in_iter)
 {
   static_assert(sizeof(typename std::iterator_traits<InputIterator>::value_type) == sizeof(uint8_t), "size error");
-  const uint8_t byte_order(static_cast<uint8_t>(*in_itr));
-  ++in_itr;
+  const uint8_t byte_order(static_cast<uint8_t>(*in_iter));
+  ++in_iter;
   if (BigEndian == byte_order || LittleEndian == byte_order) return byte_order;
   throw std::runtime_error("byte order error");
 }
 
 template <typename OutputIterator>
-void set_byte_order(OutputIterator& out_itr)
+void set_byte_order(OutputIterator& out_iter)
 {
   static_assert(sizeof(typename std::iterator_traits<OutputIterator>::value_type) == sizeof(uint8_t), "size error");
-  *out_itr = system_byte_order();
-  ++out_itr;
+  *out_iter = system_byte_order();
+  ++out_iter;
 }
 
 template <typename T, typename InputIterator>
-T get(uint8_t byte_order, InputIterator& in_itr)
+T get(uint8_t byte_order, InputIterator& in_iter)
 {
   T val(0);
   uint8_t* out_ptr = (uint8_t*)(&val);
   if (system_byte_order() == byte_order)
-    copy<T>(in_itr, out_ptr);
+    copy<T>(in_iter, out_ptr);
   else
-    reverse_copy<T>(in_itr, out_ptr);
+    reverse_copy<T>(in_iter, out_ptr);
   return val;
 }
 
 template <typename T, typename OutputIterator>
-void set(OutputIterator& out_itr, T val)
+void set(OutputIterator& out_iter, T val)
 {
   const uint8_t* in_ptr = (uint8_t*)(&val);
-  copy<T>(in_ptr, out_itr);
+  copy<T>(in_ptr, out_iter);
 }
 
 enum GeometryType {

@@ -15,11 +15,11 @@ namespace brig { namespace proj { namespace detail {
 using namespace brig::detail::ogc;
 
 template <typename InputIterator, typename OutputIterator>
-void transform_line(uint8_t byte_order, InputIterator& in_itr, OutputIterator& out_itr, projPJ in_pj, projPJ out_pj)
+void transform_line(uint8_t byte_order, InputIterator& in_iter, OutputIterator& out_iter, projPJ in_pj, projPJ out_pj)
 {
-  const uint32_t count(get<uint32_t>(byte_order, in_itr)); set<uint32_t>(out_itr, count);
+  const uint32_t count(get<uint32_t>(byte_order, in_iter)); set<uint32_t>(out_iter, count);
   for (uint32_t i(0); i < count; ++i)
-    transform_point(byte_order, in_itr, out_itr, in_pj, out_pj);
+    transform_point(byte_order, in_iter, out_iter, in_pj, out_pj);
 }
 
 template <typename InputType, typename OutputType>

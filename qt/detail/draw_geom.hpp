@@ -17,46 +17,47 @@ namespace brig { namespace qt { namespace detail {
 using namespace brig::detail::ogc;
 
 template <typename InputIterator>
-void draw_geom(InputIterator& itr, const frame& fr, QPainter& painter)
+void draw_geom(InputIterator& iter, const frame& fr, QPainter& painter)
 {
-  uint8_t byte_order(get_byte_order(itr));
-  switch (get<uint32_t>(byte_order, itr))
+  uint8_t byte_order(get_byte_order(iter));
+  uint32_t i(0), count(0);
+  switch (get<uint32_t>(byte_order, iter))
   {
   default: throw std::runtime_error("WKB error");
-  case Point: draw_point(byte_order, itr, fr, painter); break;
-  case LineString: draw_line(byte_order, itr, fr, painter); break;
-  case Polygon: draw_polygon(byte_order, itr, fr, painter); break;
+  case Point: draw_point(byte_order, iter, fr, painter); break;
+  case LineString: draw_line(byte_order, iter, fr, painter); break;
+  case Polygon: draw_polygon(byte_order, iter, fr, painter); break;
 
   case MultiPoint:
-    for (uint32_t i(0), count(get<uint32_t>(byte_order, itr)); i < count; ++i)
+    for (i = 0, count = get<uint32_t>(byte_order, iter); i < count; ++i)
     {
-      byte_order = get_byte_order(itr);
-      if (Point != get<uint32_t>(byte_order, itr)) throw std::runtime_error("WKB error");
-      draw_point(byte_order, itr, fr, painter);
+      byte_order = get_byte_order(iter);
+      if (Point != get<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
+      draw_point(byte_order, iter, fr, painter);
     }
     break;
 
   case MultiLineString:
-    for (uint32_t i(0), count(get<uint32_t>(byte_order, itr)); i < count; ++i)
+    for (i = 0, count = get<uint32_t>(byte_order, iter); i < count; ++i)
     {
-      byte_order = get_byte_order(itr);
-      if (LineString != get<uint32_t>(byte_order, itr)) throw std::runtime_error("WKB error");
-      draw_line(byte_order, itr, fr, painter);
+      byte_order = get_byte_order(iter);
+      if (LineString != get<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
+      draw_line(byte_order, iter, fr, painter);
     }
     break;
 
   case MultiPolygon:
-    for (uint32_t i(0), count(get<uint32_t>(byte_order, itr)); i < count; ++i)
+    for (i = 0, count = get<uint32_t>(byte_order, iter); i < count; ++i)
     {
-      byte_order = get_byte_order(itr);
-      if (Polygon != get<uint32_t>(byte_order, itr)) throw std::runtime_error("WKB error");
-      draw_polygon(byte_order, itr, fr, painter);
+      byte_order = get_byte_order(iter);
+      if (Polygon != get<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
+      draw_polygon(byte_order, iter, fr, painter);
     }
     break;
 
   case GeometryCollection:
-    for (uint32_t i(0), count(get<uint32_t>(byte_order, itr)); i < count; ++i)
-      draw_geom(itr, fr, painter);
+    for (i = 0, count = get<uint32_t>(byte_order, iter); i < count; ++i)
+      draw_geom(iter, fr, painter);
     break;
   }
 }
