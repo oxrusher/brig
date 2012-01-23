@@ -9,17 +9,15 @@
 #include <brig/wkt/detail/wkbgeometry.hpp>
 #include <cstdint>
 #include <stdexcept>
-#include <string>
 #include <vector>
 
 namespace brig { namespace wkt {
 
-inline void scan(const std::string& in_wkt, std::vector<uint8_t>& out_wkb)
+inline void scan(const char* in_wkt, std::vector<uint8_t>& out_wkb)
 {
-  auto in_iter = in_wkt.cbegin();
-  detail::grammar<decltype(in_iter)> gr;
+  detail::grammar<const char*> gr;
   detail::wkbgeometry geom;
-  if (!boost::spirit::qi::phrase_parse(in_iter, in_wkt.cend(), gr, boost::spirit::qi::blank, geom) || in_iter != in_wkt.cend())
+  if (!boost::spirit::qi::phrase_parse(in_wkt, (const char*)0, gr, boost::spirit::qi::blank, geom) || *in_wkt != 0)
     throw std::runtime_error("wkt error");
 
   out_wkb.clear();
