@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_WKT_DETAIL_LINE_T_HPP
-#define BRIG_WKT_DETAIL_LINE_T_HPP
+#ifndef BRIG_WKT_DETAIL_LINEARRING_HPP
+#define BRIG_WKT_DETAIL_LINEARRING_HPP
 
 #include <brig/detail/ogc.hpp>
 #include <brig/wkt/detail/point_t.hpp>
@@ -10,10 +10,10 @@
 
 namespace brig { namespace wkt { namespace detail {
 
-struct line_t  { std::vector<point_t> points; };
+struct linearring  { std::vector<point_t> points; };
 
 template <typename OutputIterator>
-void set(OutputIterator& out_iter, const line_t& line)
+void set(OutputIterator& out_iter, const linearring& line)
 {
   brig::detail::ogc::set<uint32_t>(out_iter, static_cast<uint32_t>(line.points.size()));
   for (size_t i(0); i < line.points.size(); ++i)
@@ -22,4 +22,4 @@ void set(OutputIterator& out_iter, const line_t& line)
 
 } } } // brig::wkt::detail
 
-#endif // BRIG_WKT_DETAIL_LINE_T_HPP
+#endif // BRIG_WKT_DETAIL_LINEARRING_HPP

@@ -4,7 +4,7 @@
 #define BRIG_WKT_DETAIL_WKBSEQUENCE_HPP
 
 #include <brig/detail/ogc.hpp>
-#include <brig/wkt/detail/line_t.hpp>
+#include <brig/wkt/detail/linearring.hpp>
 #include <brig/wkt/detail/wkbpoint.hpp>
 #include <cstdint>
 #include <vector>
@@ -23,10 +23,10 @@ using namespace brig::detail;
 struct wkblinestring : wkbsequence<point_t, ogc::LineString>
 {
   wkblinestring()  {}
-  wkblinestring(const line_t& line_)  { elements = line_.points; }
+  wkblinestring(const linearring& line_)  { elements = line_.points; }
 };
 
-typedef wkbsequence<line_t, ogc::Polygon> wkbpolygon;
+typedef wkbsequence<linearring, ogc::Polygon> wkbpolygon;
 typedef wkbsequence<wkbpoint, ogc::MultiPoint> wkbmultipoint;
 typedef wkbsequence<wkblinestring, ogc::MultiLineString> wkbmultilinestring;
 typedef wkbsequence<wkbpolygon, ogc::MultiPolygon> wkbmultipolygon;

@@ -6,7 +6,7 @@
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/spirit/include/phoenix.hpp>
 #include <boost/spirit/include/qi.hpp>
-#include <brig/wkt/detail/line_t.hpp>
+#include <brig/wkt/detail/linearring.hpp>
 #include <brig/wkt/detail/point_t.hpp>
 #include <brig/wkt/detail/wkbgeometry.hpp>
 #include <brig/wkt/detail/wkbpoint.hpp>
@@ -14,10 +14,10 @@
 #include <vector>
 
 BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::point_t, (double, x) (double, y))
-BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::line_t, (std::vector<brig::wkt::detail::point_t>, points))
+BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::linearring, (std::vector<brig::wkt::detail::point_t>, points))
 BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::wkbpoint, (brig::wkt::detail::point_t, point))
 BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::wkblinestring, (std::vector<brig::wkt::detail::point_t>, elements))
-BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::wkbpolygon, (std::vector<brig::wkt::detail::line_t>, elements))
+BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::wkbpolygon, (std::vector<brig::wkt::detail::linearring>, elements))
 BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::wkbmultipoint, (std::vector<brig::wkt::detail::wkbpoint>, elements))
 BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::wkbmultilinestring, (std::vector<brig::wkt::detail::wkblinestring>, elements))
 BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::wkbmultipolygon, (std::vector<brig::wkt::detail::wkbpolygon>, elements))
@@ -33,7 +33,7 @@ struct grammar : boost::spirit::qi::grammar<InputIterator, wkbgeometry(), blank_
 {
   rule<InputIterator, double(), blank_type> x, y;
   rule<InputIterator, point_t(), blank_type> point;
-  rule<InputIterator, line_t(), blank_type> linestring_text;
+  rule<InputIterator, linearring(), blank_type> linestring_text;
   rule<InputIterator, wkbpoint(), blank_type> point_text, point_tagged_text;
   rule<InputIterator, wkblinestring(), blank_type> linestring_tagged_text;
   rule<InputIterator, wkbpolygon(), blank_type> polygon_text, polygon_tagged_text;
