@@ -7,7 +7,6 @@
 #include <boost/variant/static_visitor.hpp>
 #include <boost/variant/variant.hpp>
 #include <brig/detail/ogc.hpp>
-#include <brig/wkt/detail/wkblinestring.hpp>
 #include <brig/wkt/detail/wkbpoint.hpp>
 #include <brig/wkt/detail/wkbsequence.hpp>
 #include <vector>
@@ -27,7 +26,6 @@ typedef boost::variant<
 > wkbvariant;
 
 struct wkbgeometry  { wkbvariant var; };
-
 struct wkbgeometrycollection  { std::vector<wkbgeometry> geoms; };
 
 template <typename OutputIterator>
@@ -51,9 +49,10 @@ void set(OutputIterator& out_iter, const wkbgeometry& geom)
 template <typename OutputIterator>
 void set(OutputIterator& out_iter, const wkbgeometrycollection& collection)
 {
-  brig::detail::ogc::set_byte_order(out_iter);
-  brig::detail::ogc::set<uint32_t>(out_iter, brig::detail::ogc::GeometryCollection);
-  brig::detail::ogc::set<uint32_t>(out_iter, static_cast<uint32_t>(collection.geoms.size()));
+  using namespace brig::detail;
+  ogc::set_byte_order(out_iter);
+  ogc::set<uint32_t>(out_iter, ogc::GeometryCollection);
+  ogc::set<uint32_t>(out_iter, static_cast<uint32_t>(collection.geoms.size()));
   for (size_t i(0); i < collection.geoms.size(); ++i)
     set<>(out_iter, collection.geoms[i]);
 };

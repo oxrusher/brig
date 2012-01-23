@@ -9,7 +9,6 @@
 #include <brig/wkt/detail/line_t.hpp>
 #include <brig/wkt/detail/point_t.hpp>
 #include <brig/wkt/detail/wkbgeometry.hpp>
-#include <brig/wkt/detail/wkblinestring.hpp>
 #include <brig/wkt/detail/wkbpoint.hpp>
 #include <brig/wkt/detail/wkbsequence.hpp>
 #include <vector>
@@ -17,7 +16,7 @@
 BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::point_t, (double, x) (double, y))
 BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::line_t, (std::vector<brig::wkt::detail::point_t>, points))
 BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::wkbpoint, (brig::wkt::detail::point_t, point))
-BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::wkblinestring, (brig::wkt::detail::line_t, line))
+BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::wkblinestring, (std::vector<brig::wkt::detail::point_t>, elements))
 BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::wkbpolygon, (std::vector<brig::wkt::detail::line_t>, elements))
 BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::wkbmultipoint, (std::vector<brig::wkt::detail::wkbpoint>, elements))
 BOOST_FUSION_ADAPT_STRUCT(brig::wkt::detail::wkbmultilinestring, (std::vector<brig::wkt::detail::wkblinestring>, elements))
@@ -30,12 +29,12 @@ namespace brig { namespace wkt { namespace detail {
 using namespace boost::spirit::qi;
 
 template <typename InputIterator>
-struct wkt_grammar : grammar<InputIterator, wkbgeometry(), blank_type>
+struct grammar : boost::spirit::qi::grammar<InputIterator, wkbgeometry(), blank_type>
 {
   rule<InputIterator, double(), blank_type> x, y;
-  rule<InputIterator, point_t(), blank_type> point, point_text;
+  rule<InputIterator, point_t(), blank_type> point;
   rule<InputIterator, line_t(), blank_type> linestring_text;
-  rule<InputIterator, wkbpoint(), blank_type> point_tagged_text;
+  rule<InputIterator, wkbpoint(), blank_type> point_text, point_tagged_text;
   rule<InputIterator, wkblinestring(), blank_type> linestring_tagged_text;
   rule<InputIterator, wkbpolygon(), blank_type> polygon_text, polygon_tagged_text;
   rule<InputIterator, wkbmultipoint(), blank_type> multipoint_text, multipoint_tagged_text;
@@ -44,21 +43,21 @@ struct wkt_grammar : grammar<InputIterator, wkbgeometry(), blank_type>
   rule<InputIterator, wkbgeometrycollection(), blank_type> geometrycollection_text, geometrycollection_tagged_text;
   rule<InputIterator, wkbgeometry(), blank_type> geometry_tagged_text;
   
-  wkt_grammar() : wkt_grammar::base_type(geometry_tagged_text)
+  grammar() : grammar::base_type(geometry_tagged_text)
   {
     using boost::phoenix::at_c;
     using boost::phoenix::push_back;
 
-    geometry_tagged_text = (
+    geometry_tagged_text =
       point_tagged_text |
       linestring_tagged_text |
       polygon_tagged_text |
       multipoint_tagged_text |
       multilinestring_tagged_text |
       multipolygon_tagged_text |
-      geometrycollection_tagged_text)[ at_c<0>(_val) = _1 ];
-    point_tagged_text = "POINT" >> point_text;
-    linestring_tagged_text = "LINESTRING" >> linestring_text[ at_c<0>(_val) = _1 ];
+      geometrycollection_tagged_text;
+    point_tagged_text = "POINT" >> point_text[ _val = _1 ];
+    linestring_tagged_text = "LINESTRING" >> linestring_text[ at_c<0>(_val) = at_c<0>(_1) ];
     polygon_tagged_text = "POLYGON" >> polygon_text[ _val = _1 ];
     multipoint_tagged_text = "MULTIPOINT" >> multipoint_text[ _val = _1 ];
     multilinestring_tagged_text = "MULTILINESTRING" >> multilinestring_text[ _val = _1 ];

@@ -16,8 +16,9 @@ struct point_t
 template <typename OutputIterator>
 void set(OutputIterator& out_iter, const point_t& point)
 {
-  brig::detail::ogc::set<double>(out_iter, point.x);
-  brig::detail::ogc::set<double>(out_iter, point.y);
+  using namespace brig::detail;
+  ogc::set<double>(out_iter, point.x);
+  ogc::set<double>(out_iter, point.y);
 }
 
 } } } // brig::wkt::detail
