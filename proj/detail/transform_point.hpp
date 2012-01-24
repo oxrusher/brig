@@ -10,11 +10,10 @@
 
 namespace brig { namespace proj { namespace detail {
 
-using namespace brig::detail::ogc;
-
 template <typename InputIterator, typename OutputIterator>
 void transform_point(uint8_t byte_order, InputIterator& in_iter, OutputIterator& out_iter, projPJ in_pj, projPJ out_pj)
 {
+  using namespace brig::detail::ogc;
   double point_xy[2];
   point_xy[0] = get<double>(byte_order, in_iter);
   point_xy[1] = get<double>(byte_order, in_iter);

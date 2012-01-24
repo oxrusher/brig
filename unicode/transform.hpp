@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <string>
 
-namespace brig { namespace unicode {
+namespace brig { namespace unicode { namespace detail {
 
 template <typename InputIterator, typename OutputIterator>
 void transform(InputIterator& in_iter, OutputIterator& out_iter)
@@ -21,6 +21,8 @@ void transform(InputIterator& in_iter, OutputIterator& out_iter)
   }
 }
 
+} // detail
+
 template <typename OutputString, typename InputCodeUnit>
 OutputString transform(const InputCodeUnit* ptr)
 {
@@ -28,7 +30,7 @@ OutputString transform(const InputCodeUnit* ptr)
   if (ptr != 0)
   {
     auto out_iter = brig::detail::back_inserter(res);
-    transform(ptr, out_iter);
+    detail::transform(ptr, out_iter);
   }
   return std::move(res);
 }
@@ -39,7 +41,7 @@ OutputString transform(const std::basic_string<InputCodeUnit>& str)
   OutputString res;
   auto in_ptr = str.c_str();
   auto out_iter = brig::detail::back_inserter(res);
-  transform(in_ptr, out_iter);
+  detail::transform(in_ptr, out_iter);
   return std::move(res);
 }
 

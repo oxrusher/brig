@@ -6,13 +6,15 @@
 #include <brig/qt/detail/draw_geom.hpp>
 #include <brig/qt/frame.hpp>
 #include <QPainter>
+#include <vector>
 
 namespace brig { namespace qt {
 
-template <typename InputIterator>
-void draw(InputIterator& wkb, const frame& fr, QPainter& painter)
+template <typename T>
+void draw(const std::vector<T>& wkb, const frame& fr, QPainter& painter)
 {
-  detail::draw_geom(wkb, fr, painter);
+  const T* ptr(wkb.data());
+  detail::draw_geom(ptr, fr, painter);
 }
 
 } } // brig::qt

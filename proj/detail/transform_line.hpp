@@ -27,10 +27,9 @@ void transform_line(uint8_t byte_order, InputType*& in_ptr, OutputType*& out_ptr
 {
   static_assert(sizeof(InputType) == sizeof(uint8_t), "size error");
   static_assert(sizeof(OutputType) == sizeof(uint8_t), "size error");
-
   const uint32_t point_xy_count(get<uint32_t>(byte_order, in_ptr)); set<uint32_t>(out_ptr, point_xy_count);
   double* point_xy_begin((double*)out_ptr);
-  if (get_endian() == byte_order)
+  if (system_byte_order() == byte_order)
   {
     const uint32_t bytes(point_xy_count * 2 * sizeof(double));
     if (in_ptr != out_ptr) memcpy(out_ptr, in_ptr, bytes);
@@ -43,7 +42,6 @@ void transform_line(uint8_t byte_order, InputType*& in_ptr, OutputType*& out_ptr
       set<double>(out_ptr, get<double>(byte_order, in_ptr));
       set<double>(out_ptr, get<double>(byte_order, in_ptr));
     }
-
   transform(point_xy_begin, point_xy_count, in_pj, out_pj);
 }
 

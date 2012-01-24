@@ -5,13 +5,16 @@
 
 #include <brig/proj/detail/lib.hpp>
 #include <brig/proj/detail/transform_geom.hpp>
+#include <vector>
 
 namespace brig { namespace proj {
 
-template <typename InputIterator, typename OutputIterator>
-void transform_wkb(InputIterator& in_iter, OutputIterator& out_iter, projPJ in_pj, projPJ out_pj)
+template <typename T>
+void transform_wkb(std::vector<T>& wkb, projPJ in_pj, projPJ out_pj)
 {
-  detail::transform_geom(in_iter, out_iter, in_pj, out_pj);
+  const T* in_ptr = wkb.data();
+  T* out_ptr = (T*)wkb.data();
+  detail::transform_geom(in_ptr, out_ptr, in_pj, out_pj);
 }
 
 } } // brig::proj

@@ -13,11 +13,10 @@
 
 namespace brig { namespace proj { namespace detail {
 
-using namespace brig::detail::ogc;
-
 template <typename InputIterator, typename OutputIterator>
 void transform_geom(InputIterator& in_iter, OutputIterator& out_iter, projPJ in_pj, projPJ out_pj)
 {
+  using namespace brig::detail::ogc;
   uint8_t byte_order(get_byte_order(in_iter)); set_byte_order(out_iter);
   uint32_t type(get<uint32_t>(byte_order, in_iter)); set<uint32_t>(out_iter, type);
   uint32_t i(0), count(0);

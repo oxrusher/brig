@@ -32,7 +32,7 @@ template <typename InputIterator>
 struct grammar : boost::spirit::qi::grammar<InputIterator, wkbgeometry(), blank_type>
 {
   rule<InputIterator, double(), blank_type> x, y;
-  rule<InputIterator, point_t(), blank_type> point;
+  rule<InputIterator, point_t(), blank_type> point_r;
   rule<InputIterator, linearring(), blank_type> linestring_text;
   rule<InputIterator, wkbpoint(), blank_type> point_text, point_tagged_text;
   rule<InputIterator, wkblinestring(), blank_type> linestring_tagged_text;
@@ -63,11 +63,11 @@ struct grammar : boost::spirit::qi::grammar<InputIterator, wkbgeometry(), blank_
     multilinestring_tagged_text = "MULTILINESTRING" >> multilinestring_text[ _val = _1 ];
     multipolygon_tagged_text = "MULTIPOLYGON" >> multipolygon_text[ _val = _1 ];
     geometrycollection_tagged_text = "GEOMETRYCOLLECTION" >> geometrycollection_text[ _val = _1 ];
-    point_text = '(' >> point >> ')' | eps;
-    point = x >> y;
+    point_text = '(' >> point_r >> ')' | eps;
+    point_r = x >> y;
     x = double_;
     y = double_;
-    linestring_text = '(' >> point[ push_back(at_c<0>(_val), _1) ] >> *( ',' >> point[ push_back(at_c<0>(_val), _1) ]) >> ')' | eps;
+    linestring_text = '(' >> point_r[ push_back(at_c<0>(_val), _1) ] >> *( ',' >> point_r[ push_back(at_c<0>(_val), _1) ]) >> ')' | eps;
     polygon_text = '(' >> linestring_text[ push_back(at_c<0>(_val), _1) ] >> *(',' >> linestring_text[ push_back(at_c<0>(_val), _1) ]) >> ')' | eps;
     multipoint_text = '(' >> point_text[ push_back(at_c<0>(_val), _1) ] >> *(',' >> point_text[ push_back(at_c<0>(_val), _1) ]) >> ')' | eps;
     multilinestring_text = '(' >> linestring_text[ push_back(at_c<0>(_val), _1) ] >> *(',' >> linestring_text[ push_back(at_c<0>(_val), _1) ]) >> ')' | eps;

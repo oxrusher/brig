@@ -14,13 +14,11 @@
 
 namespace brig { namespace qt { namespace detail {
 
-using namespace brig::detail::ogc;
-
 template <typename InputIterator>
 void draw_geom(InputIterator& iter, const frame& fr, QPainter& painter)
 {
-  uint8_t byte_order(get_byte_order(iter));
-  uint32_t i(0), count(0);
+  using namespace brig::detail::ogc;
+  uint8_t byte_order(get_byte_order(iter)), i(0), count(0);
   switch (get<uint32_t>(byte_order, iter))
   {
   default: throw std::runtime_error("WKB error");
