@@ -4,17 +4,16 @@
 #define BRIG_WKT_SCAN_HPP
 
 #include <boost/spirit/include/qi.hpp>
+#include <brig/blob_t.hpp>
 #include <brig/detail/back_insert_iterator.hpp>
 #include <brig/wkt/detail/grammar.hpp>
 #include <brig/wkt/detail/wkbgeometry.hpp>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 namespace brig { namespace wkt {
 
-template <typename T>
-void scan(const char* in_wkt, std::vector<T>& out_wkb)
+inline void scan(const char* in_wkt, blob_t& out_wkb)
 {
   detail::grammar<const char*> gr;
   detail::wkbgeometry geom;
@@ -25,10 +24,9 @@ void scan(const char* in_wkt, std::vector<T>& out_wkb)
   detail::set<>(out_iter, geom);
 }
 
-template <typename T>
-void scan(const std::string& in_wkt, std::vector<T>& out_wkb)
+inline void scan(const std::string& in_wkt, blob_t& out_wkb)
 {
-  const char* in_ptr(in_wkt.c_str());
+  auto in_ptr = in_wkt.c_str();
   scan(in_ptr, out_wkb);
 }
 
