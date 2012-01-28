@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_DETAIL_IS_VECTOR_TYPE_HPP
-#define BRIG_DATABASE_DETAIL_IS_VECTOR_TYPE_HPP
+#ifndef BRIG_DATABASE_DETAIL_IS_GEOMETRY_TYPE_HPP
+#define BRIG_DATABASE_DETAIL_IS_GEOMETRY_TYPE_HPP
 
 #include <brig/database/column_detail.hpp>
 #include <brig/database/dbms.hpp>
@@ -9,7 +9,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline bool is_vector_type(DBMS sys, const column_detail& col)
+inline bool is_geometry_type(DBMS sys, const column_detail& col)
 {
   switch (sys)
   {
@@ -29,4 +29,4 @@ inline bool is_vector_type(DBMS sys, const column_detail& col)
 
 } } } // brig::database::detail
 
-#endif // BRIG_DATABASE_DETAIL_IS_VECTOR_TYPE_HPP
+#endif // BRIG_DATABASE_DETAIL_IS_GEOMETRY_TYPE_HPP

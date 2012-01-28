@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <iomanip>
+#include <ios>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -19,13 +20,21 @@ struct blob_t : std::vector<uint8_t>  {};
 namespace std {
 
 template <typename CharT, typename TraitsT>
-basic_ostream<CharT, TraitsT>& operator<<(basic_ostream<CharT, TraitsT>& out_stream, const brig::blob_t& blob)
+basic_ostream<CharT, TraitsT>& operator<<(basic_ostream<CharT, TraitsT>& out_stream, const brig::blob_t& in_blob)
 {
-  basic_ostringstream<CharT, TraitsT> str_stream;
-  str_stream << hex << setfill(CharT(0x30));
-  for (size_t i(0); i < blob.size(); ++i)
-    str_stream << setw(2) << static_cast<uint32_t>(blob[i]);
-  out_stream << str_stream.str();
+  if (out_stream.flags() & ios::hex)
+  {
+    basic_ostringstream<CharT, TraitsT> str_stream;
+    str_stream << hex << setfill(CharT(0x30));
+    for (size_t i(0); i < in_blob.size(); ++i)
+      str_stream << setw(2) << static_cast<uint32_t>(in_blob[i]);
+    out_stream << str_stream.str();
+  }
+  else
+  {
+    static const CharT prefix[] = { 0x42, 0x4c, 0x4f, 0x42, 0x20, 0x73, 0x7a, 0x20, 0x3d, 0x20, 0 }; // "BLOB sz = "
+    out_stream << prefix << in_blob.size();
+  }
   return out_stream;
 }
 

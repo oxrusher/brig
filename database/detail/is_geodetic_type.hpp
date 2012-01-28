@@ -5,13 +5,13 @@
 
 #include <brig/database/column_detail.hpp>
 #include <brig/database/dbms.hpp>
-#include <brig/database/detail/is_vector_type.hpp>
+#include <brig/database/detail/is_geometry_type.hpp>
 
 namespace brig { namespace database { namespace detail {
 
 inline bool is_geodetic_type(DBMS sys, const column_detail& col)
 {
-  if (is_vector_type(sys, col))
+  if (is_geometry_type(sys, col))
     switch (sys)
     {
     case UnknownSystem:

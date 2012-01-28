@@ -1,7 +1,5 @@
 // Andrew Naplavkov
 
-// http://trac.osgeo.org/proj/
-
 #ifndef BRIG_PROJ_DETAIL_LIB_HPP
 #define BRIG_PROJ_DETAIL_LIB_HPP
 
