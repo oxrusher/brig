@@ -182,31 +182,31 @@ inline void link::columns(std::vector<std::string>& cols)
   m_sql = "";
 
   SQLSMALLINT count(0);
-  if (SQL_SUCCEEDED(lib::singleton().p_SQLNumResultCols(m_stmt, &count)) && count > 0)
-    for (SQLSMALLINT i(0); i < count; ++i)
+  check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLNumResultCols(m_stmt, &count));
+  for (SQLSMALLINT i(0); i < count; ++i)
+  {
+    SQLUSMALLINT col = SQLUSMALLINT(i + 1);
+    SQLWCHAR buf[SQL_MAX_MESSAGE_LENGTH];
+    SQLSMALLINT len(0);
+    SQLLEN sql_type(SQL_UNKNOWN_TYPE);
+    SQLLEN precision(0), scale(0);
+
+    check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLColAttributeW(m_stmt, col, SQL_DESC_NAME, &buf, SQL_MAX_MESSAGE_LENGTH, &len, 0));
+    check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLColAttributeW(m_stmt, col, SQL_DESC_TYPE, 0, 0, 0, &sql_type));
+    if ( (SQL_DECIMAL == sql_type || SQL_NUMERIC == sql_type)
+      && SQL_SUCCEEDED(lib::singleton().p_SQLColAttributeW(m_stmt, col, SQL_DESC_PRECISION, 0, 0, 0, &precision))
+      && SQL_SUCCEEDED(lib::singleton().p_SQLColAttributeW(m_stmt, col, SQL_DESC_SCALE, 0, 0, 0, &scale))
+      && 0 < precision
+      && 0 == scale)
     {
-      SQLUSMALLINT col = SQLUSMALLINT(i + 1);
-      SQLWCHAR buf[SQL_MAX_MESSAGE_LENGTH];
-      SQLSMALLINT len(0);
-      SQLLEN sql_type(SQL_UNKNOWN_TYPE);
-      SQLLEN precision(0), scale(0);
-
-      check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLColAttributeW(m_stmt, col, SQL_DESC_NAME, &buf, SQL_MAX_MESSAGE_LENGTH, &len, 0));
-      check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLColAttributeW(m_stmt, col, SQL_DESC_TYPE, 0, 0, 0, &sql_type));
-      if ( (SQL_DECIMAL == sql_type || SQL_NUMERIC == sql_type)
-        && SQL_SUCCEEDED(lib::singleton().p_SQLColAttributeW(m_stmt, col, SQL_DESC_PRECISION, 0, 0, 0, &precision))
-        && SQL_SUCCEEDED(lib::singleton().p_SQLColAttributeW(m_stmt, col, SQL_DESC_SCALE, 0, 0, 0, &scale))
-        && 0 < precision
-        && 0 == scale)
-      {
-        if (precision <= 5) sql_type = SQL_SMALLINT;
-        else if (precision <= 10) sql_type = SQL_INTEGER;
-        else if (precision <= 19) sql_type = SQL_BIGINT;
-      }
-
-      m_cols.push_back(get_data_factory(SQLSMALLINT(sql_type)));
-      cols.push_back(brig::unicode::transform<std::string>(buf));
+      if (precision <= 5) sql_type = SQL_SMALLINT;
+      else if (precision <= 10) sql_type = SQL_INTEGER;
+      else if (precision <= 19) sql_type = SQL_BIGINT;
     }
+
+    m_cols.push_back(get_data_factory(SQLSMALLINT(sql_type)));
+    cols.push_back(brig::unicode::transform<std::string>(buf));
+  }
 }
 
 inline bool link::fetch(std::vector<variant>& row)
