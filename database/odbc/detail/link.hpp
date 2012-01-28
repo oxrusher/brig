@@ -3,7 +3,6 @@
 #ifndef BRIG_DATABASE_ODBC_DETAIL_LINK_HPP
 #define BRIG_DATABASE_ODBC_DETAIL_LINK_HPP
 
-#include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <brig/database/link.hpp>
@@ -156,11 +155,11 @@ inline void link::exec(const std::string& sql, const std::vector<variant>& param
   else lib::singleton().p_SQLFreeStmt(m_stmt, SQL_CLOSE);
 
   boost::ptr_vector<binding> binds;
-  for (int i(0); i < (int)params.size(); ++i)
+  for (size_t i(0); i < params.size(); ++i)
   {
-    binding* bind(binding_factory(m_sys, params[i], i < (int)param_cols.size()? &param_cols[i]: 0));
+    binding* bind(binding_factory(m_sys, params[i], i < param_cols.size()? &param_cols[i]: 0));
     binds.push_back(bind);
-    check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLBindParameter(m_stmt, i + 1, SQL_PARAM_INPUT
+    check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLBindParameter(m_stmt, SQLUSMALLINT(i + 1), SQL_PARAM_INPUT
       , bind->c_type(), bind->sql_type(), bind->precision(), 0, bind->val_ptr(), 0, bind->ind()));
   }
   const SQLRETURN r(lib::singleton().p_SQLExecute(m_stmt));
@@ -173,7 +172,7 @@ inline int64_t link::affected()
   SQLLEN rows(0);
   check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLRowCount(m_stmt, &rows));
   if (rows < 0) rows = 0;
-  return std::min<int64_t>(rows, 0);
+  return rows;
 }
 
 inline void link::columns(std::vector<std::string>& cols)
@@ -184,18 +183,19 @@ inline void link::columns(std::vector<std::string>& cols)
 
   SQLSMALLINT count(0);
   if (SQL_SUCCEEDED(lib::singleton().p_SQLNumResultCols(m_stmt, &count)) && count > 0)
-    for (int i(0); i < (int)count; ++i)
+    for (SQLSMALLINT i(0); i < count; ++i)
     {
+      SQLUSMALLINT col = SQLUSMALLINT(i + 1);
       SQLWCHAR buf[SQL_MAX_MESSAGE_LENGTH];
       SQLSMALLINT len(0);
       SQLLEN sql_type(SQL_UNKNOWN_TYPE);
       SQLLEN precision(0), scale(0);
 
-      check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLColAttributeW(m_stmt, i + 1, SQL_DESC_NAME, &buf, SQL_MAX_MESSAGE_LENGTH, &len, 0));
-      check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLColAttributeW(m_stmt, i + 1, SQL_DESC_TYPE, 0, 0, 0, &sql_type));
+      check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLColAttributeW(m_stmt, col, SQL_DESC_NAME, &buf, SQL_MAX_MESSAGE_LENGTH, &len, 0));
+      check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLColAttributeW(m_stmt, col, SQL_DESC_TYPE, 0, 0, 0, &sql_type));
       if ( (SQL_DECIMAL == sql_type || SQL_NUMERIC == sql_type)
-        && SQL_SUCCEEDED(lib::singleton().p_SQLColAttributeW(m_stmt, i + 1, SQL_DESC_PRECISION, 0, 0, 0, &precision))
-        && SQL_SUCCEEDED(lib::singleton().p_SQLColAttributeW(m_stmt, i + 1, SQL_DESC_SCALE, 0, 0, 0, &scale))
+        && SQL_SUCCEEDED(lib::singleton().p_SQLColAttributeW(m_stmt, col, SQL_DESC_PRECISION, 0, 0, 0, &precision))
+        && SQL_SUCCEEDED(lib::singleton().p_SQLColAttributeW(m_stmt, col, SQL_DESC_SCALE, 0, 0, 0, &scale))
         && 0 < precision
         && 0 == scale)
       {
@@ -204,7 +204,7 @@ inline void link::columns(std::vector<std::string>& cols)
         else if (precision <= 19) sql_type = SQL_BIGINT;
       }
 
-      m_cols.push_back(get_data_factory((SQLSMALLINT)sql_type));
+      m_cols.push_back(get_data_factory(SQLSMALLINT(sql_type)));
       cols.push_back(brig::unicode::transform<std::string>(buf));
     }
 }
@@ -219,7 +219,7 @@ inline bool link::fetch(std::vector<variant>& row)
   check(SQL_HANDLE_STMT, m_stmt, r);
 
   row.resize(m_cols.size());
-  for (int i(0); i < (int)m_cols.size(); ++i)
+  for (size_t i(0); i < m_cols.size(); ++i)
     check(SQL_HANDLE_STMT, m_stmt, m_cols[i](m_stmt, i, row[i]));
   return true;
 }

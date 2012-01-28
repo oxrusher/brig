@@ -13,10 +13,10 @@
 namespace brig { namespace database { namespace odbc { namespace detail {
 
 struct get_data_string : get_data {
-  virtual SQLRETURN operator()(SQLHSTMT stmt, int col, variant& var);
+  virtual SQLRETURN operator()(SQLHSTMT stmt, size_t col, variant& var);
 }; // get_data_string
 
-inline SQLRETURN get_data_string::operator()(SQLHSTMT stmt, int col, variant& var)
+inline SQLRETURN get_data_string::operator()(SQLHSTMT stmt, size_t col, variant& var)
 {
   SQLWCHAR buf[SQL_MAX_MESSAGE_LENGTH];
   const SQLLEN reserved(sizeof(buf) - sizeof(SQLWCHAR));
@@ -25,7 +25,7 @@ inline SQLRETURN get_data_string::operator()(SQLHSTMT stmt, int col, variant& va
   while (true)
   {
     SQLLEN ind(SQL_NULL_DATA);
-    SQLRETURN r(lib::singleton().p_SQLGetData(stmt, col + 1, SQL_C_WCHAR, SQLPOINTER(buf), reserved, &ind));
+    const SQLRETURN r(lib::singleton().p_SQLGetData(stmt, SQLUSMALLINT(col + 1), SQL_C_WCHAR, SQLPOINTER(buf), reserved, &ind));
 
     if (r == SQL_NO_DATA)  break;
     else if (!SQL_SUCCEEDED(r)) return r;

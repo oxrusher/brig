@@ -16,7 +16,7 @@ class binding_string : public binding {
   SQLLEN m_ind;
 public:
   binding_string(const std::string& str, SQLSMALLINT sql_type)
-    : m_str(brig::unicode::transform<std::basic_string<SQLWCHAR>>(str))
+    : m_str(brig::unicode::transform<decltype(m_str)>(str))
     , m_sql_type(sql_type)
     { m_ind = m_str.size() * sizeof(SQLWCHAR); }
   virtual SQLSMALLINT c_type()  { return SQL_C_WCHAR; }

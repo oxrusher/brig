@@ -13,16 +13,16 @@
 namespace brig { namespace database { namespace odbc { namespace detail {
 
 struct get_data_blob : get_data {
-  virtual SQLRETURN operator()(SQLHSTMT stmt, int col, variant& var);
+  virtual SQLRETURN operator()(SQLHSTMT stmt, size_t col, variant& var);
 }; // get_data_blob
 
-inline SQLRETURN get_data_blob::operator()(SQLHSTMT stmt, int col, variant& var)
+inline SQLRETURN get_data_blob::operator()(SQLHSTMT stmt, size_t col, variant& var)
 {
   var = blob_t();
   brig::blob_t& blob = boost::get<brig::blob_t>(var);
 
   SQLLEN ind(SQL_NULL_DATA), reserved(0);
-  SQLRETURN r(lib::singleton().p_SQLGetData(stmt, col + 1, SQL_C_BINARY, SQLPOINTER(1), 0, &ind));
+  SQLRETURN r(lib::singleton().p_SQLGetData(stmt, SQLUSMALLINT(col + 1), SQL_C_BINARY, SQLPOINTER(1), 0, &ind));
 
   while (true)
   {
@@ -37,7 +37,7 @@ inline SQLRETURN get_data_blob::operator()(SQLHSTMT stmt, int col, variant& var)
     reserved = ind - reserved;
     const size_t offset(blob.size());
     blob.resize(blob.size() + size_t(reserved));
-    r = lib::singleton().p_SQLGetData(stmt, col + 1, SQL_C_BINARY, SQLPOINTER(blob.data() + offset), reserved, &ind);
+    r = lib::singleton().p_SQLGetData(stmt, SQLUSMALLINT(col + 1), SQL_C_BINARY, SQLPOINTER(blob.data() + offset), reserved, &ind);
   }
 
   if (reserved > ind) blob.resize(blob.size() - size_t(reserved - ind));
