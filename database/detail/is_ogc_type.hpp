@@ -11,8 +11,6 @@ namespace brig { namespace database { namespace detail {
 inline bool is_ogc_type(std::string type)
 {
   if (boost::algorithm::starts_with(type, "ST_")) boost::algorithm::replace_first(type, "ST_", "");
-  if (boost::algorithm::ends_with(type, "M")) boost::algorithm::replace_last(type, "M", "");
-  if (boost::algorithm::ends_with(type, "Z")) boost::algorithm::replace_last(type, "Z", "");
   return type == "COLLECTION" // synonym
       || type == "CURVE" // non-instantiable
       || type == "GEOMCOLLECTION" // synonym

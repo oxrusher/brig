@@ -30,7 +30,11 @@ public:
   link(const std::string& str);
   virtual ~link()  { close_all(); }
   virtual DBMS system()  { return m_sys; }
-  virtual void exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& param_cols);
+  virtual void exec
+    ( const std::string& sql
+    , const std::vector<variant>& params = std::vector<variant>()
+    , const std::vector<column_detail>& param_cols = std::vector<column_detail>()
+    );
   virtual int64_t affected();
   virtual void columns(std::vector<std::string>& cols);
   virtual bool fetch(std::vector<variant>& row);
@@ -144,7 +148,6 @@ inline void link::exec(const std::string& sql, const std::vector<variant>& param
 {
   if (SQL_NULL_HANDLE == m_stmt || sql != m_sql)
   {
-    if (SQL_NULL_HANDLE == m_dbc) error();
     close_stmt();
     SQLHANDLE stmt(SQL_NULL_HANDLE);
     check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLAllocHandle(SQL_HANDLE_STMT, m_dbc, &stmt));
@@ -168,16 +171,15 @@ inline void link::exec(const std::string& sql, const std::vector<variant>& param
 
 inline int64_t link::affected()
 {
-  if (SQL_NULL_HANDLE == m_stmt || !m_cols.empty()) error();
-  SQLLEN rows(0);
-  check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLRowCount(m_stmt, &rows));
-  if (rows < 0) rows = 0;
-  return rows;
+  SQLLEN count(0);
+  if (SQL_NULL_HANDLE != m_stmt) check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLRowCount(m_stmt, &count));
+  if (count < 0) count = 0;
+  return count;
 }
 
 inline void link::columns(std::vector<std::string>& cols)
 {
-  if (SQL_NULL_HANDLE == m_stmt) error();
+  if (SQL_NULL_HANDLE == m_stmt) return;
   m_cols.clear();
   m_sql = "";
 
@@ -211,7 +213,7 @@ inline void link::columns(std::vector<std::string>& cols)
 
 inline bool link::fetch(std::vector<variant>& row)
 {
-  if (SQL_NULL_HANDLE == m_stmt) error();
+  if (SQL_NULL_HANDLE == m_stmt) return false;
   if (m_cols.empty())  { std::vector<std::string> cols; columns(cols); }
 
   const SQLRETURN r(lib::singleton().p_SQLFetch(m_stmt));
@@ -227,14 +229,12 @@ inline bool link::fetch(std::vector<variant>& row)
 inline void link::start()
 {
   close_stmt();
-  if (SQL_NULL_HANDLE == m_dbc) error();
   check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLSetConnectAttr(m_dbc,  SQL_ATTR_AUTOCOMMIT, SQLPOINTER(SQL_AUTOCOMMIT_OFF), 0));
 }
 
 inline void link::commit()
 {
   close_stmt();
-  if (SQL_NULL_HANDLE == m_dbc) error();
   check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLEndTran(SQL_HANDLE_DBC, m_dbc, SQL_COMMIT));
   check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLSetConnectAttr(m_dbc,  SQL_ATTR_AUTOCOMMIT, SQLPOINTER(SQL_AUTOCOMMIT_ON), 0));
 }
@@ -242,7 +242,6 @@ inline void link::commit()
 inline void link::rollback()
 {
   close_stmt();
-  if (SQL_NULL_HANDLE == m_dbc) error();
   check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLEndTran(SQL_HANDLE_DBC, m_dbc, SQL_ROLLBACK));
   check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLSetConnectAttr(m_dbc,  SQL_ATTR_AUTOCOMMIT, SQLPOINTER(SQL_AUTOCOMMIT_ON), 0));
 } // link::

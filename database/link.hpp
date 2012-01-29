@@ -26,7 +26,11 @@ struct link : public rowset
   virtual void sql_column(const column_detail& col, std::ostringstream& stream);
 
   // command
-  virtual void exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& param_cols) = 0;
+  virtual void exec
+    ( const std::string& sql
+    , const std::vector<variant>& params = std::vector<variant>()
+    , const std::vector<column_detail>& param_cols = std::vector<column_detail>()
+    ) = 0;
   virtual int64_t affected() = 0;
   virtual void columns(std::vector<std::string>& cols) = 0;
 
