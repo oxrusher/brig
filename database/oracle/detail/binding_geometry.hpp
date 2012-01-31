@@ -1,0 +1,189 @@
+// Andrew Naplavkov
+
+#ifndef BRIG_DATABASE_ORACLE_DETAIL_BINDING_GEOMETRY_HPP
+#define BRIG_DATABASE_ORACLE_DETAIL_BINDING_GEOMETRY_HPP
+
+#include <brig/blob_t.hpp>
+#include <brig/database/oracle/detail/binding.hpp>
+#include <brig/database/oracle/detail/handles.hpp>
+#include <brig/database/oracle/detail/geometry.hpp>
+#include <brig/database/oracle/detail/lib.hpp>
+#include <brig/detail/ogc.hpp>
+#include <cstdint>
+#include <stdexcept>
+
+namespace brig { namespace database { namespace oracle { namespace detail {
+
+class binding_geometry : public binding
+{
+  static const uint32_t SDO_ORDINATE_ARRAY_LIMIT = 1048576; // the maximum SDO_ORDINATE_ARRAY size is 1,048,576 numbers
+
+  handles* m_hnd;
+  geometry* m_geom;
+  geometry_ind* m_ind;
+
+  void free();
+  void add_real(double val, OCIColl* coll) const;
+  void add_info(uint32_t starting_offset, uint32_t etype, uint32_t interpretation) const;
+  template <typename InputIterator> void add_point(uint8_t byte_order, InputIterator& iter, uint32_t& offset) const;
+  template <typename InputIterator> void add_line(uint8_t byte_order, InputIterator& iter, uint32_t& offset, uint32_t etype) const;
+  template <typename InputIterator> void add_polygon(uint8_t byte_order, InputIterator& iter, uint32_t& offset) const;
+  template <typename InputIterator> void add_geom(InputIterator& iter, uint32_t& offset) const;
+
+public:
+  binding_geometry(handles* hnd, size_t order, const blob_t& blob, int srid);
+  virtual ~binding_geometry()  { free(); }
+}; // binding_geometry
+
+inline void binding_geometry::free()
+{
+  if (m_geom) lib::singleton().p_OCIObjectFree(m_hnd->env, m_hnd->err, m_geom, OCI_OBJECTFREE_FORCE);
+  delete m_ind;
+}
+
+inline void binding_geometry::add_real(double val, OCIColl* coll) const
+{
+  OCINumber num;
+  m_hnd->set_real(val, &num);
+  m_hnd->check(lib::singleton().p_OCICollAppend(m_hnd->env, m_hnd->err, &num, 0, coll));
+}
+
+inline void binding_geometry::add_info(uint32_t starting_offset, uint32_t etype, uint32_t interpretation) const
+{
+  OCINumber num;
+  m_hnd->set_int(starting_offset, &num);
+  m_hnd->check(lib::singleton().p_OCICollAppend(m_hnd->env, m_hnd->err, &num, 0, m_geom->elem_info));
+  m_hnd->set_int(etype, &num);
+  m_hnd->check(lib::singleton().p_OCICollAppend(m_hnd->env, m_hnd->err, &num, 0, m_geom->elem_info));
+  m_hnd->set_int(interpretation, &num);
+  m_hnd->check(lib::singleton().p_OCICollAppend(m_hnd->env, m_hnd->err, &num, 0, m_geom->elem_info));
+  m_ind->elem_info = OCI_IND_NOTNULL;
+}
+
+template <typename InputIterator>
+void binding_geometry::add_point(uint8_t byte_order, InputIterator& iter, uint32_t& offset) const
+{
+  if (offset >= SDO_ORDINATE_ARRAY_LIMIT) throw std::runtime_error("OCI geometry error");
+  add_real(brig::detail::ogc::get<double>(byte_order, iter), m_geom->ordinates);
+  add_real(brig::detail::ogc::get<double>(byte_order, iter), m_geom->ordinates);
+  m_ind->ordinates = OCI_IND_NOTNULL;
+  offset += 2;
+}
+
+template <typename InputIterator>
+void binding_geometry::add_line(uint8_t byte_order, InputIterator& iter, uint32_t& offset, uint32_t etype) const
+{
+  add_info(offset, etype, 1);
+  for (uint32_t i(0), count(brig::detail::ogc::get<uint32_t>(byte_order, iter)); i < count; ++i)
+    add_point(byte_order, iter, offset);
+}
+
+template <typename InputIterator>
+void binding_geometry::add_polygon(uint8_t byte_order, InputIterator& iter, uint32_t& offset) const
+{
+  for (uint32_t i(0), count(brig::detail::ogc::get<uint32_t>(byte_order, iter)); i < count; ++i)
+    add_line(byte_order, iter, offset, i == 0? 1003: 2003);
+}
+
+template <typename InputIterator>
+void binding_geometry::add_geom(InputIterator& iter, uint32_t& offset) const
+{
+  using namespace brig::detail::ogc;
+  uint8_t byte_order(get_byte_order(iter));
+  uint32_t i(0), count(0);
+  switch (get<uint32_t>(byte_order, iter)) // type
+  {
+  default: throw std::runtime_error("WKB error");
+
+  case Point:
+    add_info(offset, 1, 1);
+    add_point(byte_order, iter, offset);
+    break;
+
+  case LineString:
+    add_line(byte_order, iter, offset, 2);
+    break;
+
+  case Polygon:
+    add_polygon(byte_order, iter, offset);
+    break;
+
+  case MultiPoint:
+    count = get<uint32_t>(byte_order, iter);
+    add_info(offset, 1, count);
+    for (i = 0; i < count; ++i)
+    {
+      byte_order = get_byte_order(iter);
+      if (Point != get<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
+      add_point(byte_order, iter, offset);
+    }
+    break;
+
+  case MultiLineString:
+    for (i = 0, count = get<uint32_t>(byte_order, iter); i < count; ++i)
+    {
+      byte_order = get_byte_order(iter);
+      if (LineString != get<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
+      add_line(byte_order, iter, offset, 2);
+    }
+    break;
+
+  case MultiPolygon:
+    for (i = 0, count = get<uint32_t>(byte_order, iter); i < count; ++i)
+    {
+      byte_order = get_byte_order(iter);
+      if (Polygon != get<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
+      add_polygon(byte_order, iter, offset);
+    }
+    break;
+
+  case GeometryCollection:
+    for (i = 0, count = get<uint32_t>(byte_order, iter); i < count; ++i)
+      add_geom(iter, offset);
+    break;
+  }
+}
+
+inline binding_geometry::binding_geometry(handles* hnd, size_t order, const blob_t& blob, int srid) : m_hnd(hnd), m_geom(0), m_ind(0)
+{
+  using namespace brig::detail::ogc;
+  m_hnd->check(lib::singleton().p_OCIObjectNew(m_hnd->env, m_hnd->err, m_hnd->svc, OCI_TYPECODE_OBJECT, m_hnd->geom, 0, OCI_DURATION_DEFAULT, true, (void**)&m_geom));
+  try
+  {
+    m_ind = new geometry_ind(); m_ind->reset();
+    OCIBind* bind(0);
+    m_hnd->check(lib::singleton().p_OCIBindByPos(m_hnd->stmt, &bind, m_hnd->err, ub4(order), 0, 0, SQLT_NTY, 0, 0, 0, 0, 0, OCI_DEFAULT));
+    m_hnd->check(lib::singleton().p_OCIBindObject(bind, m_hnd->err, m_hnd->geom, (void**)&m_geom, 0, (void**)&m_ind, 0));
+    
+    if (0 == blob.size()) return;
+    m_ind->atomic = OCI_IND_NOTNULL;
+    if (srid > 0) m_hnd->set_int(srid, &m_geom->srid, &m_ind->srid);
+
+    auto ptr = blob.data();
+    uint8_t byte_order(get_byte_order(ptr));
+    switch (get<uint32_t>(byte_order, ptr)) // type
+    {
+    default: throw std::runtime_error("WKB error");
+    case Point:
+      m_hnd->set_int(2001, &m_geom->gtype, &m_ind->gtype);
+      m_hnd->set_real(get<double>(byte_order, ptr), &m_geom->point.x, &m_ind->point.x);
+      m_hnd->set_real(get<double>(byte_order, ptr), &m_geom->point.y, &m_ind->point.y);
+      return;
+    case LineString: m_hnd->set_int(2002, &m_geom->gtype, &m_ind->gtype); break;
+    case Polygon: m_hnd->set_int(2003, &m_geom->gtype, &m_ind->gtype); break;
+    case MultiPoint: m_hnd->set_int(2005, &m_geom->gtype, &m_ind->gtype); break;
+    case MultiLineString: m_hnd->set_int(2006, &m_geom->gtype, &m_ind->gtype); break;
+    case MultiPolygon: m_hnd->set_int(2007, &m_geom->gtype, &m_ind->gtype); break;
+    case GeometryCollection: m_hnd->set_int(2004, &m_geom->gtype, &m_ind->gtype); break;
+    }
+
+    ptr = blob.data();
+    uint32_t offset(1);
+    add_geom(ptr, offset);
+  }
+  catch (const std::exception&)  { free(); throw; }
+} // binding_geometry::
+
+} } } } // brig::database::oracle::detail
+
+#endif // BRIG_DATABASE_ORACLE_DETAIL_BINDING_GEOMETRY_HPP

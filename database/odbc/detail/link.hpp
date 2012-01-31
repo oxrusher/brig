@@ -23,7 +23,6 @@ class link : public brig::database::link {
 
   void close_stmt();
   void close_all();
-  void error();
   void check(SQLSMALLINT type, SQLHANDLE handle, SQLRETURN r);
 
 public:
@@ -57,44 +56,34 @@ inline void link::close_all()
 {
   close_stmt();
   m_sys = UnknownSystem;
-  if (m_dbc != SQL_NULL_HANDLE)
+  if (SQL_NULL_HANDLE != m_dbc)
   {
     SQLHANDLE dbc(SQL_NULL_HANDLE); std::swap(dbc, m_dbc);
     lib::singleton().p_SQLDisconnect(dbc);
     lib::singleton().p_SQLFreeHandle(SQL_HANDLE_DBC, dbc);
   }
-  if (m_env != SQL_NULL_HANDLE)
+  if (SQL_NULL_HANDLE != m_env)
   {
     SQLHANDLE env(SQL_NULL_HANDLE); std::swap(env, m_env);
     lib::singleton().p_SQLFreeHandle(SQL_HANDLE_ENV, env);
   }
 }
 
-inline void link::error()
-{
-  close_stmt();
-  throw std::runtime_error("ODBC error");
-}
-
 inline void link::check(SQLSMALLINT type, SQLHANDLE handle, SQLRETURN r)
 {
   if (SQL_SUCCEEDED(r)) return;
-
   std::basic_string<SQLWCHAR> msg;
-  if (handle != SQL_NULL_HANDLE && (SQL_SUCCESS_WITH_INFO == r || SQL_ERROR == r))
+  if (SQL_NULL_HANDLE != handle  && SQL_ERROR == r)
   {
     SQLWCHAR state[6], buf[SQL_MAX_MESSAGE_LENGTH];
     SQLINTEGER err(0);
     SQLSMALLINT row(1), len(0);
-    while (true)
+    while (SQL_SUCCEEDED(lib::singleton().p_SQLGetDiagRecW(type, handle, row++, state, &err, buf, SQL_MAX_MESSAGE_LENGTH, &len)))
     {
-      if (!SQL_SUCCEEDED(lib::singleton().p_SQLGetDiagRecW(type, handle, row++, state, &err, buf, SQL_MAX_MESSAGE_LENGTH, &len))) break;
       if (!msg.empty()) msg += SQLWCHAR(32);
       msg += buf;
     }
   }
-
-  close_stmt();
   throw std::runtime_error(msg.empty()? "ODBC error": brig::unicode::transform<std::string>(msg));
 }
 
@@ -105,7 +94,7 @@ inline link::link(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(SQL_NU
 
   // environment
   SQLHANDLE env(SQL_NULL_HANDLE);
-  if (lib::singleton().empty() || !SQL_SUCCEEDED(lib::singleton().p_SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env))) error();
+  if (lib::singleton().empty() || !SQL_SUCCEEDED(lib::singleton().p_SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env))) throw std::runtime_error("ODBC error");
   std::swap(m_env, env);
 
   // connection

@@ -19,7 +19,7 @@ struct get_data_blob : get_data {
 inline SQLRETURN get_data_blob::operator()(SQLHSTMT stmt, size_t col, variant& var)
 {
   var = blob_t();
-  brig::blob_t& blob = boost::get<brig::blob_t>(var);
+  blob_t& blob = boost::get<blob_t>(var);
 
   SQLLEN ind(SQL_NULL_DATA), reserved(0);
   SQLRETURN r(lib::singleton().p_SQLGetData(stmt, SQLUSMALLINT(col + 1), SQL_C_BINARY, SQLPOINTER(1), 0, &ind));

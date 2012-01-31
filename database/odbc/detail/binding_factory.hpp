@@ -8,15 +8,16 @@
 #include <boost/variant/apply_visitor.hpp>
 #include <boost/variant/static_visitor.hpp>
 #include <brig/blob_t.hpp>
+#include <brig/database/column_detail.hpp>
 #include <brig/database/dbms.hpp>
 #include <brig/database/detail/get_type_identifier.hpp>
-#include <brig/database/column_detail.hpp>
 #include <brig/database/odbc/detail/binding.hpp>
 #include <brig/database/odbc/detail/binding_blob.hpp>
 #include <brig/database/odbc/detail/binding_impl.hpp>
 #include <brig/database/odbc/detail/binding_null.hpp>
 #include <brig/database/odbc/detail/binding_string.hpp>
 #include <brig/database/odbc/detail/lib.hpp>
+#include <brig/database/type_identifier.hpp>
 #include <brig/database/variant.hpp>
 #include <cstdint>
 

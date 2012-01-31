@@ -22,7 +22,7 @@ struct link : public rowset
 {
   // dialect
   virtual DBMS system() = 0;
-  virtual void sql_parameter(int order, const column_detail& param_col, std::ostringstream& stream);
+  virtual void sql_parameter(size_t order, const column_detail& param_col, std::ostringstream& stream);
   virtual void sql_column(const column_detail& col, std::ostringstream& stream);
 
   // command
@@ -40,7 +40,7 @@ struct link : public rowset
   virtual void rollback() = 0;
 }; // link
 
-inline void link::sql_parameter(int, const column_detail& param_col, std::ostringstream& stream)
+inline void link::sql_parameter(size_t, const column_detail& param_col, std::ostringstream& stream)
 {
   const DBMS sys(system());
   if (detail::is_geometry_type(sys, param_col))
