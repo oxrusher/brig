@@ -11,11 +11,10 @@
 
 namespace brig { namespace qt { namespace detail {
 
-using namespace brig::detail::ogc;
-
 template <typename InputIterator>
 QPointF get_point(uint8_t byte_order, InputIterator& iter, const frame& fr)
 {
+  using namespace brig::detail::ogc;
   QPointF point;
   point.setX(get<double>(byte_order, iter));
   point.setY(get<double>(byte_order, iter));

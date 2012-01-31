@@ -16,9 +16,8 @@ namespace brig { namespace qt { namespace detail {
 template <typename InputIterator>
 void draw_polygon(uint8_t byte_order, InputIterator& iter, const frame& fr, QPainter& painter)
 {
-  using namespace brig::detail::ogc;
   QPainterPath path;
-  for (uint32_t i(0), count(get<uint32_t>(byte_order, iter)); i < count; ++i)
+  for (uint32_t i(0), count(brig::detail::ogc::get<uint32_t>(byte_order, iter)); i < count; ++i)
     path.addPolygon( get_line(byte_order, iter, fr) );
   painter.drawPath(path);
 }

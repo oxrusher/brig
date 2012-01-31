@@ -12,9 +12,7 @@
 #include <brig/detail/back_insert_iterator.hpp>
 #include <brig/detail/ogc.hpp>
 #include <cstdint>
-#include <iterator>
 #include <stdexcept>
-#include <vector>
 
 namespace brig { namespace database { namespace oracle { namespace detail {
 
@@ -50,8 +48,9 @@ inline define_geometry::~define_geometry()
 template <typename OutputIterator>
 void define_geometry::set_point(OutputIterator& iter, uint32_t ord_beg) const
 {
-  brig::detail::ogc::set<double>(iter, m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg)));
-  brig::detail::ogc::set<double>(iter, m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg + 1)));
+  using namespace brig::detail::ogc;
+  set<double>(iter, m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg)));
+  set<double>(iter, m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg + 1)));
 }
 
 template <typename OutputIterator>
@@ -66,7 +65,6 @@ inline void define_geometry::operator()(variant& var)
 {
   using namespace brig::detail::ogc;
   if (!m_ind || m_ind->null())  { var = null_t(); return; }
-
   const uint32_t gtype (m_hnd->get_int(&(m_geom->gtype), m_ind->gtype));
   const uint32_t tt    (gtype % 100);
   const uint32_t dim   (gtype / 1000);
@@ -92,8 +90,9 @@ inline void define_geometry::operator()(variant& var)
 
   var = blob_t();
   blob_t& blob = boost::get<blob_t>(var);
-  if (collection) blob.resize(sizeof(uint8_t) + 2 * sizeof(uint32_t));
-  blob.reserve(blob.size() + sizeof(uint8_t) + 2 * sizeof(uint32_t) + (ords / dim) * 2 * sizeof(double) ); // estimate size
+  const size_t header_size(sizeof(uint8_t) + 2 * sizeof(uint32_t));
+  if (collection) blob.resize(header_size);
+  blob.reserve((collection? 3: 1) * header_size + ((ords / dim) * 2 * sizeof(double)) ); // estimate size
   auto iter = brig::detail::back_inserter(blob);
 
   if (0 == infos)
@@ -117,7 +116,6 @@ inline void define_geometry::operator()(variant& var)
       {
         const uint32_t num_points(interpretation(i));
         if (num_points < 1) throw std::runtime_error("OCI geometry error"); // oriented point
-
         const uint32_t ord_beg (starting_offset(i));
         const uint32_t ord_end (ord_beg + num_points * dim);
         for (uint32_t ord(ord_beg); ord < ord_end; ord += dim)
@@ -135,7 +133,6 @@ inline void define_geometry::operator()(variant& var)
     case 2: // line string
       {
         if (1 != interpretation(i)) throw std::runtime_error("OCI geometry error"); // not straight line segments
-
         set_byte_order(iter);
         set<uint32_t>(iter, LineString);
         set_line(iter, starting_offset(i), i + 3 < infos? starting_offset(i + 3): ords, dim); // triplet

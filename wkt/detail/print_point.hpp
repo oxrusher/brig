@@ -9,11 +9,10 @@
 
 namespace brig { namespace wkt { namespace detail {
 
-using namespace brig::detail::ogc;
-
 template <typename InputIterator>
 void print_point(uint8_t byte_order, InputIterator& in_iter, std::ostringstream& out_stream)
 {
+  using namespace brig::detail::ogc;
   out_stream << get<double>(byte_order, in_iter);
   out_stream << ' ';
   out_stream << get<double>(byte_order, in_iter);

@@ -13,12 +13,10 @@
 
 namespace brig { namespace qt { namespace detail {
 
-using namespace brig::detail::ogc;
-
 template <typename InputIterator>
 QPolygonF get_line(uint8_t byte_order, InputIterator& iter, const frame& fr)
 {
-  const uint32_t count(get<uint32_t>(byte_order, iter));
+  const uint32_t count(brig::detail::ogc::get<uint32_t>(byte_order, iter));
   QPolygonF line; line.reserve(count);
   for (uint32_t i(0); i < count; ++i)
     line.push_back( get_point(byte_order, iter, fr) );

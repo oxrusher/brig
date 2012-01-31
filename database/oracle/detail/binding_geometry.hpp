@@ -16,8 +16,6 @@ namespace brig { namespace database { namespace oracle { namespace detail {
 
 class binding_geometry : public binding
 {
-  static const uint32_t SDO_ORDINATE_ARRAY_LIMIT = 1048576; // the maximum SDO_ORDINATE_ARRAY size is 1,048,576 numbers
-
   handles* m_hnd;
   geometry* m_geom;
   geometry_ind* m_ind;
@@ -63,9 +61,9 @@ inline void binding_geometry::add_info(uint32_t starting_offset, uint32_t etype,
 template <typename InputIterator>
 void binding_geometry::add_point(uint8_t byte_order, InputIterator& iter, uint32_t& offset) const
 {
-  if (offset >= SDO_ORDINATE_ARRAY_LIMIT) throw std::runtime_error("OCI geometry error");
-  add_real(brig::detail::ogc::get<double>(byte_order, iter), m_geom->ordinates);
-  add_real(brig::detail::ogc::get<double>(byte_order, iter), m_geom->ordinates);
+  using namespace brig::detail::ogc;
+  add_real(get<double>(byte_order, iter), m_geom->ordinates);
+  add_real(get<double>(byte_order, iter), m_geom->ordinates);
   m_ind->ordinates = OCI_IND_NOTNULL;
   offset += 2;
 }
