@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_ODBC_DATA_SOURCES_HPP
-#define BRIG_DATABASE_ODBC_DATA_SOURCES_HPP
+#ifndef BRIG_DATABASE_ODBC_DATASOURCES_HPP
+#define BRIG_DATABASE_ODBC_DATASOURCES_HPP
 
 #include <brig/database/odbc/detail/lib.hpp>
 #include <brig/unicode/transform.hpp>
@@ -33,4 +33,4 @@ inline void data_sources(std::vector<std::string>& dsns)
 
 } } } // brig::database::odbc
 
-#endif // BRIG_DATABASE_ODBC_DATA_SOURCES_HPP
+#endif // BRIG_DATABASE_ODBC_DATASOURCES_HPP

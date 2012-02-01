@@ -3,7 +3,7 @@
 #ifndef BRIG_DATABASE_DETAIL_SQL_IDENTIFIER_HPP
 #define BRIG_DATABASE_DETAIL_SQL_IDENTIFIER_HPP
 
-#include <brig/database/dbms.hpp>
+#include <brig/database/global.hpp>
 #include <sstream>
 #include <string>
 

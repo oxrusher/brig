@@ -3,12 +3,13 @@
 #ifndef BRIG_DATABASE_ORACLE_DETAIL_LINK_HPP
 #define BRIG_DATABASE_ORACLE_DETAIL_LINK_HPP
 
+#include <boost/algorithm/string.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
-#include <brig/database/dbms.hpp>
-#include <brig/database/detail/config.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
+#include <brig/database/global.hpp>
 #include <brig/database/link.hpp>
+#include <brig/database/object.hpp>
 #include <brig/database/oracle/detail/binding.hpp>
 #include <brig/database/oracle/detail/binding_factory.hpp>
 #include <brig/database/oracle/detail/define.hpp>
@@ -16,6 +17,7 @@
 #include <brig/database/oracle/detail/handles.hpp>
 #include <brig/database/oracle/detail/lib.hpp>
 #include <brig/unicode/transform.hpp>
+#include <locale>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -155,8 +157,8 @@ inline void link::columns(std::vector<std::string>& cols)
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_schema, &type_schema_len, OCI_ATTR_SCHEMA_NAME, m_hnd.err));
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_name, &type_name_len, OCI_ATTR_TYPE_NAME, m_hnd.err));
 
-      m_cols.push_back(define_factory(&m_hnd, i + 1
-        , data_type, size, precision, scale, brig::unicode::transform<std::string>(type_schema), brig::unicode::transform<std::string>(type_name)));
+      m_cols.push_back(define_factory(&m_hnd, i + 1, data_type
+        , size, precision, scale, object(brig::unicode::transform<std::string>(type_schema), brig::unicode::transform<std::string>(type_name))));
       cols.push_back(brig::unicode::transform<std::string>(name));
 
     }
@@ -164,7 +166,7 @@ inline void link::columns(std::vector<std::string>& cols)
     handles::free_descriptor((void**)&dsc, OCI_DTYPE_PARAM);
   }
 
-  ub4 rows = ub4(brig::database::detail::PageSize);
+  ub4 rows = ub4(PageSize);
   m_hnd.check(lib::singleton().p_OCIAttrSet(m_hnd.stmt, OCI_HTYPE_STMT, &rows, 0, OCI_ATTR_PREFETCH_ROWS, m_hnd.err));
 }
 
@@ -185,17 +187,21 @@ inline bool link::fetch(std::vector<variant>& row)
 
 inline void link::sql_parameter(size_t order, const column_detail& param_col, std::ostringstream& stream)
 {
-  if (param_col.type_schema == "MDSYS" && brig::database::detail::is_ogc_type(param_col.type_name))
-    stream << param_col.type_schema << '.' << param_col.type_name << "(:" << (order + 1) << ')';
+  if ( boost::algorithm::iequals(param_col.type.schema, "MDSYS", std::locale::classic())
+    && brig::database::detail::is_ogc_type(param_col.type.name)
+     )
+    stream << param_col.type.schema << '.' << param_col.type.name << "(:" << (order + 1) << ')';
   else
     stream << ':' << (order + 1);
 }
 
 inline void link::sql_column(const column_detail& col, std::ostringstream& stream)
 {
-  if (col.type_schema == "MDSYS" && brig::database::detail::is_ogc_type(col.type_name))
+  if ( boost::algorithm::iequals(col.type.schema, "MDSYS", std::locale::classic())
+    && brig::database::detail::is_ogc_type(col.type.name)
+     )
   {
-    stream << col.type_schema << '.' << col.type_name << ".GET_SDO_GEOM(";
+    stream << col.type.schema << '.' << col.type.name << ".GET_SDO_GEOM(";
     brig::database::detail::sql_identifier(Oracle, col.name, stream);
     stream << ')';
   }

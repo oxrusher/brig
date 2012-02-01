@@ -9,8 +9,9 @@
 #include <boost/variant/static_visitor.hpp>
 #include <brig/blob_t.hpp>
 #include <brig/database/column_detail.hpp>
-#include <brig/database/dbms.hpp>
-#include <brig/database/detail/get_type_identifier.hpp>
+#include <brig/database/detail/get_type.hpp>
+#include <brig/database/detail/is_geometry_type.hpp>
+#include <brig/database/global.hpp>
 #include <brig/database/oracle/detail/binding.hpp>
 #include <brig/database/oracle/detail/binding_datetime.hpp>
 #include <brig/database/oracle/detail/binding_geometry.hpp>
@@ -18,7 +19,6 @@
 #include <brig/database/oracle/detail/binding_string.hpp>
 #include <brig/database/oracle/detail/get_charset_form.hpp>
 #include <brig/database/oracle/detail/handles.hpp>
-#include <brig/database/type_identifier.hpp>
 #include <brig/database/variant.hpp>
 #include <cstdint>
 #include <stdexcept>
@@ -39,13 +39,13 @@ struct binding_visitor : boost::static_visitor<binding*> {
   binding* operator()(double v) const  { return new binding_impl<double, SQLT_FLT>(hnd, i, v); }
   binding* operator()(const boost::gregorian::date& r) const  { return new binding_datetime(hnd, i, r); }
   binding* operator()(const boost::posix_time::ptime& r) const  { return new binding_datetime(hnd, i, r); }
-  binding* operator()(const std::string& r) const  { return new binding_string(hnd, i, r, col? get_charset_form(col->type_schema, col->type_name): SQLCS_NCHAR); }
-  binding* operator()(const blob_t& r) const  { return new binding_geometry(hnd, i, r, col? col->srid: -1); }
+  binding* operator()(const std::string& r) const  { return new binding_string(hnd, i, r, col? get_charset_form(col->type): SQLCS_NCHAR); }
+  binding* operator()(const blob_t&) const;
 }; // binding_visitor
 
 inline binding* binding_visitor::operator()(const null_t&) const
 {
-  switch (col? brig::database::detail::get_type_identifier(Oracle, *col): UnknownType)
+  switch (col? brig::database::detail::get_type(Oracle, *col): UnknownType)
   {
     default: throw std::runtime_error("unsupported OCI parameter");
     case Date:
@@ -53,8 +53,16 @@ inline binding* binding_visitor::operator()(const null_t&) const
     case Double: return new binding_impl<double, SQLT_FLT>(hnd, i);
     case Geometry: return new binding_geometry(hnd, i, blob_t(), col->srid);
     case Integer: return new binding_impl<int64_t, SQLT_INT>(hnd, i);
-    case String: return new binding_string(hnd, i, std::string(), get_charset_form(col->type_schema, col->type_name));
+    case String: return new binding_string(hnd, i, std::string(), get_charset_form(col->type));
   };
+}
+
+inline binding* binding_visitor::operator()(const blob_t& r) const
+{
+  if (col && brig::database::detail::is_geometry_type(Oracle, *col))
+    return new binding_geometry(hnd, i, r, col->srid);
+  else
+    throw std::runtime_error("unsupported OCI parameter");
 } // binding_visitor::
 
 inline binding* binding_factory(handles* hnd, size_t param, const variant& var, const column_detail* param_col)

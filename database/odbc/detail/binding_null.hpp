@@ -3,18 +3,18 @@
 #ifndef BRIG_DATABASE_ODBC_DETAIL_BINDING_NULL_HPP
 #define BRIG_DATABASE_ODBC_DETAIL_BINDING_NULL_HPP
 
+#include <brig/database/global.hpp>
 #include <brig/database/odbc/detail/binding.hpp>
 #include <brig/database/odbc/detail/lib.hpp>
-#include <brig/database/type_identifier.hpp>
 #include <stdexcept>
 
 namespace brig { namespace database { namespace odbc { namespace detail {
 
 class binding_null : public binding {
-  TypeIdentifier m_type;
+  Type m_type;
   SQLLEN m_ind;
 public:
-  binding_null(TypeIdentifier type) : m_type(type), m_ind(SQL_NULL_DATA)  {}
+  binding_null(Type type) : m_type(type), m_ind(SQL_NULL_DATA)  {}
   virtual SQLSMALLINT c_type();
   virtual SQLSMALLINT sql_type();
   virtual SQLULEN precision()  { return 0; }

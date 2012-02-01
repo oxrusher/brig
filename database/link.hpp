@@ -3,14 +3,16 @@
 #ifndef BRIG_DATABASE_LINK_HPP
 #define BRIG_DATABASE_LINK_HPP
 
+#include <boost/algorithm/string.hpp>
 #include <boost/utility.hpp>
 #include <brig/database/column_detail.hpp>
-#include <brig/database/dbms.hpp>
 #include <brig/database/detail/is_geometry_type.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
+#include <brig/database/global.hpp>
 #include <brig/database/rowset.hpp>
 #include <brig/database/variant.hpp>
 #include <cstdint>
+#include <locale>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -42,6 +44,8 @@ struct link : public rowset
 
 inline void link::sql_parameter(size_t, const column_detail& param_col, std::ostringstream& stream)
 {
+  using namespace boost::algorithm;
+  auto loc = std::locale::classic();
   const DBMS sys(system());
   if (detail::is_geometry_type(sys, param_col))
     switch (sys)
@@ -50,11 +54,11 @@ inline void link::sql_parameter(size_t, const column_detail& param_col, std::ost
       break;
 
     case DB2:
-      stream << param_col.type_schema << '.' << param_col.type_name << "(CAST(? AS BLOB (100M)), " << param_col.srid << ')';
+      stream << param_col.type.schema << '.' << param_col.type.name << "(CAST(? AS BLOB (100M)), " << param_col.srid << ')';
       return;
 
     case MS_SQL:
-      stream << param_col.type_name << "::STGeomFromWKB(?, " << param_col.srid << ')';
+      stream << param_col.type.name << "::STGeomFromWKB(?, " << param_col.srid << ')';
       return;
 
     case MySQL:
@@ -63,13 +67,16 @@ inline void link::sql_parameter(size_t, const column_detail& param_col, std::ost
       return;
 
     case Oracle:
-      if (param_col.type_name != "SDO_GEOMETRY") stream << param_col.type_schema << '.' << param_col.type_name << '(';
+      {
+      const bool conv(!iequals(param_col.type.name, "SDO_GEOMETRY", loc));
+      if (conv) stream << param_col.type.schema << '.' << param_col.type.name << '(';
       stream << "MDSYS.SDO_GEOMETRY(TO_BLOB(?), " << param_col.srid << ')';
-      if (param_col.type_name != "SDO_GEOMETRY") stream << ')';
+      if (conv) stream << ')';
+      }
       return;
 
     case Postgres:
-      if (param_col.type_name == "GEOGRAPHY")
+      if (iequals(param_col.type.name, "GEOGRAPHY", loc))
       {
         if (param_col.srid != 4326) throw std::runtime_error("it only supports wgs 84 long lat (srid:4326)");
         stream << "ST_GeogFromWKB(?)";
@@ -110,7 +117,7 @@ inline void link::sql_column(const column_detail& col, std::ostringstream& strea
       return;
 
     case Oracle:
-      stream << col.type_schema << '.' << col.type_name << ".GET_WKB(";
+      stream << col.type.schema << '.' << col.type.name << ".GET_WKB(";
       detail::sql_identifier(sys, col.name, stream);
       stream << ')';
       return;

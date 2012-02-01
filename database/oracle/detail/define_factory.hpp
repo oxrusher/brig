@@ -3,6 +3,7 @@
 #ifndef BRIG_DATABASE_ORACLE_DETAIL_DEFINE_FACTORY_HPP
 #define BRIG_DATABASE_ORACLE_DETAIL_DEFINE_FACTORY_HPP
 
+#include <brig/database/object.hpp>
 #include <brig/database/oracle/detail/define.hpp>
 #include <brig/database/oracle/detail/define_datetime.hpp>
 #include <brig/database/oracle/detail/define_geometry.hpp>
@@ -12,12 +13,11 @@
 #include <brig/database/oracle/detail/lib.hpp>
 #include <cstdint>
 #include <stdexcept>
-#include <string>
 
 namespace brig { namespace database { namespace oracle { namespace detail {
 
-inline define* define_factory(handles* hnd, size_t order
-  , ub2 data_type, ub2 size, sb2 precision, sb1 scale, const std::string& type_schema, const std::string& type_name)
+inline define* define_factory(handles* hnd, size_t order, ub2 data_type
+  , ub2 size, sb2 precision, sb1 scale, const object& type)
 {
   switch (data_type)
   {
@@ -40,7 +40,7 @@ inline define* define_factory(handles* hnd, size_t order
   case SQLT_LVC:
   case SQLT_CFILE:
   case SQLT_CLOB:
-    return new define_string(hnd, order, size, get_charset_form(type_schema, type_name));
+    return new define_string(hnd, order, size, get_charset_form(type));
 
   // numeric
   case SQLT_INT:
@@ -84,7 +84,11 @@ inline define* define_factory(handles* hnd, size_t order
 
   // named data type
   case SQLT_NTY:
-    if (type_schema == "MDSYS" && type_name == "SDO_GEOMETRY") return new define_geometry(hnd, order);
+    {
+    using namespace boost::algorithm;
+    auto loc = std::locale::classic();
+    if (iequals(type.schema, "MDSYS", loc) && iequals(type.name, "SDO_GEOMETRY", loc)) return new define_geometry(hnd, order);
+    }
     break;
   }
 

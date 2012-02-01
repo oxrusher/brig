@@ -9,15 +9,14 @@
 #include <boost/variant/static_visitor.hpp>
 #include <brig/blob_t.hpp>
 #include <brig/database/column_detail.hpp>
-#include <brig/database/dbms.hpp>
-#include <brig/database/detail/get_type_identifier.hpp>
+#include <brig/database/detail/get_type.hpp>
+#include <brig/database/global.hpp>
 #include <brig/database/odbc/detail/binding.hpp>
 #include <brig/database/odbc/detail/binding_blob.hpp>
 #include <brig/database/odbc/detail/binding_impl.hpp>
 #include <brig/database/odbc/detail/binding_null.hpp>
 #include <brig/database/odbc/detail/binding_string.hpp>
 #include <brig/database/odbc/detail/lib.hpp>
-#include <brig/database/type_identifier.hpp>
 #include <brig/database/variant.hpp>
 #include <cstdint>
 
@@ -25,18 +24,18 @@ namespace brig { namespace database { namespace odbc { namespace detail {
 
 struct binding_visitor : boost::static_visitor<binding*> {
   const DBMS sys;
-  const column_detail* param_col;
-  explicit binding_visitor(DBMS sys_, const column_detail* param_col_) : sys(sys_), param_col(param_col_)  {}
-  binding* operator()(const null_t&) const  { return new binding_null(param_col? brig::database::detail::get_type_identifier(sys, *param_col): UnknownType); }
+  const column_detail* col;
+  explicit binding_visitor(DBMS sys_, const column_detail* col_) : sys(sys_), col(col_)  {}
+  binding* operator()(const null_t&) const  { return new binding_null(col? brig::database::detail::get_type(sys, *col): UnknownType); }
   binding* operator()(int16_t v) const  { return new binding_impl<int16_t, SQL_C_SSHORT, SQL_SMALLINT>(v); }
   binding* operator()(int32_t v) const  { return new binding_impl<int32_t, SQL_C_SLONG, SQL_INTEGER>(v); }
-  binding* operator()(int64_t v) const  { return sys == Postgres? operator()(int32_t(v)): new binding_impl<int64_t, SQL_C_SBIGINT, SQL_BIGINT>(v); }
+  binding* operator()(int64_t v) const  { return Postgres == sys? operator()(int32_t(v)): new binding_impl<int64_t, SQL_C_SBIGINT, SQL_BIGINT>(v); }
   binding* operator()(float v) const  { return new binding_impl<float, SQL_C_FLOAT, SQL_REAL>(v); }
   binding* operator()(double v) const  { return new binding_impl<double, SQL_C_DOUBLE, SQL_DOUBLE>(v); }
   binding* operator()(const boost::gregorian::date&) const;
   binding* operator()(const boost::posix_time::ptime&) const;
-  binding* operator()(const std::string& r) const  { return new binding_string(r, sys == MS_SQL? SQL_WLONGVARCHAR: SQL_WVARCHAR); }
-  binding* operator()(const blob_t& r) const  { return new binding_blob(r, sys == MS_SQL? SQL_LONGVARBINARY: SQL_VARBINARY); }
+  binding* operator()(const std::string& r) const  { return new binding_string(r, MS_SQL == sys? SQL_WLONGVARCHAR: SQL_WVARCHAR); }
+  binding* operator()(const blob_t& r) const  { return new binding_blob(r, MS_SQL == sys? SQL_LONGVARBINARY: SQL_VARBINARY); }
 }; // binding_visitor
 
 inline binding* binding_visitor::operator()(const boost::gregorian::date& r) const
