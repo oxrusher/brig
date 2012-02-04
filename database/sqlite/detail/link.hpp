@@ -4,7 +4,7 @@
 #define BRIG_DATABASE_SQLITE_DETAIL_LINK_HPP
 
 #include <algorithm>
-#include <brig/database/link.hpp>
+#include <brig/database/detail/link.hpp>
 #include <brig/database/sqlite/detail/binding.hpp>
 #include <brig/database/sqlite/detail/connection.hpp>
 #include <brig/database/sqlite/detail/lib.hpp>
@@ -14,7 +14,7 @@
 
 namespace brig { namespace database { namespace sqlite { namespace detail {
 
-class link : public brig::database::link {
+class link : public brig::database::detail::link {
   std::shared_ptr<connection> m_dbc;
   sqlite3_stmt* m_stmt;
   bool m_done;

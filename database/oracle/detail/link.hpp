@@ -6,9 +6,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
+#include <brig/database/detail/link.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
-#include <brig/database/link.hpp>
 #include <brig/database/object.hpp>
 #include <brig/database/oracle/detail/binding.hpp>
 #include <brig/database/oracle/detail/binding_factory.hpp>
@@ -24,7 +24,7 @@
 
 namespace brig { namespace database { namespace oracle { namespace detail {
 
-class link : public brig::database::link {
+class link : public brig::database::detail::link {
   handles m_hnd;
   boost::ptr_vector<define> m_cols;
   bool m_autocommit;

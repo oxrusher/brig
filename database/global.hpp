@@ -15,7 +15,7 @@ enum DBMS {
   SQLite
 }; // DBMS
 
-enum Type {
+enum column_type {
   UnknownType,
   Date,
   DateTime,
@@ -23,9 +23,9 @@ enum Type {
   Geometry,
   Integer,
   String
-}; // Type
+}; // column_type
 
-static const size_t PageSize = 250;
+static const size_t PageSize = 250; // DB2 PUERTO_ROADS is slowdown after 447
 
 } } // brig::database
 

@@ -5,7 +5,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
-#include <brig/database/link.hpp>
+#include <brig/database/detail/link.hpp>
 #include <brig/database/odbc/detail/binding_factory.hpp>
 #include <brig/database/odbc/detail/get_data_factory.hpp>
 #include <brig/database/odbc/detail/lib.hpp>
@@ -16,7 +16,7 @@
 
 namespace brig { namespace database { namespace odbc { namespace detail {
 
-class link : public brig::database::link {
+class link : public brig::database::detail::link {
   SQLHANDLE m_env, m_dbc, m_stmt;
   DBMS m_sys;
   boost::ptr_vector<get_data> m_cols;

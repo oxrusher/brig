@@ -1,15 +1,15 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_LINK_HPP
-#define BRIG_DATABASE_LINK_HPP
+#ifndef BRIG_DATABASE_DETAIL_LINK_HPP
+#define BRIG_DATABASE_DETAIL_LINK_HPP
 
 #include <boost/algorithm/string.hpp>
 #include <boost/utility.hpp>
 #include <brig/database/column_detail.hpp>
 #include <brig/database/detail/is_geometry_type.hpp>
+#include <brig/database/detail/rowset.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
-#include <brig/database/rowset.hpp>
 #include <brig/database/variant.hpp>
 #include <cstdint>
 #include <locale>
@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-namespace brig { namespace database {
+namespace brig { namespace database { namespace detail {
 
 struct link : public rowset
 {
@@ -131,6 +131,6 @@ inline void link::sql_column(const column_detail& col, std::ostringstream& strea
   detail::sql_identifier(sys, col.name, stream);
 } // link::
 
-} } // brig::database
+} } } // brig::database::detail
 
-#endif // BRIG_DATABASE_LINK_HPP
+#endif // BRIG_DATABASE_DETAIL_LINK_HPP
