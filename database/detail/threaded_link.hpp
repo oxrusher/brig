@@ -3,7 +3,6 @@
 #ifndef BRIG_DATABASE_DETAIL_THREADED_LINK_HPP
 #define BRIG_DATABASE_DETAIL_THREADED_LINK_HPP
 
-#include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
 #include <brig/database/detail/link.hpp>
 #include <brig/database/detail/linker.hpp>
@@ -11,6 +10,7 @@
 #include <brig/database/detail/rowset.hpp>
 #include <brig/detail/mediator.hpp>
 #include <exception>
+#include <functional>
 #include <memory>
 #include <sstream>
 
@@ -26,7 +26,7 @@ class threaded_link : public link
     mediator_impl() : sync(false), done(false)  {}
     void reset()  { front.reset(); sync = false; }
     void daemon(rowset* rs)  { if (sync && !done) done = !back.fill(rs); }
-    void fill(rowset* rs)  { if (!sync) { back.reset(); done = !back.fill(rs); sync = true; } page::swap(front, back); }
+    void fill(rowset* rs)  { if (!sync) { back.reset(); sync = true; done = !back.fill(rs); } page::swap(front, back); }
   }; // mediator_impl
 
   std::shared_ptr<mediator_impl> m_med;
@@ -59,7 +59,7 @@ inline void threaded_link::worker(std::shared_ptr<linker> lkr, std::shared_ptr<m
 
 inline DBMS threaded_link::system()
 {
-  auto bnd(boost::bind(&link::system, _1));
+  auto bnd(std::bind(&link::system, std::placeholders::_1));
   mediator_impl::functor_impl<decltype(bnd), DBMS> func(bnd);
   m_med->call(&func);
   return func.m_res;
@@ -67,14 +67,14 @@ inline DBMS threaded_link::system()
 
 inline void threaded_link::sql_parameter(size_t order, const column_detail& param_col, std::ostringstream& stream)
 {
-  auto bnd(boost::bind(&link::sql_parameter, _1, order, std::cref(param_col), std::ref(stream)));
+  auto bnd(std::bind(&link::sql_parameter, std::placeholders::_1, order, std::cref(param_col), std::ref(stream)));
   mediator_impl::functor_impl<decltype(bnd), void> func(bnd);
   m_med->call(&func);
 }
 
 inline void threaded_link::sql_column(const column_detail& col, std::ostringstream& stream)
 {
-  auto bnd(boost::bind(&link::sql_column, _1, std::cref(col), std::ref(stream)));
+  auto bnd(std::bind(&link::sql_column, std::placeholders::_1, std::cref(col), std::ref(stream)));
   mediator_impl::functor_impl<decltype(bnd), void> func(bnd);
   m_med->call(&func);
 }
@@ -82,14 +82,14 @@ inline void threaded_link::sql_column(const column_detail& col, std::ostringstre
 inline void threaded_link::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& param_cols)
 {
   m_med->reset();
-  auto bnd(boost::bind(&link::exec, _1, std::cref(sql), std::cref(params), std::cref(param_cols)));
+  auto bnd(std::bind(&link::exec, std::placeholders::_1, std::cref(sql), std::cref(params), std::cref(param_cols)));
   mediator_impl::functor_impl<decltype(bnd), void> func(bnd);
   m_med->call(&func);
 }
 
 inline int64_t threaded_link::affected()
 {
-  auto bnd(boost::bind(&link::affected, _1));
+  auto bnd(std::bind(&link::affected, std::placeholders::_1));
   mediator_impl::functor_impl<decltype(bnd), int64_t> func(bnd);
   m_med->call(&func);
   return func.m_res;
@@ -97,7 +97,7 @@ inline int64_t threaded_link::affected()
 
 inline void threaded_link::columns(std::vector<std::string>& cols)
 {
-  auto bnd(boost::bind(&link::columns, _1, std::ref(cols)));
+  auto bnd(std::bind(&link::columns, std::placeholders::_1, std::ref(cols)));
   mediator_impl::functor_impl<decltype(bnd), void> func(bnd);
   m_med->call(&func);
 }
@@ -106,7 +106,7 @@ inline bool threaded_link::fetch(std::vector<variant>& row)
 {
   if (m_med->front.empty())
   {
-    auto bnd(boost::bind(&mediator_impl::fill, m_med.get(), _1));
+    auto bnd(std::bind(&mediator_impl::fill, m_med.get(), std::placeholders::_1));
     mediator_impl::functor_impl<decltype(bnd), void> func(bnd);
     m_med->call(&func);
   }
@@ -115,21 +115,21 @@ inline bool threaded_link::fetch(std::vector<variant>& row)
 
 inline void threaded_link::start()
 {
-  auto bnd(boost::bind(&link::start, _1));
+  auto bnd(std::bind(&link::start, std::placeholders::_1));
   mediator_impl::functor_impl<decltype(bnd), void> func(bnd);
   m_med->call(&func);
 }
 
 inline void threaded_link::commit()
 {
-  auto bnd(boost::bind(&link::commit, _1));
+  auto bnd(std::bind(&link::commit, std::placeholders::_1));
   mediator_impl::functor_impl<decltype(bnd), void> func(bnd);
   m_med->call(&func);
 }
 
 inline void threaded_link::rollback()
 {
-  auto bnd(boost::bind(&link::rollback, _1));
+  auto bnd(std::bind(&link::rollback, std::placeholders::_1));
   mediator_impl::functor_impl<decltype(bnd), void> func(bnd);
   m_med->call(&func);
 } // threaded_link::
