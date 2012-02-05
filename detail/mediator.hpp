@@ -19,22 +19,23 @@ public:
     virtual void operator()(ThreadedArgument*) = 0;
   }; // functor
 
-  template <typename Function, typename Result>
-  class functor_impl : public functor {
-    Function& m_func;
-  public:
-    Result m_res;
-    functor_impl(Function& func) : m_func(func), m_res()  {}
-    virtual void operator()(ThreadedArgument* arg)  { m_res = m_func(arg); }
-  }; // functor_impl<Function, Result>
+  template <typename R, typename F>
+  struct functor_impl : functor {
+    R r;
+    F f;
+    explicit functor_impl(F&& f_) : f(std::move(f_))  {}
+    virtual void operator()(ThreadedArgument* arg)  { r = f(arg); }
+  }; // functor_impl<R, F>
 
-  template <typename Function>
-  class functor_impl<Function, void> : public functor {
-    Function& m_func;
-  public:
-    functor_impl(Function& func) : m_func(func)  {}
-    virtual void operator()(ThreadedArgument* arg)  { m_func(arg); }
-  }; // functor_impl<Function>
+  template <typename F>
+  struct functor_impl<void, F> : functor {
+    F f;
+    explicit functor_impl(F&& f_) : f(std::move(f_))  {}
+    virtual void operator()(ThreadedArgument* arg)  { f(arg); }
+  }; // functor_impl<void, F>
+
+  template <typename F>
+  static functor_impl<typename F::result_type, F> bind(F&& f)  { return std::move(functor_impl<typename F::result_type, F>(std::move(f))); }
 
 private:
   enum state  { BeforeStart, Idle, Calling, AfterFinish };

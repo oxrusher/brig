@@ -29,7 +29,7 @@ public:
     , const std::vector<variant>& params = std::vector<variant>()
     , const std::vector<column_detail>& param_cols = std::vector<column_detail>()
     );
-  virtual int64_t affected()  { return m_dbc->affected(); }
+  virtual size_t affected()  { return m_dbc->affected(); }
   virtual void columns(std::vector<std::string>& cols);
   virtual bool fetch(std::vector<variant>& row);
   virtual void start()  { exec("BEGIN", std::vector<variant>(), std::vector<column_detail>()); }
@@ -87,7 +87,7 @@ inline bool link::fetch(std::vector<variant>& row)
     switch (lib::singleton().p_sqlite3_column_type(m_stmt, i))
     {
     default: row[i] = null_t(); break;
-    case SQLITE_INTEGER: row[i] = (int64_t)lib::singleton().p_sqlite3_column_int64(m_stmt, i); break;
+    case SQLITE_INTEGER: row[i] = int64_t(lib::singleton().p_sqlite3_column_int64(m_stmt, i)); break;
     case SQLITE_FLOAT: row[i] = lib::singleton().p_sqlite3_column_double(m_stmt, i); break;
     case SQLITE_TEXT: row[i] = std::string((const char*)lib::singleton().p_sqlite3_column_text(m_stmt, i)); break;
     case SQLITE_BLOB:

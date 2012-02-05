@@ -4,6 +4,7 @@
 #define BRIG_DATABASE_DETAIL_PAGE_HPP
 
 #include <algorithm>
+#include <boost/utility.hpp>
 #include <brig/database/detail/rowset.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/variant.hpp>
@@ -11,35 +12,28 @@
 
 namespace brig { namespace database { namespace detail {
 
-class page : public rowset {
+class page : boost::noncopyable {
   std::vector<std::vector<variant>> m_rows;
   size_t m_beg, m_end;
+
   static size_t next(size_t pos)  { return pos < PageSize? pos + 1: 0; }
+
 public:
   page() : m_rows(PageSize + 1), m_beg(0), m_end(0)  {}
+  bool full() const  { return m_beg == next(m_end); }
+  void swap(page& r);
+
   bool empty() const  { return m_beg == m_end; }
-  bool fill(rowset* rs);
+  bool fetch(std::vector<variant>& row);
+  void fill(rowset* rs);
   void reset()  { m_beg = m_end = 0; }
-  static void swap(page& a, page& b);
-  virtual bool fetch(std::vector<variant>& row);
 }; // page
 
-inline bool page::fill(rowset* rs)
+inline void page::swap(page& r)
 {
-  while (true)
-  {
-    const size_t end(next(m_end));
-    if (m_beg == end) return true;
-    if (!rs || !rs->fetch(m_rows[m_end])) return false;
-    m_end = end;
-  }
-}
-
-inline void page::swap(page& a, page& b)
-{
-  a.m_rows.swap(b.m_rows);
-  std::swap(a.m_beg, b.m_beg);
-  std::swap(a.m_end, b.m_end);
+  m_rows.swap(r.m_rows);
+  std::swap(m_beg, r.m_beg);
+  std::swap(m_end, r.m_end);
 }
 
 inline bool page::fetch(std::vector<variant>& row)
@@ -48,6 +42,16 @@ inline bool page::fetch(std::vector<variant>& row)
   row.swap(m_rows[m_beg]);
   m_beg = next(m_beg);
   return true;
+}
+
+inline void page::fill(rowset* rs)
+{
+  while (true)
+  {
+    const size_t end(next(m_end));
+    if (m_beg == end || !rs || !rs->fetch(m_rows[m_end])) return;
+    m_end = end;
+  }
 } // page::
 
 } } } // brig::database::detail

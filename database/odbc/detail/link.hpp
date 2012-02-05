@@ -35,7 +35,7 @@ public:
     , const std::vector<variant>& params = std::vector<variant>()
     , const std::vector<column_detail>& param_cols = std::vector<column_detail>()
     );
-  virtual int64_t affected();
+  virtual size_t affected();
   virtual void columns(std::vector<std::string>& cols);
   virtual bool fetch(std::vector<variant>& row);
   virtual void start();
@@ -160,7 +160,7 @@ inline void link::exec(const std::string& sql, const std::vector<variant>& param
   if (SQL_NO_DATA != r) check(SQL_HANDLE_STMT, m_stmt, r);
 }
 
-inline int64_t link::affected()
+inline size_t link::affected()
 {
   SQLLEN count(0);
   if (SQL_NULL_HANDLE != m_stmt) check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLRowCount(m_stmt, &count));

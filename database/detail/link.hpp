@@ -11,7 +11,6 @@
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/variant.hpp>
-#include <cstdint>
 #include <locale>
 #include <sstream>
 #include <stdexcept>
@@ -33,7 +32,7 @@ struct link : public rowset
     , const std::vector<variant>& params = std::vector<variant>()
     , const std::vector<column_detail>& param_cols = std::vector<column_detail>()
     ) = 0;
-  virtual int64_t affected() = 0;
+  virtual size_t affected() = 0;
   virtual void columns(std::vector<std::string>& cols) = 0;
 
   // transaction

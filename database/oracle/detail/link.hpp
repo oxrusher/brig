@@ -43,7 +43,7 @@ public:
     , const std::vector<variant>& params = std::vector<variant>()
     , const std::vector<column_detail>& param_cols = std::vector<column_detail>()
     );
-  virtual int64_t affected();
+  virtual size_t affected();
   virtual void columns(std::vector<std::string>& cols);
   virtual bool fetch(std::vector<variant>& row);
   virtual void start();
@@ -123,7 +123,7 @@ inline void link::exec(const std::string& sql_, const std::vector<variant>& para
     , (m_autocommit && OCI_STMT_SELECT != stmt_type)? OCI_COMMIT_ON_SUCCESS: OCI_DEFAULT));
 }
 
-inline int64_t link::affected()
+inline size_t link::affected()
 {
   ub4 count(0);
   if (0 != m_hnd.stmt) m_hnd.check(lib::singleton().p_OCIAttrGet(m_hnd.stmt, OCI_HTYPE_STMT, &count, 0, OCI_ATTR_ROW_COUNT, m_hnd.err));
