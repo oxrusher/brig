@@ -65,7 +65,7 @@ inline void threaded_link::sql_column(const column_detail& col, std::ostringstre
 
 inline void threaded_link::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& param_cols)
 {
-  m_med->dpg.reset();
+  m_med->dpg.clear();
   auto bnd(mediator::bind(std::bind(&link::exec, std::placeholders::_1, std::cref(sql), std::cref(params), std::cref(param_cols))));
   m_med->call(&bnd);
 }

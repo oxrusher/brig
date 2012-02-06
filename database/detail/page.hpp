@@ -12,7 +12,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-class page : boost::noncopyable {
+class page : boost::noncopyable { // boost::circular_buffer
   std::vector<std::vector<variant>> m_rows;
   size_t m_beg, m_end;
 
@@ -23,10 +23,10 @@ public:
   bool full() const  { return m_beg == next(m_end); }
   void swap(page& r);
 
+  void clear()  { m_beg = m_end = 0; }
   bool empty() const  { return m_beg == m_end; }
   bool fetch(std::vector<variant>& row);
   void fill(rowset* rs);
-  void reset()  { m_beg = m_end = 0; }
 }; // page
 
 inline void page::swap(page& r)
