@@ -26,6 +26,7 @@ enum column_type {
 }; // column_type
 
 static const size_t PageSize = 250; // DB2 PUERTO_ROADS is slowdown after 447
+static const size_t PoolSize = 5;
 
 } } // brig::database
 

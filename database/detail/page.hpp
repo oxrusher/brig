@@ -5,14 +5,14 @@
 
 #include <algorithm>
 #include <boost/utility.hpp>
-#include <brig/database/detail/rowset.hpp>
 #include <brig/database/global.hpp>
+#include <brig/database/rowset.hpp>
 #include <brig/database/variant.hpp>
 #include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-class page : boost::noncopyable { // boost::circular_buffer
+class page : boost::noncopyable { // boost::circular_buffer is slow
   std::vector<std::vector<variant>> m_rows;
   size_t m_beg, m_end;
 

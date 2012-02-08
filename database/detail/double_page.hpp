@@ -5,7 +5,7 @@
 
 #include <boost/utility.hpp>
 #include <brig/database/detail/page.hpp>
-#include <brig/database/detail/rowset.hpp>
+#include <brig/database/rowset.hpp>
 #include <brig/database/variant.hpp>
 #include <vector>
 

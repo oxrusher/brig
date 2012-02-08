@@ -4,36 +4,23 @@
 #define BRIG_DATABASE_DETAIL_LINK_HPP
 
 #include <boost/algorithm/string.hpp>
-#include <boost/utility.hpp>
 #include <brig/database/column_detail.hpp>
+#include <brig/database/command.hpp>
 #include <brig/database/detail/is_geometry_type.hpp>
-#include <brig/database/detail/rowset.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
-#include <brig/database/variant.hpp>
 #include <locale>
 #include <sstream>
 #include <stdexcept>
-#include <string>
-#include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-struct link : public rowset
+struct link : public command
 {
   // dialect
   virtual DBMS system() = 0;
   virtual void sql_parameter(size_t order, const column_detail& param_col, std::ostringstream& stream);
   virtual void sql_column(const column_detail& col, std::ostringstream& stream);
-
-  // command
-  virtual void exec
-    ( const std::string& sql
-    , const std::vector<variant>& params = std::vector<variant>()
-    , const std::vector<column_detail>& param_cols = std::vector<column_detail>()
-    ) = 0;
-  virtual size_t affected() = 0;
-  virtual void columns(std::vector<std::string>& cols) = 0;
 
   // transaction
   virtual void start() = 0;
