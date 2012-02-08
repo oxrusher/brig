@@ -6,24 +6,35 @@
 #include <algorithm>
 #include <brig/database/detail/link.hpp>
 #include <brig/database/sqlite/detail/binding.hpp>
+#include <brig/database/sqlite/detail/column_geometry.hpp>
 #include <brig/database/sqlite/detail/db_handle.hpp>
 #include <brig/database/sqlite/detail/lib.hpp>
+#include <brig/database/detail/is_ogc_type.hpp>
+#include <brig/database/detail/sql_identifier.hpp>
 #include <cstring>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace brig { namespace database { namespace sqlite { namespace detail {
 
-class link : public brig::database::detail::link {
+class link : public brig::database::detail::link
+{
+  struct column  { std::string name; bool geometry; };
+
   std::shared_ptr<db_handle> m_db;
   sqlite3_stmt* m_stmt;
-  bool m_done;
   std::string m_sql;
+  std::vector<column> m_cols;
+  bool m_done;
+
   void close_stmt();
+
 public:
   link(std::shared_ptr<db_handle> db) : m_db(db), m_stmt(0), m_done(false)  {}
   virtual ~link()  { close_stmt(); }
   virtual DBMS system()  { return SQLite; }
+  virtual void sql_column(const column_detail& col, std::ostringstream& stream)  { brig::database::detail::sql_identifier(SQLite, col.name, stream); }
   virtual void exec
     ( const std::string& sql
     , const std::vector<variant>& params = std::vector<variant>()
@@ -40,15 +51,16 @@ public:
 inline void link::close_stmt()
 {
   if (!m_stmt) return;
-  m_sql = "";
   m_done = false;
+  m_cols.clear();
+  m_sql = "";
   sqlite3_stmt* stmt(0); std::swap(stmt, m_stmt);
   lib::singleton().p_sqlite3_finalize(stmt);
 }
 
 inline void link::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& /*param_cols*/)
 {
-  if (!m_stmt || !m_done || sql != m_sql)
+  if (!m_stmt || sql != m_sql || !m_done)
   {
     close_stmt();
     m_stmt = m_db->prepare_stmt(sql);
@@ -57,6 +69,7 @@ inline void link::exec(const std::string& sql, const std::vector<variant>& param
   else
   {
     m_db->check(lib::singleton().p_sqlite3_reset(m_stmt));
+    m_cols.clear();
     m_done = false;
   }
 
@@ -73,15 +86,27 @@ inline void link::exec(const std::string& sql, const std::vector<variant>& param
 
 inline void link::columns(std::vector<std::string>& cols)
 {
-  for (int i(0), count(m_stmt? lib::singleton().p_sqlite3_column_count(m_stmt): 0); i < count; ++i)
-    cols.push_back(lib::singleton().p_sqlite3_column_name(m_stmt, i));
+  if (!m_stmt) return;
+  m_sql = "";
+  m_cols.clear();
+
+  const int count(lib::singleton().p_sqlite3_column_count(m_stmt));
+  for (int i(0); i < count; ++i)
+  {
+    column col;
+    col.name = lib::singleton().p_sqlite3_column_name(m_stmt, i);
+    col.geometry = brig::database::detail::is_ogc_type(lib::singleton().p_sqlite3_column_decltype(m_stmt, i));
+    m_cols.push_back(col);
+    cols.push_back(col.name);
+  }
 }
 
 inline bool link::fetch(std::vector<variant>& row)
 {
   if (!m_stmt || m_done) return false;
+  if (m_cols.empty())  { std::vector<std::string> cols; columns(cols); }
 
-  const int count(lib::singleton().p_sqlite3_column_count(m_stmt));
+  const int count = int(m_cols.size());
   row.resize(count);
   for (int i(0); i < count; ++i)
     switch (lib::singleton().p_sqlite3_column_type(m_stmt, i))
@@ -93,8 +118,13 @@ inline bool link::fetch(std::vector<variant>& row)
     case SQLITE_BLOB:
       row[i] = blob_t();
       brig::blob_t& blob = boost::get<brig::blob_t>(row[i]);
-      blob.resize(lib::singleton().p_sqlite3_column_bytes(m_stmt, i));
-      if (!blob.empty()) memcpy(blob.data(), lib::singleton().p_sqlite3_column_blob(m_stmt, i), blob.size());
+      if (m_cols[i].geometry)
+        column_geometry(m_stmt, i, blob);
+      else
+      {
+        blob.resize(lib::singleton().p_sqlite3_column_bytes(m_stmt, i));
+        if (!blob.empty()) memcpy(blob.data(), lib::singleton().p_sqlite3_column_blob(m_stmt, i), blob.size());
+      }
       break;
     }
 

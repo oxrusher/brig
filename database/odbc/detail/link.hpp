@@ -19,8 +19,8 @@ namespace brig { namespace database { namespace odbc { namespace detail {
 class link : public brig::database::detail::link {
   SQLHANDLE m_env, m_dbc, m_stmt;
   DBMS m_sys;
-  boost::ptr_vector<get_data> m_cols;
   std::string m_sql;
+  boost::ptr_vector<get_data> m_cols;
 
   void close_stmt();
   void close_all();
@@ -46,8 +46,8 @@ public:
 inline void link::close_stmt()
 {
   if (SQL_NULL_HANDLE == m_stmt) return;
-  m_sql = "";
   m_cols.clear();
+  m_sql = "";
   SQLHANDLE stmt(SQL_NULL_HANDLE); std::swap(stmt, m_stmt);
   lib::singleton().p_SQLFreeStmt(stmt, SQL_CLOSE); // Postgres hangs on under Visual Studio IDE
   lib::singleton().p_SQLFreeHandle(SQL_HANDLE_STMT, stmt);
@@ -146,7 +146,11 @@ inline void link::exec(const std::string& sql, const std::vector<variant>& param
     check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLPrepareW(m_stmt, (SQLWCHAR*)brig::unicode::transform<std::basic_string<SQLWCHAR>>(sql).c_str(), SQL_NTS));
     m_sql = sql;
   }
-  else lib::singleton().p_SQLFreeStmt(m_stmt, SQL_CLOSE);
+  else
+  {
+    lib::singleton().p_SQLFreeStmt(m_stmt, SQL_CLOSE);
+    m_cols.clear();
+  }
 
   boost::ptr_vector<binding> binds;
   for (size_t i(0); i < params.size(); ++i)
@@ -171,8 +175,8 @@ inline size_t link::affected()
 inline void link::columns(std::vector<std::string>& cols)
 {
   if (SQL_NULL_HANDLE == m_stmt) return;
-  m_cols.clear();
   m_sql = "";
+  m_cols.clear();
 
   SQLSMALLINT count(0);
   check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLNumResultCols(m_stmt, &count));

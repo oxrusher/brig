@@ -29,6 +29,7 @@ public:
   decltype(sqlite3_column_blob) *p_sqlite3_column_blob;
   decltype(sqlite3_column_bytes) *p_sqlite3_column_bytes;
   decltype(sqlite3_column_count) *p_sqlite3_column_count;
+  decltype(sqlite3_column_decltype) *p_sqlite3_column_decltype;
   decltype(sqlite3_column_double) *p_sqlite3_column_double;
   decltype(sqlite3_column_int64) *p_sqlite3_column_int64;
   decltype(sqlite3_column_name) *p_sqlite3_column_name;
@@ -67,6 +68,7 @@ inline lib::lib() : p_sqlite3_step(0), p_spatialite_version(0)
     && (p_sqlite3_column_blob = BRIG_DL_FUNCTION(handle, sqlite3_column_blob))
     && (p_sqlite3_column_bytes = BRIG_DL_FUNCTION(handle, sqlite3_column_bytes))
     && (p_sqlite3_column_count = BRIG_DL_FUNCTION(handle, sqlite3_column_count))
+    && (p_sqlite3_column_decltype = BRIG_DL_FUNCTION(handle, sqlite3_column_decltype))
     && (p_sqlite3_column_double = BRIG_DL_FUNCTION(handle, sqlite3_column_double))
     && (p_sqlite3_column_int64 = BRIG_DL_FUNCTION(handle, sqlite3_column_int64))
     && (p_sqlite3_column_name = BRIG_DL_FUNCTION(handle, sqlite3_column_name))
