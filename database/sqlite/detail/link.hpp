@@ -93,9 +93,13 @@ inline void link::columns(std::vector<std::string>& cols)
   const int count(lib::singleton().p_sqlite3_column_count(m_stmt));
   for (int i(0); i < count; ++i)
   {
+    auto name_ptr = lib::singleton().p_sqlite3_column_name(m_stmt, i);
+    auto type_ptr = lib::singleton().p_sqlite3_column_decltype(m_stmt, i);
+
     column col;
-    col.name = lib::singleton().p_sqlite3_column_name(m_stmt, i);
-    col.geometry = brig::database::detail::is_ogc_type(lib::singleton().p_sqlite3_column_decltype(m_stmt, i));
+    if (name_ptr) col.name = name_ptr;
+    col.geometry = type_ptr? brig::database::detail::is_ogc_type(type_ptr) : false;
+
     m_cols.push_back(col);
     cols.push_back(col.name);
   }
@@ -114,7 +118,14 @@ inline bool link::fetch(std::vector<variant>& row)
     default: row[i] = null_t(); break;
     case SQLITE_INTEGER: row[i] = int64_t(lib::singleton().p_sqlite3_column_int64(m_stmt, i)); break;
     case SQLITE_FLOAT: row[i] = lib::singleton().p_sqlite3_column_double(m_stmt, i); break;
-    case SQLITE_TEXT: row[i] = std::string((const char*)lib::singleton().p_sqlite3_column_text(m_stmt, i)); break;
+
+    case SQLITE_TEXT:
+      {
+      const char* text_ptr = (const char*)lib::singleton().p_sqlite3_column_text(m_stmt, i);
+      row[i] = std::string(text_ptr? text_ptr: "");
+      }
+      break;
+
     case SQLITE_BLOB:
       row[i] = blob_t();
       brig::blob_t& blob = boost::get<brig::blob_t>(row[i]);

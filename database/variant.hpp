@@ -23,7 +23,7 @@ typedef boost::variant<
   double,
   boost::gregorian::date,
   boost::posix_time::ptime,
-  std::string, // UTF-8
+  std::string,
   blob_t
 > variant;
 
