@@ -17,7 +17,7 @@ inline bool is_geometry_type(DBMS sys, const column_detail& col)
   auto loc = std::locale::classic();
   switch (sys)
   {
-  case UnknownSystem: break;
+  case VoidSystem: break;
   case DB2: return iequals(col.type.schema, "DB2GSE", loc) && is_ogc_type(col.type.name);
   case MS_SQL: return iequals(col.type.name, "GEOMETRY", loc) || iequals(col.type.name, "GEOGRAPHY", loc);
   case MySQL:

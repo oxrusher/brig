@@ -6,7 +6,7 @@
 namespace brig { namespace database {
 
 enum DBMS {
-  UnknownSystem,
+  VoidSystem,
   DB2,
   MS_SQL,
   MySQL,
@@ -16,7 +16,7 @@ enum DBMS {
 }; // DBMS
 
 enum column_type {
-  UnknownType,
+  VoidColumn,
   Date,
   DateTime,
   Double,
@@ -24,6 +24,14 @@ enum column_type {
   Integer,
   String
 }; // column_type
+
+enum index_type {
+  VoidIndex,
+  Primary,
+  Unique,
+  Duplicate,
+  Spatial
+}; // index_type
 
 static const size_t PageSize = 250; // DB2 PUERTO_ROADS is slowdown after 447
 static const size_t PoolSize = 5;

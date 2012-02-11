@@ -45,7 +45,7 @@ struct binding_visitor : boost::static_visitor<binding*> {
 
 inline binding* binding_visitor::operator()(const null_t&) const
 {
-  switch (col? brig::database::detail::get_type(Oracle, *col): UnknownType)
+  switch (col? brig::database::detail::get_type(Oracle, *col): VoidColumn)
   {
     default: throw std::runtime_error("unsupported OCI parameter");
     case Date:

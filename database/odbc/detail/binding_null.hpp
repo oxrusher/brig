@@ -26,7 +26,7 @@ inline SQLSMALLINT binding_null::c_type()
 {
   switch (m_type)
   {
-    case UnknownType: break;
+    case VoidColumn: break;
     case Date: return SQL_C_TYPE_DATE;
     case DateTime: return SQL_C_TYPE_TIMESTAMP;
     case Double: return SQL_C_DOUBLE;
@@ -41,7 +41,7 @@ inline SQLSMALLINT binding_null::sql_type()
 {
   switch (m_type)
   {
-    case UnknownType: break;
+    case VoidColumn: break;
     case Date: return SQL_DATE;
     case DateTime: return SQL_TIMESTAMP;
     case Double: return SQL_DOUBLE;

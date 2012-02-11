@@ -36,7 +36,7 @@ inline void link::sql_parameter(size_t, const column_detail& param_col, std::ost
   if (detail::is_geometry_type(sys, param_col))
     switch (sys)
     {
-    case UnknownSystem:
+    case VoidSystem:
       break;
 
     case DB2:
@@ -76,45 +76,36 @@ inline void link::sql_parameter(size_t, const column_detail& param_col, std::ost
 
 inline void link::sql_column(const column_detail& col, std::ostringstream& stream)
 {
+  using namespace detail;
   const DBMS sys(system());
-  if (detail::is_geometry_type(sys, col))
+  if (is_geometry_type(sys, col))
     switch (sys)
     {
-    case UnknownSystem:
+    case VoidSystem:
       break;
 
     case DB2:
-      stream << "DB2GSE.ST_AsBinary(";
-      detail::sql_identifier(sys, col.name, stream);
-      stream << ')';
+      stream << "DB2GSE.ST_AsBinary(" << sql_identifier(sys, col.name) << ')';
       return;
 
     case MS_SQL:
-      detail::sql_identifier(sys, col.name, stream);
-      stream << ".STAsBinary() ";
-      detail::sql_identifier(sys, col.name, stream);
+      stream << sql_identifier(sys, col.name) << ".STAsBinary() " << sql_identifier(sys, col.name);
       return;
 
     case MySQL:
     case SQLite:
-      stream << "AsBinary(";
-      detail::sql_identifier(sys, col.name, stream);
-      stream << ')';
+      stream << "AsBinary(" << sql_identifier(sys, col.name) << ')';
       return;
 
     case Oracle:
-      stream << col.type.schema << '.' << col.type.name << ".GET_WKB(";
-      detail::sql_identifier(sys, col.name, stream);
-      stream << ')';
+      stream << col.type.schema << '.' << col.type.name << ".GET_WKB(" << sql_identifier(sys, col.name) << ')';
       return;
 
     case Postgres:
-      stream << "ST_AsBinary(";
-      detail::sql_identifier(sys, col.name, stream);
-      stream << ')';
+      stream << "ST_AsBinary(" << sql_identifier(sys, col.name) << ')';
       return;
     }
-  detail::sql_identifier(sys, col.name, stream);
+  stream << sql_identifier(sys, col.name);
 } // link::
 
 } } } // brig::database::detail

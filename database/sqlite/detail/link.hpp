@@ -34,7 +34,7 @@ public:
   link(std::shared_ptr<db_handle> db) : m_db(db), m_stmt(0), m_done(false)  {}
   virtual ~link()  { close_stmt(); }
   virtual DBMS system()  { return SQLite; }
-  virtual void sql_column(const column_detail& col, std::ostringstream& stream)  { brig::database::detail::sql_identifier(SQLite, col.name, stream); }
+  virtual void sql_column(const column_detail& col, std::ostringstream& stream)  { stream << brig::database::detail::sql_identifier(SQLite, col.name); }
   virtual void exec
     ( const std::string& sql
     , const std::vector<variant>& params = std::vector<variant>()

@@ -4,14 +4,13 @@
 #define BRIG_DATABASE_DETAIL_SQL_IDENTIFIER_HPP
 
 #include <brig/database/global.hpp>
-#include <sstream>
 #include <string>
 
 namespace brig { namespace database { namespace detail {
 
-inline void sql_identifier(DBMS sys, const std::string& id, std::ostringstream& stream)
+inline std::string sql_identifier(DBMS sys, const std::string& id)
 {
-  stream << (sys == MySQL? '`': '"') << id << (sys == MySQL? '`': '"');
+  return (sys == MySQL? '`': '"') + id + (sys == MySQL? '`': '"');
 }
 
 } } } // brig::database::detail

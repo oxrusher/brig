@@ -19,12 +19,12 @@ inline column_type get_type(DBMS sys, const column_detail& col)
   else
     switch (sys)
     {
-    case UnknownSystem:
+    case VoidSystem:
     case SQLite:
       break;
 
     case DB2:
-      if (!col.type.schema.empty() && !iequals(col.type.schema, "SYSIBM", loc)) return UnknownType;
+      if (!col.type.schema.empty() && !iequals(col.type.schema, "SYSIBM", loc)) return VoidColumn;
       else if (icontains(col.type.name, "GRAPHIC", loc)) return String;
       break;
 
@@ -41,12 +41,12 @@ inline column_type get_type(DBMS sys, const column_detail& col)
       break;
 
     case Oracle:
-      if (!col.type.schema.empty()) return UnknownType;
+      if (!col.type.schema.empty()) return VoidColumn;
       else if (iequals(col.type.name, "LONG", loc)) return String;
       break;
 
     case Postgres:
-      if (iequals(col.type.schema, "USER-DEFINED", loc)) return UnknownType;
+      if (iequals(col.type.schema, "USER-DEFINED", loc)) return VoidColumn;
       else if (icontains(col.type.name, "SERIAL", loc)) return Integer;
       break;
     }
@@ -63,7 +63,7 @@ inline column_type get_type(DBMS sys, const column_detail& col)
         || icontains(col.type.name, "DOUBLE", loc)) return Double;
   else if (istarts_with(col.type.name, "DEC", loc)
         || istarts_with(col.type.name, "NUM", loc)) return col.scale == 0? Integer: Double;
-  else return UnknownType;
+  else return VoidColumn;
 }
 
 } } } // brig::database::detail

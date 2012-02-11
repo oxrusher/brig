@@ -56,7 +56,7 @@ inline void link::close_stmt()
 inline void link::close_all()
 {
   close_stmt();
-  m_sys = UnknownSystem;
+  m_sys = VoidSystem;
   if (SQL_NULL_HANDLE != m_dbc)
   {
     SQLHANDLE dbc(SQL_NULL_HANDLE); std::swap(dbc, m_dbc);
@@ -88,7 +88,7 @@ inline void link::check(SQLSMALLINT type, SQLHANDLE handle, SQLRETURN r)
   throw std::runtime_error(msg.empty()? "ODBC error": brig::unicode::transform<std::string>(msg));
 }
 
-inline link::link(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(SQL_NULL_HANDLE), m_stmt(SQL_NULL_HANDLE), m_sys(UnknownSystem)
+inline link::link(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(SQL_NULL_HANDLE), m_stmt(SQL_NULL_HANDLE), m_sys(VoidSystem)
 {
   SQLWCHAR buf[SQL_MAX_MESSAGE_LENGTH];
   SQLSMALLINT len(0);

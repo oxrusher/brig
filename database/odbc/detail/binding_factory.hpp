@@ -26,7 +26,7 @@ struct binding_visitor : boost::static_visitor<binding*> {
   const DBMS sys;
   const column_detail* col;
   explicit binding_visitor(DBMS sys_, const column_detail* col_) : sys(sys_), col(col_)  {}
-  binding* operator()(const null_t&) const  { return new binding_null(col? brig::database::detail::get_type(sys, *col): UnknownType); }
+  binding* operator()(const null_t&) const  { return new binding_null(col? brig::database::detail::get_type(sys, *col): VoidColumn); }
   binding* operator()(int16_t v) const  { return new binding_impl<int16_t, SQL_C_SSHORT, SQL_SMALLINT>(v); }
   binding* operator()(int32_t v) const  { return new binding_impl<int32_t, SQL_C_SLONG, SQL_INTEGER>(v); }
   binding* operator()(int64_t v) const  { return Postgres == sys? operator()(int32_t(v)): new binding_impl<int64_t, SQL_C_SBIGINT, SQL_BIGINT>(v); }
