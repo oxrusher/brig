@@ -10,10 +10,10 @@
 
 namespace brig { namespace database {
 
-struct index_detail { // DESC, expressions are NOT supported
+struct index_detail { // descending, expressions are NOT supported
   object index;
   index_type type;
-  std::vector<std::string> cols;
+  std::vector<std::string> columns;
 
   index_detail() : type(VoidIndex)  {}
 }; // index_detail

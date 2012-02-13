@@ -3,6 +3,7 @@
 #ifndef BRIG_DATABASE_CONNECTION_HPP
 #define BRIG_DATABASE_CONNECTION_HPP
 
+#include <brig/database/column.hpp>
 #include <brig/database/command.hpp>
 #include <brig/database/detail/deleter.hpp>
 #include <brig/database/detail/link.hpp>
@@ -12,6 +13,7 @@
 #include <brig/database/detail/sql_indexed_columns.hpp>
 #include <brig/database/detail/sql_srid.hpp>
 #include <brig/database/detail/sql_tables.hpp>
+#include <brig/database/detail/sql_vector_layers.hpp>
 #include <brig/database/detail/sqlite_table_detail.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/index_detail.hpp>
@@ -33,16 +35,20 @@ class connection {
 public:
   explicit connection(std::shared_ptr<detail::linker> lkr) : m_pl(new pool_type(lkr))  {}
   std::shared_ptr<command> get_command()  { return get_link(); }
-  void get_tables(std::vector<object>& tables);
-  void get_table_detail(const object& tbl, table_detail<column_detail>& meta);
+  std::vector<object> get_tables();
+  table_detail<column_detail> get_table_detail(const object& tbl);
+  std::vector<column> get_vector_layers();
 }; // connection
 
 template <bool Threading>
-void connection<Threading>::get_tables(std::vector<object>& tables)
+std::vector<object> connection<Threading>::get_tables()
 {
+  using namespace brig::database::detail;
   using namespace brig::detail;
+
+  std::vector<object> tables;
   auto lnk = get_link();
-  lnk->exec(detail::sql_tables(lnk->system()));
+  lnk->exec(sql_tables(lnk->system()));
   std::vector<variant> row;
   while (lnk->fetch(row))
   {
@@ -51,83 +57,116 @@ void connection<Threading>::get_tables(std::vector<object>& tables)
     tbl.name = string_cast<char>(row[1]);
     tables.push_back(tbl);
   }
+  return std::move(tables);
 }
 
 template <bool Threading>
-void connection<Threading>::get_table_detail(const object& tbl, table_detail<column_detail>& meta)
+table_detail<column_detail> connection<Threading>::get_table_detail(const object& tbl)
 {
   using namespace brig::database::detail;
   using namespace brig::detail;
 
   auto lnk = get_link();
   const DBMS sys(lnk->system());
-  if (SQLite == sys)
-    sqlite_table_detail(lnk, tbl, meta);
-  else
+  if (SQLite == sys) return sqlite_table_detail(lnk, tbl);
+
+  // columns
+  table_detail<column_detail> meta;
+  meta.table = tbl;
+  lnk->exec(sql_columns(sys, tbl));
+  std::vector<variant> row;
+  while (lnk->fetch(row))
   {
-    // columns
-    lnk->exec(sql_columns(sys, tbl));
-    std::vector<variant> row;
-    while (lnk->fetch(row))
+    column_detail col;
+    col.name = string_cast<char>(row[0]);
+    col.type.schema = string_cast<char>(row[1]);
+    col.type.name = string_cast<char>(row[2]);
+    numeric_cast(row[3], col.chars);
+    numeric_cast(row[4], col.precision);
+    numeric_cast(row[5], col.scale);
+    meta.columns.push_back(std::move(col));
+  }
+
+  // indexes
+  lnk->exec(sql_indexed_columns(sys, tbl));
+  index_detail idx;
+  while (lnk->fetch(row))
+  {
+    object index;
+    index.schema = string_cast<char>(row[0]);
+    index.name = string_cast<char>(row[1]);
+
+    if (!(index == idx.index))
     {
-      column_detail col;
-      col.name = string_cast<char>(row[0]);
-      col.type.schema = string_cast<char>(row[1]);
-      col.type.name = string_cast<char>(row[2]);
-      numeric_cast(row[3], col.chars);
-      numeric_cast(row[4], col.precision);
-      numeric_cast(row[5], col.scale);
-      meta.cols.push_back(std::move(col));
+      if (VoidIndex != idx.type) meta.indexes.push_back(std::move(idx));
+
+      idx = index_detail();
+      idx.index = index;
+      int primary(0), unique(0), spatial(0);
+      numeric_cast(row[2], primary);
+      numeric_cast(row[3], unique);
+      numeric_cast(row[4], spatial);
+      if (primary) idx.type = Primary;
+      else if (unique) idx.type = Unique;
+      else if (spatial) idx.type = Spatial;
+      else idx.type = Duplicate;
     }
 
-    // indexes
-    lnk->exec(sql_indexed_columns(sys, tbl));
-    index_detail idx;
-    while (lnk->fetch(row))
+    column_detail col;
+    col.name = string_cast<char>(row[5]);
+    idx.columns.push_back(col.name);
+    if (std::find(meta.columns.begin(), meta.columns.end(), col) == meta.columns.end()) idx.type = VoidIndex;
+
+    int desc(0);
+    if (numeric_cast(row[6], desc) && desc) idx.type = VoidIndex;
+  }
+  if (VoidIndex != idx.type) meta.indexes.push_back(std::move(idx));
+
+  // srid, epsg, type detail
+  for (size_t i(0); i < meta.columns.size(); ++i)
+  {
+    const std::string sql(sql_srid(sys, tbl, meta.columns[i]));
+    if (!sql.empty())
     {
-      object index;
-      index.schema = string_cast<char>(row[0]);
-      index.name = string_cast<char>(row[1]);
-
-      if (!(index == idx.index))
+      lnk->exec(sql);
+      if (lnk->fetch(row))
       {
-        if (VoidIndex != idx.type) meta.idxs.push_back(std::move(idx));
-
-        idx = index_detail();
-        idx.index = index;
-        int primary(0), unique(0), spatial(0);
-        numeric_cast(row[2], primary);
-        numeric_cast(row[3], unique);
-        numeric_cast(row[4], spatial);
-        if (primary) idx.type = Primary;
-        else if (unique) idx.type = Unique;
-        else if (spatial) idx.type = Spatial;
-        else idx.type = Duplicate;
-      }
-
-      idx.cols.push_back(string_cast<char>(row[5]));
-      int desc(0);
-      if (numeric_cast(row[6], desc) && desc) idx.type = VoidIndex;
-    }
-    if (VoidIndex != idx.type) meta.idxs.push_back(std::move(idx));
-
-    // srid, epsg, extra
-    for (size_t i(0); i < meta.cols.size(); ++i)
-    {
-      const std::string sql(sql_srid(sys, tbl, meta.cols[i]));
-      if (!sql.empty())
-      {
-        lnk->exec(sql);
-        if (lnk->fetch(row))
-        {
-          numeric_cast(row[0], meta.cols[i].srid);
-          if (row.size() > 1) numeric_cast(row[1], meta.cols[i].epsg);
-          else meta.cols[i].epsg = meta.cols[i].srid;
-          if (row.size() > 2) meta.cols[i].type_detail = string_cast<char>(row[2]);
-        }
+        numeric_cast(row[0], meta.columns[i].srid);
+        if (row.size() > 1) numeric_cast(row[1], meta.columns[i].epsg);
+        else meta.columns[i].epsg = meta.columns[i].srid;
+        if (row.size() > 2) meta.columns[i].type_detail = string_cast<char>(row[2]);
       }
     }
   }
+  return std::move(meta);
+}
+
+template <bool Threading>
+std::vector<column> connection<Threading>::get_vector_layers()
+{
+  using namespace brig::database::detail;
+  using namespace brig::detail;
+
+  auto lnk = get_link();
+  const DBMS sys(lnk->system());
+  std::vector<variant> row;
+  if (SQLite == sys)
+  {
+    lnk->exec(sql_tables(sys, "GEOMETRY_COLUMNS"));
+    if (!lnk->fetch(row)) return std::vector<column>();
+  }
+
+  std::vector<column> drawings;
+  lnk->exec(sql_vector_layers(sys));
+  while (lnk->fetch(row))
+  {
+    column drw;
+    drw.table.schema = string_cast<char>(row[0]);
+    drw.table.name = string_cast<char>(row[1]);
+    drw.name = string_cast<char>(row[2]);
+    drawings.push_back(drw);
+  }
+  return std::move(drawings);
 }
 
 } } // brig::database
