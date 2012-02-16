@@ -16,7 +16,7 @@ template <typename InputIterator, typename OutputIterator>
 void transform_line(uint8_t byte_order, InputIterator& in_iter, OutputIterator& out_iter, projPJ in_pj, projPJ out_pj)
 {
   using namespace brig::detail::ogc;
-  const uint32_t count(get<uint32_t>(byte_order, in_iter)); set<uint32_t>(out_iter, count);
+  const uint32_t count(read<uint32_t>(byte_order, in_iter)); write<uint32_t>(out_iter, count);
   for (uint32_t i(0); i < count; ++i)
     transform_point(byte_order, in_iter, out_iter, in_pj, out_pj);
 }
@@ -27,7 +27,7 @@ void transform_line(uint8_t byte_order, InputType*& in_ptr, OutputType*& out_ptr
   using namespace brig::detail::ogc;
   static_assert(sizeof(InputType) == sizeof(uint8_t), "size error");
   static_assert(sizeof(OutputType) == sizeof(uint8_t), "size error");
-  const uint32_t point_xy_count(get<uint32_t>(byte_order, in_ptr)); set<uint32_t>(out_ptr, point_xy_count);
+  const uint32_t point_xy_count(read<uint32_t>(byte_order, in_ptr)); write<uint32_t>(out_ptr, point_xy_count);
   double* point_xy_begin((double*)out_ptr);
   if (system_byte_order() == byte_order)
   {
@@ -39,8 +39,8 @@ void transform_line(uint8_t byte_order, InputType*& in_ptr, OutputType*& out_ptr
   else
     for (uint32_t i(0); i < point_xy_count; ++i)
     {
-      set<double>(out_ptr, get<double>(byte_order, in_ptr));
-      set<double>(out_ptr, get<double>(byte_order, in_ptr));
+      write<double>(out_ptr, read<double>(byte_order, in_ptr));
+      write<double>(out_ptr, read<double>(byte_order, in_ptr));
     }
   transform(point_xy_begin, point_xy_count, in_pj, out_pj);
 }

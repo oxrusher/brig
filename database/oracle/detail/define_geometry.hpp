@@ -49,14 +49,14 @@ template <typename OutputIterator>
 void define_geometry::set_point(OutputIterator& iter, uint32_t ord_beg) const
 {
   using namespace brig::detail::ogc;
-  set<double>(iter, m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg)));
-  set<double>(iter, m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg + 1)));
+  write<double>(iter, m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg)));
+  write<double>(iter, m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg + 1)));
 }
 
 template <typename OutputIterator>
 void define_geometry::set_line(OutputIterator& iter, uint32_t ord_beg, uint32_t ord_end, uint32_t dim) const
 {
-  brig::detail::ogc::set<uint32_t>(iter, (ord_end - ord_beg) / dim); // numPoints
+  brig::detail::ogc::write<uint32_t>(iter, (ord_end - ord_beg) / dim); // numPoints
   for (uint32_t ord(ord_beg); ord < ord_end; ord += dim)
     set_point(iter, ord);
 }
@@ -97,10 +97,10 @@ inline void define_geometry::operator()(variant& var)
 
   if (0 == infos)
   {
-    set_byte_order(iter);
-    set<uint32_t>(iter, Point);
-    set<double>(iter, m_hnd->get_real(&m_geom->point.x, m_ind->point.x));
-    set<double>(iter, m_hnd->get_real(&m_geom->point.y, m_ind->point.y));
+    write_byte_order(iter);
+    write<uint32_t>(iter, Point);
+    write<double>(iter, m_hnd->get_real(&m_geom->point.x, m_ind->point.x));
+    write<double>(iter, m_hnd->get_real(&m_geom->point.y, m_ind->point.y));
 
     ++num_geoms;
   }
@@ -120,8 +120,8 @@ inline void define_geometry::operator()(variant& var)
         const uint32_t ord_end (ord_beg + num_points * dim);
         for (uint32_t ord(ord_beg); ord < ord_end; ord += dim)
         {
-          set_byte_order(iter);
-          set<uint32_t>(iter, Point);
+          write_byte_order(iter);
+          write<uint32_t>(iter, Point);
           set_point(iter, ord);
         }
 
@@ -133,8 +133,8 @@ inline void define_geometry::operator()(variant& var)
     case 2: // line string
       {
         if (1 != interpretation(i)) throw std::runtime_error("OCI geometry error"); // not straight line segments
-        set_byte_order(iter);
-        set<uint32_t>(iter, LineString);
+        write_byte_order(iter);
+        write<uint32_t>(iter, LineString);
         set_line(iter, starting_offset(i), i + 3 < infos? starting_offset(i + 3): ords, dim); // triplet
 
         ++num_geoms;
@@ -151,9 +151,9 @@ inline void define_geometry::operator()(variant& var)
           ++num_rings;
         }
 
-        set_byte_order(iter);
-        set<uint32_t>(iter, Polygon);
-        set<uint32_t>(iter, num_rings);
+        write_byte_order(iter);
+        write<uint32_t>(iter, Polygon);
+        write<uint32_t>(iter, num_rings);
 
         const uint32_t info_end(i + num_rings * 3); // triplet
         for (; i < info_end; i += 3) // triplet
@@ -174,21 +174,21 @@ inline void define_geometry::operator()(variant& var)
               const double right (m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg + dim)));
               const double upper (m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg + dim + 1)));
 
-              set<uint32_t>(iter, 5); // numPoints
-              set<double>(iter, left); set<double>(iter, lower);
+              write<uint32_t>(iter, 5); // numPoints
+              write<double>(iter, left); write<double>(iter, lower);
               if (i == i) // exterior ring
               {
-                set<double>(iter, right); set<double>(iter, lower);
-                set<double>(iter, right); set<double>(iter, upper);
-                set<double>(iter, left); set<double>(iter, upper);
+                write<double>(iter, right); write<double>(iter, lower);
+                write<double>(iter, right); write<double>(iter, upper);
+                write<double>(iter, left); write<double>(iter, upper);
               }
               else // interior ring
               {
-                set<double>(iter, left); set<double>(iter, upper);
-                set<double>(iter, right); set<double>(iter, upper);
-                set<double>(iter, right); set<double>(iter, lower);
+                write<double>(iter, left); write<double>(iter, upper);
+                write<double>(iter, right); write<double>(iter, upper);
+                write<double>(iter, right); write<double>(iter, lower);
               }
-              set<double>(iter, left); set<double>(iter, lower);
+              write<double>(iter, left); write<double>(iter, lower);
             }
             break;
           }
@@ -203,16 +203,16 @@ inline void define_geometry::operator()(variant& var)
   if (collection)
   {
     auto ptr = blob.data();
-    set_byte_order(ptr);
+    write_byte_order(ptr);
     switch (tt)
     {
     default: throw std::runtime_error("OCI geometry error");
-    case 4: set<uint32_t>(ptr, GeometryCollection); break; // collection
-    case 5: set<uint32_t>(ptr, MultiPoint); break; // multipoint
-    case 6: set<uint32_t>(ptr, MultiLineString); break; // multiline
-    case 7: set<uint32_t>(ptr, MultiPolygon); break; // multipolygon / multisurface
+    case 4: write<uint32_t>(ptr, GeometryCollection); break; // collection
+    case 5: write<uint32_t>(ptr, MultiPoint); break; // multipoint
+    case 6: write<uint32_t>(ptr, MultiLineString); break; // multiline
+    case 7: write<uint32_t>(ptr, MultiPolygon); break; // multipolygon / multisurface
     }
-    set<uint32_t>(ptr, num_geoms);
+    write<uint32_t>(ptr, num_geoms);
   }
 } // define_geometry::
 

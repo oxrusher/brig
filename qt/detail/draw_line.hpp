@@ -14,19 +14,19 @@
 namespace brig { namespace qt { namespace detail {
 
 template <typename InputIterator>
-QPolygonF get_line(uint8_t byte_order, InputIterator& iter, const frame& fr)
+QPolygonF read_line(uint8_t byte_order, InputIterator& iter, const frame& fr)
 {
-  const uint32_t count(brig::detail::ogc::get<uint32_t>(byte_order, iter));
+  const uint32_t count(brig::detail::ogc::read<uint32_t>(byte_order, iter));
   QPolygonF line; line.reserve(count);
   for (uint32_t i(0); i < count; ++i)
-    line.push_back( get_point(byte_order, iter, fr) );
+    line.push_back( read_point(byte_order, iter, fr) );
   return line;
 }
 
 template <typename InputIterator>
 void draw_line(uint8_t byte_order, InputIterator& iter, const frame& fr, QPainter& painter)
 {
-  painter.drawPolyline( get_line(byte_order, iter, fr) );
+  painter.drawPolyline( read_line(byte_order, iter, fr) );
 }
 
 } } } // brig::qt::detail

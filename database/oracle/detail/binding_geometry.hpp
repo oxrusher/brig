@@ -62,8 +62,8 @@ template <typename InputIterator>
 void binding_geometry::add_point(uint8_t byte_order, InputIterator& iter, uint32_t& offset) const
 {
   using namespace brig::detail::ogc;
-  add_real(get<double>(byte_order, iter), m_geom->ordinates);
-  add_real(get<double>(byte_order, iter), m_geom->ordinates);
+  add_real(read<double>(byte_order, iter), m_geom->ordinates);
+  add_real(read<double>(byte_order, iter), m_geom->ordinates);
   m_ind->ordinates = OCI_IND_NOTNULL;
   offset += 2;
 }
@@ -72,14 +72,14 @@ template <typename InputIterator>
 void binding_geometry::add_line(uint8_t byte_order, InputIterator& iter, uint32_t& offset, uint32_t etype) const
 {
   add_info(offset, etype, 1);
-  for (uint32_t i(0), count(brig::detail::ogc::get<uint32_t>(byte_order, iter)); i < count; ++i)
+  for (uint32_t i(0), count(brig::detail::ogc::read<uint32_t>(byte_order, iter)); i < count; ++i)
     add_point(byte_order, iter, offset);
 }
 
 template <typename InputIterator>
 void binding_geometry::add_polygon(uint8_t byte_order, InputIterator& iter, uint32_t& offset) const
 {
-  for (uint32_t i(0), count(brig::detail::ogc::get<uint32_t>(byte_order, iter)); i < count; ++i)
+  for (uint32_t i(0), count(brig::detail::ogc::read<uint32_t>(byte_order, iter)); i < count; ++i)
     add_line(byte_order, iter, offset, i == 0? 1003: 2003);
 }
 
@@ -87,9 +87,9 @@ template <typename InputIterator>
 void binding_geometry::add_geom(InputIterator& iter, uint32_t& offset) const
 {
   using namespace brig::detail::ogc;
-  uint8_t byte_order(get_byte_order(iter));
+  uint8_t byte_order(read_byte_order(iter));
   uint32_t i(0), count(0);
-  switch (get<uint32_t>(byte_order, iter)) // type
+  switch (read<uint32_t>(byte_order, iter)) // type
   {
   default: throw std::runtime_error("WKB error");
 
@@ -107,36 +107,36 @@ void binding_geometry::add_geom(InputIterator& iter, uint32_t& offset) const
     break;
 
   case MultiPoint:
-    count = get<uint32_t>(byte_order, iter);
+    count = read<uint32_t>(byte_order, iter);
     add_info(offset, 1, count);
     for (i = 0; i < count; ++i)
     {
-      byte_order = get_byte_order(iter);
-      if (Point != get<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
+      byte_order = read_byte_order(iter);
+      if (Point != read<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
       add_point(byte_order, iter, offset);
     }
     break;
 
   case MultiLineString:
-    for (i = 0, count = get<uint32_t>(byte_order, iter); i < count; ++i)
+    for (i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
     {
-      byte_order = get_byte_order(iter);
-      if (LineString != get<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
+      byte_order = read_byte_order(iter);
+      if (LineString != read<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
       add_line(byte_order, iter, offset, 2);
     }
     break;
 
   case MultiPolygon:
-    for (i = 0, count = get<uint32_t>(byte_order, iter); i < count; ++i)
+    for (i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
     {
-      byte_order = get_byte_order(iter);
-      if (Polygon != get<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
+      byte_order = read_byte_order(iter);
+      if (Polygon != read<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
       add_polygon(byte_order, iter, offset);
     }
     break;
 
   case GeometryCollection:
-    for (i = 0, count = get<uint32_t>(byte_order, iter); i < count; ++i)
+    for (i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
       add_geom(iter, offset);
     break;
   }
@@ -158,14 +158,14 @@ inline binding_geometry::binding_geometry(handles* hnd, size_t order, const blob
     if (srid > 0) m_hnd->set_int(srid, &m_geom->srid, &m_ind->srid);
 
     auto ptr = blob.data();
-    uint8_t byte_order(get_byte_order(ptr));
-    switch (get<uint32_t>(byte_order, ptr)) // type
+    uint8_t byte_order(read_byte_order(ptr));
+    switch (read<uint32_t>(byte_order, ptr)) // type
     {
     default: throw std::runtime_error("WKB error");
     case Point:
       m_hnd->set_int(2001, &m_geom->gtype, &m_ind->gtype);
-      m_hnd->set_real(get<double>(byte_order, ptr), &m_geom->point.x, &m_ind->point.x);
-      m_hnd->set_real(get<double>(byte_order, ptr), &m_geom->point.y, &m_ind->point.y);
+      m_hnd->set_real(read<double>(byte_order, ptr), &m_geom->point.x, &m_ind->point.x);
+      m_hnd->set_real(read<double>(byte_order, ptr), &m_geom->point.y, &m_ind->point.y);
       return;
     case LineString: m_hnd->set_int(2002, &m_geom->gtype, &m_ind->gtype); break;
     case Polygon: m_hnd->set_int(2003, &m_geom->gtype, &m_ind->gtype); break;

@@ -15,11 +15,11 @@ void transform_point(uint8_t byte_order, InputIterator& in_iter, OutputIterator&
 {
   using namespace brig::detail::ogc;
   double point_xy[2];
-  point_xy[0] = get<double>(byte_order, in_iter);
-  point_xy[1] = get<double>(byte_order, in_iter);
+  point_xy[0] = read<double>(byte_order, in_iter);
+  point_xy[1] = read<double>(byte_order, in_iter);
   transform(point_xy, 1, in_pj, out_pj);
-  set<double>(out_iter, point_xy[0]);
-  set<double>(out_iter, point_xy[1]);
+  write<double>(out_iter, point_xy[0]);
+  write<double>(out_iter, point_xy[1]);
 }
 
 } } } // brig::proj::detail

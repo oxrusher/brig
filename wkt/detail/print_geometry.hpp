@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_WKT_DETAIL_PRINT_GEOM_HPP
-#define BRIG_WKT_DETAIL_PRINT_GEOM_HPP
+#ifndef BRIG_WKT_DETAIL_PRINT_GEOMETRY_HPP
+#define BRIG_WKT_DETAIL_PRINT_GEOMETRY_HPP
 
 #include <brig/detail/ogc.hpp>
 #include <brig/wkt/detail/print_line.hpp>
@@ -14,17 +14,17 @@
 namespace brig { namespace wkt { namespace detail {
 
 template <typename InputIterator>
-void print_geom(InputIterator& in_iter, std::ostringstream& out_stream)
+void print_geometry(InputIterator& in_iter, std::ostringstream& out_stream)
 {
   using namespace brig::detail::ogc;
-  uint8_t byte_order(get_byte_order(in_iter));
-  uint32_t type(get<uint32_t>(byte_order, in_iter)), i(0), count(0);
+  uint8_t byte_order(read_byte_order(in_iter));
+  uint32_t type(read<uint32_t>(byte_order, in_iter)), i(0), count(0);
   switch (type)
   {
   default: throw std::runtime_error("WKB error");
   case Point:
     out_stream << "POINT ";
-    print_point_text(byte_order, in_iter, out_stream);
+    print_point(byte_order, in_iter, out_stream);
     break;
 
   case LineString:
@@ -39,24 +39,24 @@ void print_geom(InputIterator& in_iter, std::ostringstream& out_stream)
 
   case MultiPoint:
     out_stream << "MULTIPOINT (";
-    for (i = 0, count = get<uint32_t>(byte_order, in_iter); i < count; ++i)
+    for (i = 0, count = read<uint32_t>(byte_order, in_iter); i < count; ++i)
     {
       if (i > 0) out_stream << ", ";
-      byte_order = get_byte_order(in_iter);
-      type = get<uint32_t>(byte_order, in_iter);
+      byte_order = read_byte_order(in_iter);
+      type = read<uint32_t>(byte_order, in_iter);
       if (Point != type) throw std::runtime_error("WKB error");
-      print_point_text(byte_order, in_iter, out_stream);
+      print_point(byte_order, in_iter, out_stream);
     }
     out_stream << ')';
     break;
 
   case MultiLineString:
     out_stream << "MULTILINESTRING (";
-    for (i = 0, count = get<uint32_t>(byte_order, in_iter); i < count; ++i)
+    for (i = 0, count = read<uint32_t>(byte_order, in_iter); i < count; ++i)
     {
       if (i > 0) out_stream << ", ";
-      byte_order = get_byte_order(in_iter);
-      type = get<uint32_t>(byte_order, in_iter);
+      byte_order = read_byte_order(in_iter);
+      type = read<uint32_t>(byte_order, in_iter);
       if (LineString != type) throw std::runtime_error("WKB error");
       print_line(byte_order, in_iter, out_stream);
     }
@@ -65,11 +65,11 @@ void print_geom(InputIterator& in_iter, std::ostringstream& out_stream)
 
   case MultiPolygon:
     out_stream << "MULTIPOLYGON (";
-    for (i = 0, count = get<uint32_t>(byte_order, in_iter); i < count; ++i)
+    for (i = 0, count = read<uint32_t>(byte_order, in_iter); i < count; ++i)
     {
       if (i > 0) out_stream << ", ";
-      byte_order = get_byte_order(in_iter);
-      type = get<uint32_t>(byte_order, in_iter);
+      byte_order = read_byte_order(in_iter);
+      type = read<uint32_t>(byte_order, in_iter);
       if (Polygon != type) throw std::runtime_error("WKB error");
       print_polygon(byte_order, in_iter, out_stream);
     }
@@ -78,10 +78,10 @@ void print_geom(InputIterator& in_iter, std::ostringstream& out_stream)
 
   case GeometryCollection:
     out_stream << "GEOMETRYCOLLECTION (";
-    for (i = 0, count = get<uint32_t>(byte_order, in_iter); i < count; ++i)
+    for (i = 0, count = read<uint32_t>(byte_order, in_iter); i < count; ++i)
     {
       if (i > 0) out_stream << ", ";
-      print_geom(in_iter, out_stream);
+      print_geometry(in_iter, out_stream);
     }
     out_stream << ')';
     break;
@@ -90,4 +90,4 @@ void print_geom(InputIterator& in_iter, std::ostringstream& out_stream)
 
 } } } // brig::wkt::detail
 
-#endif // BRIG_WKT_DETAIL_PRINT_GEOM_HPP
+#endif // BRIG_WKT_DETAIL_PRINT_GEOMETRY_HPP

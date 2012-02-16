@@ -19,13 +19,13 @@ inline void skip_point(uint8_t*& ptr)
 
 inline void skip_line(uint8_t byte_order, uint8_t*& ptr)
 {
-  const uint32_t count(brig::detail::ogc::get<uint32_t>(byte_order, ptr));
+  const uint32_t count(brig::detail::ogc::read<uint32_t>(byte_order, ptr));
   ptr += count * 2 * sizeof(double);
 }
 
 inline void skip_polygon(uint8_t byte_order, uint8_t*& ptr)
 {
-  for (uint32_t i(0), count(brig::detail::ogc::get<uint32_t>(byte_order, ptr)); i < count; ++i)
+  for (uint32_t i(0), count(brig::detail::ogc::read<uint32_t>(byte_order, ptr)); i < count; ++i)
     skip_line(byte_order, ptr);
 }
 
@@ -43,7 +43,7 @@ inline void column_geometry(sqlite3_stmt* stmt, int col, blob_t& blob)
   memcpy(blob.data() + 1, data + 39, blob.size() - 1);
 
   uint8_t* ptr = blob.data() + 1;
-  switch (get<uint32_t>(byte_order, ptr))
+  switch (read<uint32_t>(byte_order, ptr))
   {
   default: throw std::runtime_error("SpatiaLite geometry error");
   case Point:
@@ -55,10 +55,10 @@ inline void column_geometry(sqlite3_stmt* stmt, int col, blob_t& blob)
   case GeometryCollection: break;
   }
 
-  for (uint32_t i(0), count(get<uint32_t>(byte_order, ptr)); i < count; ++i)
+  for (uint32_t i(0), count(read<uint32_t>(byte_order, ptr)); i < count; ++i)
   {
-    set<uint8_t>(ptr, byte_order);
-    switch (get<uint32_t>(byte_order, ptr))
+    write<uint8_t>(ptr, byte_order);
+    switch (read<uint32_t>(byte_order, ptr))
     {
     default: throw std::runtime_error("SpatiaLite geometry error");
     case Point: skip_point(ptr); break;

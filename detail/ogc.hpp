@@ -25,40 +25,40 @@ inline uint8_t system_byte_order()
 }
 
 template <typename InputIterator>
-uint8_t get_byte_order(InputIterator& in_iter)
+uint8_t read_byte_order(InputIterator& iter)
 {
   static_assert(sizeof(typename std::iterator_traits<InputIterator>::value_type) == sizeof(uint8_t), "size error");
-  const uint8_t byte_order(static_cast<uint8_t>(*in_iter));
-  ++in_iter;
+  const uint8_t byte_order(static_cast<uint8_t>(*iter));
+  ++iter;
   if (BigEndian == byte_order || LittleEndian == byte_order) return byte_order;
   throw std::runtime_error("byte order error");
 }
 
 template <typename OutputIterator>
-void set_byte_order(OutputIterator& out_iter)
+void write_byte_order(OutputIterator& iter)
 {
   static_assert(sizeof(typename std::iterator_traits<OutputIterator>::value_type) == sizeof(uint8_t), "size error");
-  *out_iter = system_byte_order();
-  ++out_iter;
+  *iter = system_byte_order();
+  ++iter;
 }
 
 template <typename T, typename InputIterator>
-T get(uint8_t byte_order, InputIterator& in_iter)
+T read(uint8_t byte_order, InputIterator& iter)
 {
   T val(0);
-  uint8_t* out_ptr = (uint8_t*)(&val);
+  uint8_t* ptr = (uint8_t*)(&val);
   if (system_byte_order() == byte_order)
-    copy<T>(in_iter, out_ptr);
+    copy<T>(iter, ptr);
   else
-    reverse_copy<T>(in_iter, out_ptr);
+    reverse_copy<T>(iter, ptr);
   return val;
 }
 
 template <typename T, typename OutputIterator>
-void set(OutputIterator& out_iter, T val)
+void write(OutputIterator& iter, T val)
 {
-  const uint8_t* in_ptr = (uint8_t*)(&val);
-  copy<T>(in_ptr, out_iter);
+  const uint8_t* ptr = (const uint8_t*)(&val);
+  copy<T>(ptr, iter);
 }
 
 enum GeometryType {
