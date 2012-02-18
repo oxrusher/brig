@@ -7,7 +7,7 @@
 
 namespace brig { namespace database { namespace oracle { namespace detail {
 
-struct binding : boost::noncopyable {
+struct binding : ::boost::noncopyable {
   virtual ~binding()  {}
 }; // binding
 

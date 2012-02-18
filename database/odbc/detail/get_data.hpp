@@ -9,7 +9,7 @@
 
 namespace brig { namespace database { namespace odbc { namespace detail {
 
-struct get_data : boost::noncopyable {
+struct get_data : ::boost::noncopyable {
   virtual ~get_data()  {}
   virtual SQLRETURN operator()(SQLHSTMT stmt, size_t col, variant& var) = 0;
 }; // get_data

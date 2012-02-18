@@ -26,7 +26,7 @@
 
 namespace brig { namespace database { namespace oracle { namespace detail {
 
-struct binding_visitor : boost::static_visitor<binding*> {
+struct binding_visitor : ::boost::static_visitor<binding*> {
   handles* hnd;
   size_t i;
   const column_detail* col;
@@ -37,8 +37,8 @@ struct binding_visitor : boost::static_visitor<binding*> {
   binding* operator()(int64_t v) const  { return new binding_impl<int64_t, SQLT_INT>(hnd, i, v); }
   binding* operator()(float v) const  { return new binding_impl<float, SQLT_FLT>(hnd, i, v); }
   binding* operator()(double v) const  { return new binding_impl<double, SQLT_FLT>(hnd, i, v); }
-  binding* operator()(const boost::gregorian::date& r) const  { return new binding_datetime(hnd, i, r); }
-  binding* operator()(const boost::posix_time::ptime& r) const  { return new binding_datetime(hnd, i, r); }
+  binding* operator()(const ::boost::gregorian::date& r) const  { return new binding_datetime(hnd, i, r); }
+  binding* operator()(const ::boost::posix_time::ptime& r) const  { return new binding_datetime(hnd, i, r); }
   binding* operator()(const std::string& r) const  { return new binding_string(hnd, i, r, col? get_charset_form(col->type): SQLCS_NCHAR); }
   binding* operator()(const blob_t&) const;
 }; // binding_visitor
@@ -67,7 +67,7 @@ inline binding* binding_visitor::operator()(const blob_t& r) const
 
 inline binding* binding_factory(handles* hnd, size_t param, const variant& var, const column_detail* param_col)
 {
-  return boost::apply_visitor(binding_visitor(hnd, param + 1, param_col), var);
+  return ::boost::apply_visitor(binding_visitor(hnd, param + 1, param_col), var);
 }
 
 } } } } // brig::database::oracle::detail

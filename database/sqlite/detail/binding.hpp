@@ -17,7 +17,7 @@
 
 namespace brig { namespace database { namespace sqlite { namespace detail {
 
-struct binding_visitor : boost::static_visitor<int> {
+struct binding_visitor : ::boost::static_visitor<int> {
   sqlite3_stmt* stmt;
   int i;
 
@@ -26,8 +26,8 @@ struct binding_visitor : boost::static_visitor<int> {
   int operator()(T v) const  { return lib::singleton().p_sqlite3_bind_int64(stmt, i, int64_t(v)); }
   int operator()(float v) const  { return lib::singleton().p_sqlite3_bind_double(stmt, i, double(v)); }
   int operator()(double v) const  { return lib::singleton().p_sqlite3_bind_double(stmt, i, v); }
-  int operator()(const boost::gregorian::date& r) const  { return lib::singleton().p_sqlite3_bind_text(stmt, i, brig::detail::string_cast<char>(r).c_str(), -1, SQLITE_TRANSIENT); }
-  int operator()(const boost::posix_time::ptime& r) const  { return lib::singleton().p_sqlite3_bind_text(stmt, i, brig::detail::string_cast<char>(r).c_str(), -1, SQLITE_TRANSIENT); }
+  int operator()(const ::boost::gregorian::date& r) const  { return lib::singleton().p_sqlite3_bind_text(stmt, i, brig::detail::string_cast<char>(r).c_str(), -1, SQLITE_TRANSIENT); }
+  int operator()(const ::boost::posix_time::ptime& r) const  { return lib::singleton().p_sqlite3_bind_text(stmt, i, brig::detail::string_cast<char>(r).c_str(), -1, SQLITE_TRANSIENT); }
   int operator()(const blob_t& r) const  { return lib::singleton().p_sqlite3_bind_blob(stmt, i, r.data(), int(r.size()), SQLITE_STATIC); }
   int operator()(const std::string& r) const  { return lib::singleton().p_sqlite3_bind_text(stmt, i, r.c_str(), -1, SQLITE_STATIC); }
 }; // binding_visitor
@@ -37,7 +37,7 @@ inline int bind(sqlite3_stmt* stmt, size_t param, const variant& var)
   binding_visitor visitor;
   visitor.stmt = stmt;
   visitor.i = int(param + 1);
-  return boost::apply_visitor(visitor, var);
+  return ::boost::apply_visitor(visitor, var);
 }
 
 } } } } // brig::database::sqlite::detail

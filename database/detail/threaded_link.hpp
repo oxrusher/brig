@@ -21,7 +21,7 @@ class threaded_link : public link
   std::shared_ptr<mediator> m_med;
   static void worker(std::shared_ptr<linker> lkr, std::shared_ptr<mediator> med);
 public:
-  explicit threaded_link(std::shared_ptr<linker> lkr) : m_med(new mediator())  { boost::thread(worker, lkr, m_med); }
+  explicit threaded_link(std::shared_ptr<linker> lkr) : m_med(new mediator())  { ::boost::thread(worker, lkr, m_med); }
   virtual ~threaded_link()  { m_med->stop(); }
   virtual DBMS system();
   virtual void sql_parameter(size_t order, const column_detail& param_col, std::ostringstream& stream);

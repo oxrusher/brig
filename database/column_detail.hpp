@@ -15,7 +15,6 @@ struct column_detail {
   int chars, precision, scale, srid, epsg;
 
   column_detail() : chars(-1), precision(-1), scale(-1), srid(-1), epsg(-1)  {}
-  bool operator==(const column_detail& r) const  { return name == r.name; }
 }; // column_detail
 
 } } // brig::database

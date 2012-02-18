@@ -11,7 +11,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-class double_page : boost::noncopyable {
+class double_page : ::boost::noncopyable {
   page m_front, m_back;
   bool m_sync, m_done;
 

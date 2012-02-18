@@ -89,7 +89,7 @@ inline void define_geometry::operator()(variant& var)
   uint32_t num_geoms(0);
 
   var = blob_t();
-  blob_t& blob = boost::get<blob_t>(var);
+  blob_t& blob = ::boost::get<blob_t>(var);
   const size_t header_size(sizeof(uint8_t) + 2 * sizeof(uint32_t));
   if (collection) blob.resize(header_size);
   blob.reserve((collection? 3: 1) * header_size + ((ords / dim) * 2 * sizeof(double)) ); // estimate size

@@ -13,7 +13,7 @@ namespace brig { namespace database { namespace oracle { namespace detail {
 
 inline ub1 get_charset_form(const object& type)
 {
-  using namespace boost::algorithm;
+  using namespace ::boost::algorithm;
   auto loc = std::locale::classic();
   if (type.schema.empty() &&
     ( icontains(type.name, "CHAR", loc)

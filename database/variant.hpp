@@ -14,15 +14,15 @@
 
 namespace brig { namespace database {
 
-typedef boost::variant<
+typedef ::boost::variant<
   null_t,
   int16_t,
   int32_t,
   int64_t,
   float,
   double,
-  boost::gregorian::date,
-  boost::posix_time::ptime,
+  ::boost::gregorian::date,
+  ::boost::posix_time::ptime,
   std::string,
   blob_t
 > variant;

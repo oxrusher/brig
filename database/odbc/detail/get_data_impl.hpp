@@ -25,15 +25,15 @@ void assign(const T& from, variant& to)
 template <>
 inline void assign<DATE_STRUCT>(const DATE_STRUCT& from, variant& to)
 {
-  to = boost::gregorian::date(from.year, from.month, from.day);
+  to = ::boost::gregorian::date(from.year, from.month, from.day);
 }
 
 template <>
 inline void assign<TIMESTAMP_STRUCT>(const TIMESTAMP_STRUCT& from, variant& to)
 {
-  to = boost::posix_time::ptime
-    ( boost::gregorian::date(from.year, from.month, from.day)
-    , boost::posix_time::time_duration(from.hour, from.minute, from.second)
+  to = ::boost::posix_time::ptime
+    ( ::boost::gregorian::date(from.year, from.month, from.day)
+    , ::boost::posix_time::time_duration(from.hour, from.minute, from.second)
     );
 }
 

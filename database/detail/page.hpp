@@ -12,7 +12,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-class page : boost::noncopyable { // boost::circular_buffer is slow
+class page : ::boost::noncopyable { // ::boost::circular_buffer is slow
   std::vector<std::vector<variant>> m_rows;
   size_t m_beg, m_end;
 

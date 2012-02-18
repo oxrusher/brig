@@ -8,7 +8,7 @@
 
 namespace brig { namespace database { namespace odbc { namespace detail {
 
-struct binding : boost::noncopyable {
+struct binding : ::boost::noncopyable {
   virtual ~binding()  {}
   virtual SQLSMALLINT c_type() = 0;
   virtual SQLSMALLINT sql_type() = 0;

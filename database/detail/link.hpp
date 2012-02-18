@@ -30,7 +30,7 @@ struct link : public command
 
 inline void link::sql_parameter(size_t, const column_detail& param_col, std::ostringstream& stream)
 {
-  using namespace boost::algorithm;
+  using namespace ::boost::algorithm;
   auto loc = std::locale::classic();
   const DBMS sys(system());
   if (detail::is_geometry_type(sys, param_col))

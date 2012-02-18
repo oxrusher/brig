@@ -3,7 +3,9 @@
 #ifndef BRIG_DATABASE_CONNECTION_HPP
 #define BRIG_DATABASE_CONNECTION_HPP
 
+#include <brig/boost/geometry.hpp>
 #include <brig/database/column.hpp>
+#include <brig/database/column_detail.hpp>
 #include <brig/database/command.hpp>
 #include <brig/database/detail/deleter.hpp>
 #include <brig/database/detail/link.hpp>
@@ -11,14 +13,17 @@
 #include <brig/database/detail/pool.hpp>
 #include <brig/database/detail/sql_columns.hpp>
 #include <brig/database/detail/sql_indexed_columns.hpp>
+#include <brig/database/detail/sql_mbr.hpp>
 #include <brig/database/detail/sql_srid.hpp>
 #include <brig/database/detail/sql_tables.hpp>
+#include <brig/database/detail/sql_vector_layer.hpp>
 #include <brig/database/detail/sql_vector_layers.hpp>
 #include <brig/database/detail/sqlite_table_detail.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/index_detail.hpp>
 #include <brig/database/numeric_cast.hpp>
 #include <brig/database/object.hpp>
+#include <brig/database/rowset.hpp>
 #include <brig/database/table_detail.hpp>
 #include <brig/database/variant.hpp>
 #include <brig/detail/string_cast.hpp>
@@ -38,6 +43,11 @@ public:
   std::vector<object> get_tables();
   table_detail<column_detail> get_table_detail(const object& tbl);
   std::vector<column> get_vector_layers();
+  boost::box get_mbr(const object& tbl, const column_detail& col);
+  std::shared_ptr<rowset> get_vector_layer
+    ( const table_detail<column_detail>& tbl, const std::string& lr, const boost::box& box
+    , const std::vector<std::string> cols = std::vector<std::string>(), int rows = -1
+    );
 }; // connection
 
 template <bool Threading>
@@ -112,13 +122,12 @@ table_detail<column_detail> connection<Threading>::get_table_detail(const object
       else idx.type = Duplicate;
     }
 
-    column_detail col;
-    col.name = string_cast<char>(row[5]);
-    idx.columns.push_back(col.name);
-    if (std::find(meta.columns.begin(), meta.columns.end(), col) == meta.columns.end()) idx.type = VoidIndex;
+    const std::string col_name(string_cast<char>(row[5]));
+    idx.columns.push_back(col_name);
+    if (std::find_if(meta.columns.begin(), meta.columns.end(), [&](const column_detail& col){ return col.name == col_name; }) == meta.columns.end()) idx.type = VoidIndex; // expression
 
     int desc(0);
-    if (numeric_cast(row[6], desc) && desc) idx.type = VoidIndex;
+    if (numeric_cast(row[6], desc) && desc) idx.type = VoidIndex; // descending
   }
   if (VoidIndex != idx.type) meta.indexes.push_back(std::move(idx));
 
@@ -167,6 +176,41 @@ std::vector<column> connection<Threading>::get_vector_layers()
     drawings.push_back(drw);
   }
   return std::move(drawings);
+}
+
+template <bool Threading>
+boost::box connection<Threading>::get_mbr(const object& tbl, const column_detail& col)
+{
+  using namespace boost;
+
+  auto lnk = get_link();
+  const std::string sql(detail::sql_mbr(lnk->system(), tbl, col));
+  if (sql.empty())
+    return box(point(-180, -90), point(180, 90)); // geodetic
+
+  lnk->exec(sql);
+  std::vector<variant> row;
+  double xmin(0), ymin(0), xmax(0), ymax(0);
+  if ( lnk->fetch(row)
+    && numeric_cast(row[0], xmin)
+    && numeric_cast(row[1], ymin)
+    && numeric_cast(row[2], xmax)
+    && numeric_cast(row[3], ymax)
+     )
+    return box(point(xmin, ymin), point(xmax, ymax));
+
+  throw std::runtime_error("mbr error");
+}
+
+template <bool Threading>
+std::shared_ptr<rowset> connection<Threading>::get_vector_layer
+  ( const table_detail<column_detail>& tbl, const std::string& lr, const boost::box& box
+  , const std::vector<std::string> cols, int rows
+  )
+{
+  auto lnk = get_link();
+  lnk->exec(sql_vector_layer(lnk.get(), tbl, lr, box, cols, rows));
+  return lnk;
 }
 
 } } // brig::database

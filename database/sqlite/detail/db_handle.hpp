@@ -12,7 +12,7 @@
 
 namespace brig { namespace database { namespace sqlite { namespace detail {
 
-class db_handle : boost::noncopyable {
+class db_handle : ::boost::noncopyable {
   sqlite3* m_db;
 public:
   db_handle(const std::string& file);

@@ -22,7 +22,7 @@
 
 namespace brig { namespace database { namespace odbc { namespace detail {
 
-struct binding_visitor : boost::static_visitor<binding*> {
+struct binding_visitor : ::boost::static_visitor<binding*> {
   const DBMS sys;
   const column_detail* col;
   explicit binding_visitor(DBMS sys_, const column_detail* col_) : sys(sys_), col(col_)  {}
@@ -32,13 +32,13 @@ struct binding_visitor : boost::static_visitor<binding*> {
   binding* operator()(int64_t v) const  { return Postgres == sys? operator()(int32_t(v)): new binding_impl<int64_t, SQL_C_SBIGINT, SQL_BIGINT>(v); }
   binding* operator()(float v) const  { return new binding_impl<float, SQL_C_FLOAT, SQL_REAL>(v); }
   binding* operator()(double v) const  { return new binding_impl<double, SQL_C_DOUBLE, SQL_DOUBLE>(v); }
-  binding* operator()(const boost::gregorian::date&) const;
-  binding* operator()(const boost::posix_time::ptime&) const;
+  binding* operator()(const ::boost::gregorian::date&) const;
+  binding* operator()(const ::boost::posix_time::ptime&) const;
   binding* operator()(const std::string& r) const  { return new binding_string(r, MS_SQL == sys? SQL_WLONGVARCHAR: SQL_WVARCHAR); }
   binding* operator()(const blob_t& r) const  { return new binding_blob(r, MS_SQL == sys? SQL_LONGVARBINARY: SQL_VARBINARY); }
 }; // binding_visitor
 
-inline binding* binding_visitor::operator()(const boost::gregorian::date& r) const
+inline binding* binding_visitor::operator()(const ::boost::gregorian::date& r) const
 {
   DATE_STRUCT v;
   v.year = SQLSMALLINT(r.year());
@@ -47,14 +47,14 @@ inline binding* binding_visitor::operator()(const boost::gregorian::date& r) con
   return new binding_impl<DATE_STRUCT, SQL_C_TYPE_DATE, SQL_DATE>(v);
 }
 
-inline binding* binding_visitor::operator()(const boost::posix_time::ptime& r) const
+inline binding* binding_visitor::operator()(const ::boost::posix_time::ptime& r) const
 {
   TIMESTAMP_STRUCT v;
-  const boost::gregorian::date d(r.date());
+  const ::boost::gregorian::date d(r.date());
   v.year = SQLSMALLINT(d.year());
   v.month = SQLUSMALLINT(d.month());
   v.day = SQLUSMALLINT(d.day());
-  const boost::posix_time::time_duration t(r.time_of_day());
+  const ::boost::posix_time::time_duration t(r.time_of_day());
   v.hour = SQLUSMALLINT(t.hours());
   v.minute = SQLUSMALLINT(t.minutes());
   v.second = SQLUSMALLINT(t.seconds());
@@ -62,9 +62,9 @@ inline binding* binding_visitor::operator()(const boost::posix_time::ptime& r) c
   return new binding_impl<TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP, SQL_TIMESTAMP>(v);
 } // binding_visitor::
 
-inline binding* binding_factory(DBMS sys, const brig::database::variant& var, const column_detail* param_col)
+inline binding* binding_factory(DBMS sys, const variant& var, const column_detail* param_col)
 {
-  return boost::apply_visitor(binding_visitor(sys, param_col), var);
+  return ::boost::apply_visitor(binding_visitor(sys, param_col), var);
 }
 
 } } } } // brig::database::odbc::detail

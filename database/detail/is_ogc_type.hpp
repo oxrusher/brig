@@ -11,7 +11,7 @@ namespace brig { namespace database { namespace detail {
 
 inline bool is_ogc_type(const std::string& type)
 {
-  using namespace boost::algorithm;
+  using namespace ::boost::algorithm;
   auto loc = std::locale::classic();
   static const char* Types[] = {
       "COLLECTION" // synonym

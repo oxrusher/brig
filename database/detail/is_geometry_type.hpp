@@ -13,7 +13,7 @@ namespace brig { namespace database { namespace detail {
 
 inline bool is_geometry_type(DBMS sys, const column_detail& col)
 {
-  using namespace boost::algorithm;
+  using namespace ::boost::algorithm;
   auto loc = std::locale::classic();
   switch (sys)
   {

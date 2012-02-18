@@ -22,8 +22,8 @@ class binding_datetime : public binding {
 
 public:
   binding_datetime(handles* hnd, size_t order);
-  binding_datetime(handles* hnd, size_t order, const boost::gregorian::date& r);
-  binding_datetime(handles* hnd, size_t order, const boost::posix_time::ptime& r);
+  binding_datetime(handles* hnd, size_t order, const ::boost::gregorian::date& r);
+  binding_datetime(handles* hnd, size_t order, const ::boost::posix_time::ptime& r);
   virtual ~binding_datetime()  { free(); }
 }; // binding_datetime
 
@@ -40,7 +40,7 @@ inline binding_datetime::binding_datetime(handles* hnd, size_t order) : m_dt(0),
   catch (const std::exception&)  { free(); throw; }
 }
 
-inline binding_datetime::binding_datetime(handles* hnd, size_t order, const boost::gregorian::date& r) : m_dt(0), m_ind(sizeof(m_dt))
+inline binding_datetime::binding_datetime(handles* hnd, size_t order, const ::boost::gregorian::date& r) : m_dt(0), m_ind(sizeof(m_dt))
 {
   alloc(hnd);
   try
@@ -56,13 +56,13 @@ inline binding_datetime::binding_datetime(handles* hnd, size_t order, const boos
   catch (const std::exception&)  { free(); throw; }
 }
 
-inline binding_datetime::binding_datetime(handles* hnd, size_t order, const boost::posix_time::ptime& r) : m_dt(0), m_ind(sizeof(m_dt))
+inline binding_datetime::binding_datetime(handles* hnd, size_t order, const ::boost::posix_time::ptime& r) : m_dt(0), m_ind(sizeof(m_dt))
 {
   alloc(hnd);
   try
   {
-    const boost::gregorian::date d(r.date());
-    const boost::posix_time::time_duration t(r.time_of_day());
+    const ::boost::gregorian::date d(r.date());
+    const ::boost::posix_time::time_duration t(r.time_of_day());
     hnd->check(lib::singleton().p_OCIDateTimeConstruct(hnd->env, hnd->err, m_dt
       , (sb2)d.year()
       , (ub1)d.month()

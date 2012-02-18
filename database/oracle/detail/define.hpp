@@ -8,7 +8,7 @@
 
 namespace brig { namespace database { namespace oracle { namespace detail {
 
-struct define : boost::noncopyable {
+struct define : ::boost::noncopyable {
   virtual ~define()  {}
   virtual void operator()(variant& var) = 0;
 }; // define

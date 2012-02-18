@@ -8,7 +8,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-struct linker : boost::noncopyable {
+struct linker : ::boost::noncopyable {
   virtual ~linker()  {}
   virtual link* create() = 0;
 }; // linker

@@ -128,7 +128,7 @@ inline bool link::fetch(std::vector<variant>& row)
 
     case SQLITE_BLOB:
       row[i] = blob_t();
-      brig::blob_t& blob = boost::get<brig::blob_t>(row[i]);
+      brig::blob_t& blob = ::boost::get<brig::blob_t>(row[i]);
       if (m_cols[i].geometry)
         column_geometry(m_stmt, i, blob);
       else

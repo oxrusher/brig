@@ -48,13 +48,13 @@ inline void define_datetime::operator()(variant& var)
     {
       ub1 hour(0); ub1 minute(0); ub1 sec(0); ub4 fsec(0);
       m_hnd->check(lib::singleton().p_OCIDateTimeGetTime(m_hnd->env, m_hnd->err, m_dt, &hour, &minute, &sec, &fsec));
-      var = boost::posix_time::ptime
-        ( boost::gregorian::date(year, month, day)
-        , boost::posix_time::time_duration(hour, minute, sec)
+      var = ::boost::posix_time::ptime
+        ( ::boost::gregorian::date(year, month, day)
+        , ::boost::posix_time::time_duration(hour, minute, sec)
         );
     }
     else
-      var = boost::gregorian::date(year, month, day);
+      var = ::boost::gregorian::date(year, month, day);
   }
 } // define_datetime::
 

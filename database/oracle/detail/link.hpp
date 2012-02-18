@@ -27,7 +27,7 @@ namespace brig { namespace database { namespace oracle { namespace detail {
 
 class link : public brig::database::detail::link {
   handles m_hnd;
-  boost::ptr_vector<define> m_cols;
+  ::boost::ptr_vector<define> m_cols;
   bool m_autocommit;
 
   void close_all();
@@ -116,7 +116,7 @@ inline void link::exec(const std::string& sql_, const std::vector<variant>& para
   ub2 stmt_type(0);
   m_hnd.check(lib::singleton().p_OCIAttrGet(m_hnd.stmt, OCI_HTYPE_STMT, &stmt_type, 0, OCI_ATTR_STMT_TYPE, m_hnd.err));
 
-  boost::ptr_vector<binding> binds;
+  ::boost::ptr_vector<binding> binds;
   for (size_t i(0); i < params.size(); ++i)
     binds.push_back(binding_factory(&m_hnd, i, params[i], i < param_cols.size()? &param_cols[i]: 0));
 
@@ -191,7 +191,7 @@ inline bool link::fetch(std::vector<variant>& row)
 inline void link::sql_parameter(size_t order, const column_detail& param_col, std::ostringstream& stream)
 {
   using namespace brig::database::detail;
-  if ( boost::algorithm::iequals(param_col.type.schema, "MDSYS", std::locale::classic())
+  if ( ::boost::algorithm::iequals(param_col.type.schema, "MDSYS", std::locale::classic())
     && is_ogc_type(param_col.type.name))
     stream << sql_object(Oracle, param_col.type) << "(:" << (order + 1) << ')';
   else
@@ -201,7 +201,7 @@ inline void link::sql_parameter(size_t order, const column_detail& param_col, st
 inline void link::sql_column(const column_detail& col, std::ostringstream& stream)
 {
   using namespace brig::database::detail;
-  if ( boost::algorithm::iequals(col.type.schema, "MDSYS", std::locale::classic())
+  if ( ::boost::algorithm::iequals(col.type.schema, "MDSYS", std::locale::classic())
     && is_ogc_type(col.type.name))
     stream << sql_object(Oracle, col.type) << ".GET_SDO_GEOM(" << sql_identifier(Oracle, col.name) << ')';
   else

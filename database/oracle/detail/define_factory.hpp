@@ -85,7 +85,7 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type
   // named data type
   case SQLT_NTY:
     {
-    using namespace boost::algorithm;
+    using namespace ::boost::algorithm;
     auto loc = std::locale::classic();
     if (iequals(type.schema, "MDSYS", loc) && iequals(type.name, "SDO_GEOMETRY", loc)) return new define_geometry(hnd, order);
     }

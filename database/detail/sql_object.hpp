@@ -12,10 +12,7 @@ namespace brig { namespace database { namespace detail {
 
 inline std::string sql_object(DBMS sys, const object& obj)
 {
-  std::string str;
-  if (SQLite != sys && !obj.schema.empty()) str += sql_identifier(sys, obj.schema) + '.';
-  str += sql_identifier(sys, obj.name);
-  return std::move(str);
+  return (obj.schema.empty()? std::string(): sql_identifier(sys, obj.schema) + '.') + sql_identifier(sys, obj.name);
 }
 
 } } } // brig::database::detail

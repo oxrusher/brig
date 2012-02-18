@@ -17,9 +17,9 @@ namespace brig { namespace database { namespace detail {
 
 template <bool Threading> class pool;
 
-template <> class pool<false> : boost::noncopyable {
+template <> class pool<false> : ::boost::noncopyable {
   std::shared_ptr<linker> m_lkr;
-  boost::circular_buffer<link*> m_lnks;
+  ::boost::circular_buffer<link*> m_lnks;
 public:
   explicit pool(std::shared_ptr<linker> lkr) : m_lkr(lkr), m_lnks(PoolSize)  {}
   virtual ~pool();
@@ -48,11 +48,11 @@ void pool<false>::push(link* lnk)
 } // pool<false>::
 
 template <> class pool<true> : public pool<false> {
-  boost::mutex m_mut;
+  ::boost::mutex m_mut;
 public:
   explicit pool(std::shared_ptr<linker> lkr) : pool<false>(std::make_shared<threaded_linker>(lkr))  {}
-  link* pull()  { boost::lock_guard<boost::mutex> lck(m_mut); return pool<false>::pull(); }
-  void push(link* lnk)  { boost::lock_guard<boost::mutex> lck(m_mut); pool<false>::push(lnk); }
+  link* pull()  { ::boost::lock_guard<::boost::mutex> lck(m_mut); return pool<false>::pull(); }
+  void push(link* lnk)  { ::boost::lock_guard<::boost::mutex> lck(m_mut); pool<false>::push(lnk); }
 }; // pool<true>
 
 } } } // brig::database::detail

@@ -20,7 +20,7 @@ class link : public brig::database::detail::link {
   SQLHANDLE m_env, m_dbc, m_stmt;
   DBMS m_sys;
   std::string m_sql;
-  boost::ptr_vector<get_data> m_cols;
+  ::boost::ptr_vector<get_data> m_cols;
 
   void close_stmt();
   void close_all();
@@ -121,7 +121,7 @@ inline link::link(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(SQL_NU
   // DBMS
   if (SQL_SUCCEEDED(lib::singleton().p_SQLGetInfoW(m_dbc, SQL_DBMS_NAME, buf, SQL_MAX_MESSAGE_LENGTH, &len)))
   {
-    using namespace boost::algorithm;
+    using namespace ::boost::algorithm;
     auto loc = std::locale::classic();
     const std::string sys(brig::unicode::transform<std::string>(buf));
     if (icontains(sys, "DB2", loc)) m_sys = DB2;
@@ -152,7 +152,7 @@ inline void link::exec(const std::string& sql, const std::vector<variant>& param
     m_cols.clear();
   }
 
-  boost::ptr_vector<binding> binds;
+  ::boost::ptr_vector<binding> binds;
   for (size_t i(0); i < params.size(); ++i)
   {
     binding* bind(binding_factory(m_sys, params[i], i < param_cols.size()? &param_cols[i]: 0));
