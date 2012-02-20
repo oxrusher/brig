@@ -109,7 +109,7 @@ inline void threaded_link::rollback()
 {
   auto bnd(mediator::bind(std::bind(&link::rollback, std::placeholders::_1)));
   m_med->call(&bnd);
-} // threaded_link::
+}
 
 } } } // brig::database::detail
 
