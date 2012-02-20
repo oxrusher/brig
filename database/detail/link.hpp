@@ -33,7 +33,7 @@ inline void link::sql_parameter(size_t, const column_detail& param_col, std::ost
   using namespace ::boost::algorithm;
   auto loc = std::locale::classic();
   const DBMS sys(system());
-  if (detail::is_geometry_type(sys, param_col))
+  if (is_geometry_type(sys, param_col))
     switch (sys)
     {
     case VoidSystem:
@@ -76,7 +76,6 @@ inline void link::sql_parameter(size_t, const column_detail& param_col, std::ost
 
 inline void link::sql_column(const column_detail& col, std::ostringstream& stream)
 {
-  using namespace detail;
   const DBMS sys(system());
   if (is_geometry_type(sys, col))
     switch (sys)

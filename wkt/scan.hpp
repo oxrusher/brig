@@ -11,15 +11,8 @@
 
 namespace brig { namespace wkt {
 
-inline void scan(const char* in_wkt, blob_t& out_wkb)
-{
-  using namespace brig::boost;
-  geometry geom;
-  read_wkt(in_wkt, geom);
-  write_wkb(geom, out_wkb);
-}
-
-inline void scan(const std::string& in_wkt, blob_t& out_wkb)
+template <typename Text>
+void scan(Text in_wkt, blob_t& out_wkb)
 {
   using namespace brig::boost;
   geometry geom;

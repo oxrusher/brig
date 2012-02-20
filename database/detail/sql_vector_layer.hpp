@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <brig/boost/geometry.hpp>
 #include <brig/database/column_detail.hpp>
+#include <brig/database/detail/get_columns.hpp>
 #include <brig/database/detail/is_geodetic_type.hpp>
 #include <brig/database/detail/normalize_hemisphere.hpp>
 #include <brig/database/detail/sql_box_filter.hpp>
@@ -17,38 +18,31 @@
 #include <brig/database/index_detail.hpp>
 #include <brig/database/table_detail.hpp>
 #include <locale>
-#include <stdexcept>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace brig { namespace database { namespace detail {
 
 template <typename Dialect>
-inline std::string sql_vector_layer
+std::string sql_vector_layer
   ( Dialect* dct
-  , const table_detail<column_detail>& tbl, const std::string& lr, const boost::box& box
-  , const std::vector<std::string> cols, int rows
+  , const table_detail<column_detail>& tbl, const std::string& lr, const brig::boost::box& box
+  , const std::vector<std::string>& cols, int rows
   )
 {
   auto lr_col = std::find_if(tbl.columns.begin(), tbl.columns.end(), [&](const column_detail& col){ return col.name == lr; });
   if (lr_col == tbl.columns.end()) throw std::runtime_error("SQL error");
 
   const DBMS sys(dct->system());
-  std::vector<boost::box> boxes(1, box);
+  std::vector<brig::boost::box> boxes(1, box);
   normalize_hemisphere(boxes, sys, is_geodetic_type(sys, *lr_col));
 
-  std::vector<column_detail> select_cols;
-  for (size_t i(0); i < cols.size(); ++i)
-  {
-    auto p_col = std::find_if(tbl.columns.begin(), tbl.columns.end(), [&](const column_detail& col){ return col.name == cols[i]; });
-    if (p_col == tbl.columns.end()) throw std::runtime_error("SQL error");
-    select_cols.push_back(*p_col);
-  }
-  if (select_cols.empty()) select_cols.push_back(*lr_col);
+  std::vector<column_detail> select_cols = cols.empty()? tbl.columns: get_columns(tbl, cols);
 
-  std::string sql_prefix, sql_infix, sql_suffix, sql_postfix;
-  sql_limit(sys, rows, sql_prefix, sql_infix, sql_suffix, sql_postfix);
+  std::string sql_infix, sql_condition, sql_suffix;
+  sql_limit(sys, rows, sql_infix, sql_condition, sql_suffix);
 
   std::string sql_hint;
   if (MS_SQL == sys)
@@ -61,14 +55,9 @@ inline std::string sql_vector_layer
   std::vector<column_detail> unique_cols;
   auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_detail& idx){ return idx.type == Primary; });
   if (p_idx == tbl.indexes.end()) p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_detail& idx){ return idx.type == Unique; });
-  if (p_idx != tbl.indexes.end())
-    for (size_t i(0); i < p_idx->columns.size(); ++i)
-    {
-      auto p_col = std::find_if(tbl.columns.begin(), tbl.columns.end(), [&](const column_detail& col){ return col.name ==  p_idx->columns[i]; });
-      if (p_col == tbl.columns.end()) throw std::runtime_error("SQL error");
-      unique_cols.push_back(*p_col);
-    }
+  if (p_idx != tbl.indexes.end()) unique_cols = get_columns(tbl, p_idx->columns);
 
+  // key table
   std::ostringstream stream;
   stream.imbue(std::locale::classic());
   if (MS_SQL == sys && boxes.size() > 1)
@@ -92,7 +81,7 @@ inline std::string sql_vector_layer
       stream << "(SELECT " << sql_infix << " ";
       sql_select_list(dct, unique_cols, stream);
       stream << " FROM " << sql_object(sys, tbl.table) << " WHERE " << sql_box_filter(sys, *lr_col, boxes[i]);
-      if (rows >= 0) stream << " AND ROWNUM <= " << rows;
+      if (!sql_condition.empty()) stream << " AND " << sql_condition;
       stream << ")";
     }
     stream << ")";
@@ -109,11 +98,12 @@ inline std::string sql_vector_layer
   }
   const std::string sql_key_tbl(stream.str());
 
+  // result table
   stream = std::ostringstream();
-  stream << sql_prefix << " ";
+  if (!sql_condition.empty()) stream << "SELECT * FROM (";
+  stream << "SELECT " << sql_infix << " ";
   if (sql_key_tbl.empty())
   {
-    stream << "SELECT " << sql_infix << " ";
     sql_select_list(dct, select_cols, stream);
     stream << " FROM " << sql_object(sys, tbl.table) << " " << sql_hint << " WHERE ";
     for (size_t i(0); i < boxes.size(); ++i)
@@ -121,11 +111,10 @@ inline std::string sql_vector_layer
       if (i > 0) stream << " OR ";
       stream << sql_box_filter(sys, *lr_col, boxes[i]);
     }
-    stream << " " << sql_suffix;
   }
   else
   {
-    stream << "SELECT " << sql_infix << " v.* FROM (" << sql_key_tbl << ") k INNER JOIN (SELECT ";
+    stream << "v.* FROM (" << sql_key_tbl << ") k INNER JOIN (SELECT ";
     sql_select_list(dct, select_cols, stream);
     for (size_t i(0); i < unique_cols.size(); ++i)
       if (std::find_if(select_cols.begin(), select_cols.end(), [&](const column_detail& col){ return col.name == unique_cols[i].name; }) == select_cols.end())
@@ -139,9 +128,9 @@ inline std::string sql_vector_layer
       if (i > 0) stream << " AND ";
       stream << "k." << sql_identifier(sys, unique_cols[i].name) << " = v." << sql_identifier(sys, unique_cols[i].name);
     }
-    stream << " " << sql_suffix;
   }
-  stream << " " << sql_postfix;
+  stream << " " << sql_suffix;
+  if (!sql_condition.empty()) stream << ") WHERE " << sql_condition;
   return stream.str();
 }
 

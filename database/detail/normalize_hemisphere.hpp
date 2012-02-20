@@ -10,9 +10,9 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline void normalize_hemisphere(std::vector<boost::box>& boxes, DBMS sys, bool geodetic)
+inline void normalize_hemisphere(std::vector<brig::boost::box>& boxes, DBMS sys, bool geodetic)
 {
-  using namespace boost;
+  using namespace brig::boost;
 
   switch (sys)
   {

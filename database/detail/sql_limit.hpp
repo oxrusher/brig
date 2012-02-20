@@ -9,7 +9,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline void sql_limit(DBMS sys, int rows, std::string& sql_prefix, std::string& sql_infix, std::string& sql_suffix, std::string& sql_postfix)
+inline void sql_limit(DBMS sys, int rows, std::string& sql_infix, std::string& sql_condition, std::string& sql_suffix)
 {
   if (rows < 0) return;
   const std::string sql_rows(brig::detail::string_cast<char>(rows));
@@ -21,9 +21,8 @@ inline void sql_limit(DBMS sys, int rows, std::string& sql_prefix, std::string& 
   case MySQL:
   case SQLite: sql_suffix = "LIMIT " + sql_rows; break;
   case Oracle:
-    sql_prefix = "SELECT * FROM (";
     sql_infix = "/*+ FIRST_ROWS(" + sql_rows + ") */";
-    sql_postfix = ") WHERE ROWNUM <= " + sql_rows;
+    sql_condition = "ROWNUM <= " + sql_rows;
     break;
   case Postgres: sql_suffix = "FETCH FIRST " + sql_rows + " ROWS ONLY"; break; // SQL:2008
   }

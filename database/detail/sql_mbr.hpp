@@ -56,7 +56,7 @@ inline std::string sql_mbr(const DBMS sys, const object& tbl, const column_detai
     return "SELECT x.l, y.l, x.u, y.u FROM (SELECT * FROM (" + t + ") WHERE n = 1) x, (SELECT * FROM (" + t + ") WHERE n = 2) y";
     }
   case SQLite:
-    return "SELECT MbrMinX(t.c), MbrMinY(t.c), MbrMaxX(t.c), MbrMaxY(t.c) FROM (SELECT Extent(" + sql_identifier(sys, col.name) + ") c FROM " + sql_object(sys, tbl) + ") t";
+    return "SELECT Min(xmin), Min(ymin), Max(xmax), Max(ymax) FROM " + sql_identifier(sys, "idx_" + tbl.name + "_" + col.name);
   }
 }
 
