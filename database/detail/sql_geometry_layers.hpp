@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_DETAIL_SQL_VECTOR_LAYERS_HPP
-#define BRIG_DATABASE_DETAIL_SQL_VECTOR_LAYERS_HPP
+#ifndef BRIG_DATABASE_DETAIL_SQL_GEOMETRY_LAYERS_HPP
+#define BRIG_DATABASE_DETAIL_SQL_GEOMETRY_LAYERS_HPP
 
 #include <brig/database/detail/sql_schema_filter.hpp>
 #include <brig/database/global.hpp>
@@ -10,7 +10,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline std::string sql_vector_layers(DBMS sys) // TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME
+inline std::string sql_geometry_layers(DBMS sys) // TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME
 {
   switch (sys)
   {
@@ -27,4 +27,4 @@ inline std::string sql_vector_layers(DBMS sys) // TABLE_SCHEMA, TABLE_NAME, COLU
 
 } } } // brig::database::detail
 
-#endif // BRIG_DATABASE_DETAIL_SQL_VECTOR_LAYERS_HPP
+#endif // BRIG_DATABASE_DETAIL_SQL_GEOMETRY_LAYERS_HPP

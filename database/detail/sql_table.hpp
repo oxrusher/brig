@@ -24,8 +24,7 @@ std::string sql_table(Dialect* dct, const table_detail<column_detail>& tbl, cons
   std::vector<column_detail> select_cols = cols.empty()? tbl.columns: get_columns(tbl, cols);
   std::string sql_infix, sql_condition, sql_suffix;
   sql_limit(sys, rows, sql_infix, sql_condition, sql_suffix);
-  std::ostringstream stream;
-  stream.imbue(std::locale::classic());
+  std::ostringstream stream; stream.imbue(std::locale::classic());
 
   stream << "SELECT " << sql_infix << " ";
   sql_select_list(dct, select_cols, stream);

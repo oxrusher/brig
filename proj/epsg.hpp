@@ -37,8 +37,7 @@ public:
 
 inline std::string epsg::definition(bool cur_dir, int code)
 {
-  std::ostringstream stream;
-  stream.imbue(std::locale::classic());
+  std::ostringstream stream; stream.imbue(std::locale::classic());
   stream << "+init=";
   if (cur_dir) stream << "./";
   stream << "epsg:";

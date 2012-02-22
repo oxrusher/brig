@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <iomanip>
 #include <ios>
+#include <locale>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -29,7 +30,7 @@ basic_ostream<CharT, TraitsT>& operator<<(basic_ostream<CharT, TraitsT>& stream,
     const size_t size(blob.size());
     const size_t count(width == 0? size: std::min<>(width / 2, size));
 
-    basic_ostringstream<CharT, TraitsT> str_stream;
+    basic_ostringstream<CharT, TraitsT> str_stream; stream.imbue(std::locale::classic());
     str_stream << hex << setfill(CharT(0x30));
     if (stream.flags() & ios::uppercase) str_stream << uppercase;
     for (size_t i(0); i < count; ++i)

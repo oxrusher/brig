@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_DETAIL_SQL_VECTOR_LAYER_HPP
-#define BRIG_DATABASE_DETAIL_SQL_VECTOR_LAYER_HPP
+#ifndef BRIG_DATABASE_DETAIL_SQL_GEOMETRY_LAYER_HPP
+#define BRIG_DATABASE_DETAIL_SQL_GEOMETRY_LAYER_HPP
 
 #include <algorithm>
 #include <brig/boost/geometry.hpp>
@@ -26,7 +26,7 @@
 namespace brig { namespace database { namespace detail {
 
 template <typename Dialect>
-std::string sql_vector_layer
+std::string sql_geometry_layer
   ( Dialect* dct
   , const table_detail<column_detail>& tbl, const std::string& lr, const brig::boost::box& box
   , const std::vector<std::string>& cols, int rows
@@ -58,8 +58,8 @@ std::string sql_vector_layer
   if (p_idx != tbl.indexes.end()) unique_cols = get_columns(tbl, p_idx->columns);
 
   // key table
-  std::ostringstream stream;
-  stream.imbue(std::locale::classic());
+  auto loc = std::locale::classic();
+  std::ostringstream stream; stream.imbue(loc);
   if (MS_SQL == sys && boxes.size() > 1)
   {
     if (unique_cols.empty()) throw std::runtime_error("SQL error");
@@ -99,7 +99,7 @@ std::string sql_vector_layer
   const std::string sql_key_tbl(stream.str());
 
   // result table
-  stream = std::ostringstream();
+  stream = std::ostringstream(); stream.imbue(loc);
   if (!sql_condition.empty()) stream << "SELECT * FROM (";
   stream << "SELECT " << sql_infix << " ";
   if (sql_key_tbl.empty())
@@ -136,4 +136,4 @@ std::string sql_vector_layer
 
 } } } // brig::database::detail
 
-#endif // BRIG_DATABASE_DETAIL_SQL_VECTOR_LAYER_HPP
+#endif // BRIG_DATABASE_DETAIL_SQL_GEOMETRY_LAYER_HPP

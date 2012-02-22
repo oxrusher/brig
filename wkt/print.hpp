@@ -14,8 +14,7 @@ namespace brig { namespace wkt {
 inline void print(const blob_t& in_wkb, std::string& out_wkt)
 {
   auto in_ptr = in_wkb.data();
-  std::ostringstream out_stream;
-  out_stream.imbue(std::locale::classic());
+  std::ostringstream out_stream; out_stream.imbue(std::locale::classic());
   detail::print_geometry(in_ptr, out_stream);
   out_wkt = out_stream.str();
 }
