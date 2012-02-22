@@ -19,6 +19,7 @@
 #include <brig/database/detail/sql_geometry_layer.hpp>
 #include <brig/database/detail/sql_geometry_layers.hpp>
 #include <brig/database/detail/sql_indexed_columns.hpp>
+#include <brig/database/detail/sql_insert.hpp>
 #include <brig/database/detail/sql_mbr.hpp>
 #include <brig/database/detail/sql_srid.hpp>
 #include <brig/database/detail/sql_table.hpp>
@@ -66,8 +67,9 @@ public:
     );
 
   void before_create(table_detail<column_abstract>& tbl);
-  void sql_create(table_detail<column_abstract>& tbl, std::vector<std::string>& sqls)  { detail::sql_create(get_link()->system(), tbl, sqls); }
-  void sql_drop(const table_detail<column_detail>& tbl, std::vector<std::string>& sqls)  { detail::sql_drop(get_link()->system(), tbl, sqls); }
+  std::vector<std::string> sql_create(table_detail<column_abstract>& tbl)  { return detail::sql_create(get_link()->system(), tbl); }
+  std::vector<std::string> sql_drop(const table_detail<column_detail>& tbl)  { return detail::sql_drop(get_link()->system(), tbl); }
+  std::string sql_insert(const table_detail<column_detail>& tbl, const std::vector<std::string>& cols = std::vector<std::string>());
 }; // connection
 
 template <bool Threading>
@@ -292,6 +294,13 @@ void connection<Threading>::before_create(table_detail<column_abstract>& tbl)
       auto p_col = std::find_if(tbl.columns.begin(), tbl.columns.end(), [&](const column_abstract& col){ return col.name == p_idx->columns.front(); });
       if (typeid(bool) == p_col->mbr_need.type()) p_col->mbr_need = true;
     }
+}
+
+template <bool Threading>
+std::string connection<Threading>::sql_insert(const table_detail<column_detail>& tbl, const std::vector<std::string>& cols)
+{
+  auto lnk = get_link();
+  return detail::sql_insert(lnk.get(), tbl, cols);
 }
 
 } } // brig::database

@@ -16,10 +16,11 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline void sql_create(DBMS sys, table_detail<column_abstract>& tbl, std::vector<std::string>& sqls)
+inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstract>& tbl)
 {
   using namespace ::boost::algorithm;
   auto loc = std::locale::classic();
+  std::vector<std::string> res;
 
   tbl.table.schema = "";
   if (Oracle == sys)
@@ -169,7 +170,7 @@ inline void sql_create(DBMS sys, table_detail<column_abstract>& tbl, std::vector
   }
   stream << ")";
   if (MySQL == sys) stream << " ENGINE = MyISAM";
-  sqls.push_back(stream.str());
+  res.push_back(stream.str());
 
   // geometry
   for (auto p_col = tbl.columns.begin(); p_col != tbl.columns.end(); ++p_col)
@@ -193,7 +194,7 @@ inline void sql_create(DBMS sys, table_detail<column_abstract>& tbl, std::vector
       case Postgres: stream << "SELECT AddGeometryColumn('" << tbl.table.name << "', '" << p_col->name << "', (SELECT SRID FROM PUBLIC.SPATIAL_REF_SYS WHERE AUTH_NAME LIKE 'EPSG' AND AUTH_SRID = " << p_col->epsg << " ORDER BY SRID FETCH FIRST 1 ROWS ONLY), 'GEOMETRY', 2)"; break;
       case SQLite: stream << "SELECT AddGeometryColumn('" << tbl.table.name << "', '" << p_col->name << "', (SELECT SRID FROM SPATIAL_REF_SYS WHERE AUTH_NAME LIKE 'EPSG' AND AUTH_SRID = " << p_col->epsg << " ORDER BY SRID LIMIT 1), 'GEOMETRY', 2)"; break;
       }
-      const std::string str(stream.str()); if (!str.empty()) sqls.push_back(str);
+      const std::string str(stream.str()); if (!str.empty()) res.push_back(str);
     }
 
   // indexes
@@ -242,8 +243,9 @@ inline void sql_create(DBMS sys, table_detail<column_abstract>& tbl, std::vector
       }
       stream << ")";
     }
-    sqls.push_back(stream.str());
+    res.push_back(stream.str());
   }
+  return std::move(res);
 }
 
 } } } // brig::database::detail
