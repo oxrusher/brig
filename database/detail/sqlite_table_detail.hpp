@@ -14,6 +14,8 @@
 #include <brig/database/object.hpp>
 #include <brig/database/table_detail.hpp>
 #include <brig/detail/string_cast.hpp>
+#include <brig/unicode/simple_case_folding.hpp>
+#include <brig/unicode/transform.hpp>
 #include <memory>
 #include <string>
 #include <utility>
@@ -23,10 +25,11 @@ namespace brig { namespace database { namespace detail {
 inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> cmd, const object& tbl)
 {
   using namespace brig::detail;
+  using namespace brig::unicode;
 
   // columns
-  table_detail<column_detail> meta;
-  meta.table = tbl;
+  table_detail<column_detail> res;
+  res.table = tbl;
   std::vector<std::string> keys;
   std::vector<variant> row;
   cmd->exec("PRAGMA TABLE_INFO(" + sql_object(SQLite, tbl) + ')');
@@ -35,7 +38,8 @@ inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> 
     column_detail col;
     col.name = string_cast<char>(row[1]);
     col.type.name = string_cast<char>(row[2]);
-    meta.columns.push_back(col);
+    col.case_folded_type.name = transform<std::string>(col.type.name, simple_case_folding);
+    res.columns.push_back(col);
 
     int key(0);
     if (numeric_cast(row[5], key) && key) keys.push_back(col.name);
@@ -46,7 +50,7 @@ inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> 
     index_detail pri_idx;
     pri_idx.type = Primary;
     pri_idx.columns = keys;
-    meta.indexes.push_back(pri_idx);
+    res.indexes.push_back(pri_idx);
     sort(keys.begin(), keys.end());
   }
 
@@ -58,15 +62,15 @@ inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> 
     idx.index.name = string_cast<char>(row[1]);
     int unique(0);
     idx.type = (numeric_cast(row[2], unique) && !unique)? Duplicate: Unique;
-    meta.indexes.push_back(idx);
+    res.indexes.push_back(idx);
   }
 
   // indexed columns
-  for (size_t i(0); i < meta.indexes.size(); ++i)
+  for (size_t i(0); i < res.indexes.size(); ++i)
   {
-    if (meta.indexes[i].index.name.empty()) continue;
+    if (res.indexes[i].index.name.empty()) continue;
 
-    cmd->exec("PRAGMA INDEX_INFO(" + sql_object(SQLite, meta.indexes[i].index) + ')');
+    cmd->exec("PRAGMA INDEX_INFO(" + sql_object(SQLite, res.indexes[i].index) + ')');
     std::vector<std::string> cols;
     std::vector<std::pair<int, std::string>> seq_cols;
     while (cmd->fetch(row))
@@ -82,40 +86,40 @@ inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> 
     std::sort(cols.begin(), cols.end());
     std::sort(seq_cols.begin(), seq_cols.end());
     for (size_t j(0); j < seq_cols.size(); ++j)
-      meta.indexes[i].columns.push_back(seq_cols[j].second);
+      res.indexes[i].columns.push_back(seq_cols[j].second);
 
     if (keys.size() == cols.size() && std::equal(keys.begin(), keys.end(), cols.begin()))
     {
       keys.clear();
-      meta.indexes[i].type = VoidIndex;
-      meta.indexes[0].columns = std::move(meta.indexes[i].columns);
+      res.indexes[i].type = VoidIndex;
+      res.indexes[0].columns = std::move(res.indexes[i].columns);
     }
   }
-  auto end = std::remove_if(meta.indexes.begin(), meta.indexes.end(), [](const index_detail& idx){ return VoidIndex == idx.type; });
-  meta.indexes.resize(std::distance(meta.indexes.begin(), end));
+  auto end = std::remove_if(res.indexes.begin(), res.indexes.end(), [](const index_detail& idx){ return VoidIndex == idx.type; });
+  res.indexes.resize(std::distance(res.indexes.begin(), end));
 
   // srid, epsg, spatial index
-  for (size_t i(0); i < meta.columns.size(); ++i)
+  for (size_t i(0); i < res.columns.size(); ++i)
   {
-    if (is_ogc_type(meta.columns[i].type.name))
+    if (is_ogc_type(res.columns[i].case_folded_type.name))
     {
-      cmd->exec("SELECT c.SRID, (CASE s.AUTH_NAME WHEN 'epsg' THEN s.AUTH_SRID ELSE NULL END) epsg, c.SPATIAL_INDEX_ENABLED FROM (SELECT SRID, SPATIAL_INDEX_ENABLED FROM GEOMETRY_COLUMNS WHERE F_TABLE_NAME = '" + tbl.name + "' AND F_GEOMETRY_COLUMN = '" + meta.columns[i].name + "') c LEFT JOIN SPATIAL_REF_SYS s ON c.SRID = s.SRID");
+      cmd->exec("SELECT c.SRID, (CASE s.AUTH_NAME WHEN 'epsg' THEN s.AUTH_SRID ELSE NULL END) epsg, c.SPATIAL_INDEX_ENABLED FROM (SELECT SRID, SPATIAL_INDEX_ENABLED FROM GEOMETRY_COLUMNS WHERE F_TABLE_NAME = '" + tbl.name + "' AND F_GEOMETRY_COLUMN = '" + res.columns[i].name + "') c LEFT JOIN SPATIAL_REF_SYS s ON c.SRID = s.SRID");
       if (cmd->fetch(row))
       {
-        numeric_cast(row[0], meta.columns[i].srid);
-        numeric_cast(row[1], meta.columns[i].epsg);
+        numeric_cast(row[0], res.columns[i].srid);
+        numeric_cast(row[1], res.columns[i].epsg);
         int indexed(0);
         if (numeric_cast(row[2], indexed) && indexed == 1)
         {
           index_detail idx;
           idx.type = Spatial;
-          idx.columns.push_back(meta.columns[i].name);
-          meta.indexes.push_back(idx);
+          idx.columns.push_back(res.columns[i].name);
+          res.indexes.push_back(idx);
         }
       }
     }
   }
-  return std::move(meta);
+  return std::move(res);
 }
 
 } } } // brig::database::detail

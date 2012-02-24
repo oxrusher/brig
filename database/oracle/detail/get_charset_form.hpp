@@ -3,22 +3,19 @@
 #ifndef BRIG_DATABASE_ORACLE_DETAIL_GET_CHARSET_FORM_HPP
 #define BRIG_DATABASE_ORACLE_DETAIL_GET_CHARSET_FORM_HPP
 
-#include <boost/algorithm/string.hpp>
 #include <brig/database/object.hpp>
 #include <brig/database/oracle/detail/lib.hpp>
-#include <locale>
 #include <string>
 
 namespace brig { namespace database { namespace oracle { namespace detail {
 
-inline ub1 get_charset_form(const object& type)
+inline ub1 get_charset_form(const object& case_folded_type)
 {
-  using namespace ::boost::algorithm;
-  auto loc = std::locale::classic();
-  if (type.schema.empty() &&
-    ( icontains(type.name, "CHAR", loc)
-   || icontains(type.name, "VARCHAR2", loc)
-   || icontains(type.name, "CLOB", loc)))
+  if (case_folded_type.schema.empty() &&
+    ( case_folded_type.name.find("char") != std::string::npos
+   || case_folded_type.name.find("varchar2") != std::string::npos
+   || case_folded_type.name.find("clob") != std::string::npos)
+    )
     return SQLCS_IMPLICIT;
   else
     return SQLCS_NCHAR;

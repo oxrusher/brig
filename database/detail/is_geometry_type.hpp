@@ -3,30 +3,26 @@
 #ifndef BRIG_DATABASE_DETAIL_IS_GEOMETRY_TYPE_HPP
 #define BRIG_DATABASE_DETAIL_IS_GEOMETRY_TYPE_HPP
 
-#include <boost/algorithm/string.hpp>
 #include <brig/database/column_detail.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
 #include <brig/database/global.hpp>
-#include <locale>
 
 namespace brig { namespace database { namespace detail {
 
 inline bool is_geometry_type(DBMS sys, const column_detail& col)
 {
-  using namespace ::boost::algorithm;
-  auto loc = std::locale::classic();
   switch (sys)
   {
   case VoidSystem: break;
-  case DB2: return iequals(col.type.schema, "DB2GSE", loc) && is_ogc_type(col.type.name);
-  case MS_SQL: return iequals(col.type.name, "GEOMETRY", loc) || iequals(col.type.name, "GEOGRAPHY", loc);
+  case DB2: return "db2gse" == col.case_folded_type.schema && is_ogc_type(col.case_folded_type.name);
+  case MS_SQL: return "geometry" == col.case_folded_type.name || "geography" == col.case_folded_type.name;
   case MySQL:
-  case SQLite: return is_ogc_type(col.type.name);
-  case Oracle: return iequals(col.type.schema, "MDSYS", loc) && (iequals(col.type.name, "SDO_GEOMETRY", loc) || is_ogc_type(col.type.name));
+  case SQLite: return is_ogc_type(col.case_folded_type.name);
+  case Oracle: return "mdsys" == col.case_folded_type.schema && ("sdo_geometry" == col.case_folded_type.name || is_ogc_type(col.case_folded_type.name));
   case Postgres:
-    return iequals(col.type.schema, "USER-DEFINED", loc)
-      && (iequals(col.type.name, "GEOMETRY", loc) || iequals(col.type.name, "GEOGRAPHY", loc))
-      && (col.type_detail.empty() || is_ogc_type(col.type_detail));
+    return "user-defined" == col.case_folded_type.schema
+      && ("geometry" == col.case_folded_type.name || "geography" == col.case_folded_type.name)
+      && (col.case_folded_type_detail.empty() || is_ogc_type(col.case_folded_type_detail));
   }
   return false;
 }

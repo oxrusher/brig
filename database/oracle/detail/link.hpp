@@ -3,7 +3,6 @@
 #ifndef BRIG_DATABASE_ORACLE_DETAIL_LINK_HPP
 #define BRIG_DATABASE_ORACLE_DETAIL_LINK_HPP
 
-#include <boost/algorithm/string.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
 #include <brig/database/detail/link.hpp>
@@ -17,8 +16,8 @@
 #include <brig/database/oracle/detail/define_factory.hpp>
 #include <brig/database/oracle/detail/handles.hpp>
 #include <brig/database/oracle/detail/lib.hpp>
+#include <brig/unicode/simple_case_folding.hpp>
 #include <brig/unicode/transform.hpp>
-#include <locale>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -72,12 +71,14 @@ inline void link::close_all()
 
 inline link::link(const std::string& srv_, const std::string& usr_, const std::string& pwd_) : m_autocommit(true)
 {
+  using namespace brig::unicode;
+
   const std::u16string
-    srv(brig::unicode::transform<std::u16string>(srv_)),
-    usr(brig::unicode::transform<std::u16string>(usr_)),
-    pwd(brig::unicode::transform<std::u16string>(pwd_)),
-    type_schema(brig::unicode::transform<std::u16string>("MDSYS")),
-    type_name(brig::unicode::transform<std::u16string>("SDO_GEOMETRY"));
+    srv(transform<std::u16string>(srv_)),
+    usr(transform<std::u16string>(usr_)),
+    pwd(transform<std::u16string>(pwd_)),
+    type_schema(transform<std::u16string>("MDSYS")),
+    type_name(transform<std::u16string>("SDO_GEOMETRY"));
 
   try
   {
@@ -89,17 +90,17 @@ inline link::link(const std::string& srv_, const std::string& usr_, const std::s
     m_hnd.alloc_handle((void**)&m_hnd.srv, OCI_HTYPE_SERVER);
     m_hnd.alloc_handle((void**)&m_hnd.svc, OCI_HTYPE_SVCCTX);
     m_hnd.alloc_handle((void**)&m_hnd.ses, OCI_HTYPE_SESSION);
-    m_hnd.check(lib::singleton().p_OCIServerAttach(m_hnd.srv, m_hnd.err, (const text*)srv.c_str(), (ub4)srv.size() * sizeof(char16_t), OCI_DEFAULT));
+    m_hnd.check(lib::singleton().p_OCIServerAttach(m_hnd.srv, m_hnd.err, (const text*)srv.c_str(), ub4(srv.size() * sizeof(char16_t)), OCI_DEFAULT));
     m_hnd.check(lib::singleton().p_OCIAttrSet(m_hnd.svc, OCI_HTYPE_SVCCTX, (void*)m_hnd.srv, 0, OCI_ATTR_SERVER, m_hnd.err));
-    m_hnd.check(lib::singleton().p_OCIAttrSet(m_hnd.ses, OCI_HTYPE_SESSION, (void*)usr.c_str(), (ub4)usr.size() * sizeof(char16_t), OCI_ATTR_USERNAME, m_hnd.err));
-    m_hnd.check(lib::singleton().p_OCIAttrSet(m_hnd.ses, OCI_HTYPE_SESSION, (void*)pwd.c_str(), (ub4)pwd.size() * sizeof(char16_t), OCI_ATTR_PASSWORD, m_hnd.err));
+    m_hnd.check(lib::singleton().p_OCIAttrSet(m_hnd.ses, OCI_HTYPE_SESSION, (void*)usr.c_str(), ub4(usr.size() * sizeof(char16_t)), OCI_ATTR_USERNAME, m_hnd.err));
+    m_hnd.check(lib::singleton().p_OCIAttrSet(m_hnd.ses, OCI_HTYPE_SESSION, (void*)pwd.c_str(), ub4(pwd.size() * sizeof(char16_t)), OCI_ATTR_PASSWORD, m_hnd.err));
     m_hnd.check(lib::singleton().p_OCISessionBegin(m_hnd.svc, m_hnd.err, m_hnd.ses, OCI_CRED_RDBMS, OCI_DEFAULT));
     m_hnd.check(lib::singleton().p_OCIAttrSet(m_hnd.svc, OCI_HTYPE_SVCCTX, (void*)m_hnd.ses, 0, OCI_ATTR_SESSION, m_hnd.err));
     OCIType* type(0);
     m_hnd.check(lib::singleton().p_OCITypeByName
       ( m_hnd.env, m_hnd.err, m_hnd.svc
-      , (const text*)type_schema.c_str(), (ub4)type_schema.size() * sizeof(char16_t)
-      , (const text*)type_name.c_str(), (ub4)type_name.size() * sizeof(char16_t)
+      , (const text*)type_schema.c_str(), ub4(type_schema.size() * sizeof(char16_t))
+      , (const text*)type_name.c_str(), ub4(type_name.size() * sizeof(char16_t))
       , (const text*)0, 0, OCI_DURATION_SESSION, OCI_TYPEGET_HEADER, &type));
     m_hnd.geom = type;
   }
@@ -112,7 +113,7 @@ inline void link::exec(const std::string& sql_, const std::vector<variant>& para
 
   close_stmt();
   m_hnd.alloc_handle((void**)&m_hnd.stmt, OCI_HTYPE_STMT);
-  m_hnd.check(lib::singleton().p_OCIStmtPrepare(m_hnd.stmt, m_hnd.err, (const text*)sql.c_str(), (ub4)sql.size() * sizeof(char16_t), OCI_NTV_SYNTAX, OCI_DEFAULT));
+  m_hnd.check(lib::singleton().p_OCIStmtPrepare(m_hnd.stmt, m_hnd.err, (const text*)sql.c_str(), ub4(sql.size() * sizeof(char16_t)), OCI_NTV_SYNTAX, OCI_DEFAULT));
   ub2 stmt_type(0);
   m_hnd.check(lib::singleton().p_OCIAttrGet(m_hnd.stmt, OCI_HTYPE_STMT, &stmt_type, 0, OCI_ATTR_STMT_TYPE, m_hnd.err));
 
@@ -132,6 +133,8 @@ inline size_t link::affected()
 
 inline void link::columns(std::vector<std::string>& cols)
 {
+  using namespace brig::unicode;
+
   if (0 == m_hnd.stmt) return;
   m_cols.clear();
   ub4 count(0);
@@ -157,12 +160,12 @@ inline void link::columns(std::vector<std::string>& cols)
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_schema, &type_schema_len, OCI_ATTR_SCHEMA_NAME, m_hnd.err));
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_name, &type_name_len, OCI_ATTR_TYPE_NAME, m_hnd.err));
 
-      object type;
-      type.schema = brig::unicode::transform<std::string>(type_schema);
-      type.name = brig::unicode::transform<std::string>(type_name);
+      object case_folded_type;
+      case_folded_type.schema = transform<std::string>(type_schema, simple_case_folding);
+      case_folded_type.name = transform<std::string>(type_name, simple_case_folding);
 
-      m_cols.push_back(define_factory(&m_hnd, i + 1, data_type, size, precision, scale, type));
-      cols.push_back(brig::unicode::transform<std::string>(name));
+      m_cols.push_back(define_factory(&m_hnd, i + 1, data_type, size, precision, scale, case_folded_type));
+      cols.push_back(transform<std::string>(name));
 
     }
     catch (const std::exception&)  { handles::free_descriptor((void**)&dsc, OCI_DTYPE_PARAM); throw; }
@@ -191,8 +194,7 @@ inline bool link::fetch(std::vector<variant>& row)
 inline void link::sql_parameter(size_t order, const column_detail& param_col, std::ostringstream& stream)
 {
   using namespace brig::database::detail;
-  if ( ::boost::algorithm::iequals(param_col.type.schema, "MDSYS", std::locale::classic())
-    && is_ogc_type(param_col.type.name))
+  if ("mdsys" == param_col.case_folded_type.schema && is_ogc_type(param_col.case_folded_type.name))
     stream << sql_object(Oracle, param_col.type) << "(:" << (order + 1) << ')';
   else
     stream << ':' << (order + 1);
@@ -201,8 +203,7 @@ inline void link::sql_parameter(size_t order, const column_detail& param_col, st
 inline void link::sql_column(const column_detail& col, std::ostringstream& stream)
 {
   using namespace brig::database::detail;
-  if ( ::boost::algorithm::iequals(col.type.schema, "MDSYS", std::locale::classic())
-    && is_ogc_type(col.type.name))
+  if ("mdsys" == col.case_folded_type.schema && is_ogc_type(col.case_folded_type.name))
     stream << sql_object(Oracle, col.type) << ".GET_SDO_GEOM(" << sql_identifier(Oracle, col.name) << ')';
   else
     stream << sql_identifier(Oracle, col.name);

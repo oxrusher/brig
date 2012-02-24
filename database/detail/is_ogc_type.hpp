@@ -3,36 +3,34 @@
 #ifndef BRIG_DATABASE_DETAIL_IS_OGC_TYPE_HPP
 #define BRIG_DATABASE_DETAIL_IS_OGC_TYPE_HPP
 
-#include <boost/algorithm/string.hpp>
-#include <locale>
+#include <algorithm>
 #include <string>
 
 namespace brig { namespace database { namespace detail {
 
-inline bool is_ogc_type(const std::string& type)
+inline bool is_ogc_type(const std::string& case_folded_type)
 {
-  using namespace ::boost::algorithm;
-  auto loc = std::locale::classic();
-  static const char* Types[] = {
-      "COLLECTION" // synonym
-    , "CURVE" // non-instantiable
-    , "GEOMCOLLECTION" // synonym
-    , "GEOMETRY" // non-instantiable
-    , "GEOMETRYCOLLECTION"
-    , "LINESTRING"
-    , "MULTICURVE" // non-instantiable
-    , "MULTILINESTRING"
-    , "MULTIPOINT"
-    , "MULTIPOLYGON"
-    , "MULTISURFACE" // non-instantiable
-    , "POINT"
-    , "POLYGON"
-    , "SURFACE" // non-instantiable
+  static const char* types[] =
+  { "collection", "st_collection" // synonym
+  , "curve", "st_curve" // non-instantiable
+  , "geomcollection", "st_geomcollection" // synonym
+  , "geometry", "st_geometry" // non-instantiable
+  , "geometrycollection", "st_geometrycollection"
+  , "linestring", "st_linestring"
+  , "multicurve", "st_multicurve" // non-instantiable
+  , "multilinestring", "st_multilinestring"
+  , "multipoint", "st_multipoint"
+  , "multipolygon", "st_multipolygon"
+  , "multisurface", "st_multisurface" // non-instantiable
+  , "point", "st_point"
+  , "polygon", "st_polygon"
+  , "surface", "st_surface" // non-instantiable
   };
-  const std::string prefix("ST_");
-  for (size_t i(0); i < sizeof(Types) / sizeof(Types[0]); ++i)
-    if (iequals(type, Types[i], loc) || iequals(type, prefix + Types[i], loc)) return true;
-  return false;
+
+  auto begin = types;
+  auto end = types + sizeof(types) / sizeof(types[0]);
+  auto iter = std::find_if(begin, end, [&](const char* type){ return case_folded_type.compare(type) == 0;  });
+  return iter != end && case_folded_type.compare(*iter) == 0;
 }
 
 } } } // brig::database::detail

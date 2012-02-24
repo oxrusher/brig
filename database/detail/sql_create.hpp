@@ -4,11 +4,12 @@
 #define BRIG_DATABASE_DETAIL_SQL_CREATE_HPP
 
 #include <algorithm>
-#include <boost/algorithm/string.hpp>
 #include <brig/database/column_abstract.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/table_detail.hpp>
+#include <brig/unicode/transform.hpp>
+#include <brig/unicode/upper_case.hpp>
 #include <locale>
 #include <stdexcept>
 #include <string>
@@ -18,14 +19,15 @@ namespace brig { namespace database { namespace detail {
 
 inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstract>& tbl)
 {
-  using namespace ::boost::algorithm;
+  using namespace brig::unicode;
+
   auto loc = std::locale::classic();
   std::vector<std::string> res;
 
   tbl.table.schema = "";
   if (Oracle == sys)
     // The TABLE_NAME and COLUMN_NAME values are always converted to uppercase when you insert them into the USER_SDO_GEOM_METADATA view
-    to_upper(tbl.table.name, loc);
+    tbl.table.name = transform<std::string>(tbl.table.name, upper_case);
 
   std::ostringstream stream; stream.imbue(loc);
   stream << "CREATE TABLE " << sql_identifier(sys, tbl.table.name) << " (";
@@ -43,8 +45,8 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
         for (auto p_idx = tbl.indexes.begin(); p_idx != tbl.indexes.end(); ++p_idx)
           for (auto p_col_name = p_idx->columns.begin(); p_col_name != p_idx->columns.end(); ++p_col_name)
             if (*p_col_name == p_col->name)
-              to_upper(*p_col_name, loc);
-        to_upper(p_col->name, loc);
+              *p_col_name = transform<std::string>(*p_col_name, upper_case);
+        p_col->name = transform<std::string>(p_col->name, upper_case);
         break; 
       }
 

@@ -3,14 +3,12 @@
 #ifndef BRIG_DATABASE_DETAIL_SQL_DROP_HPP
 #define BRIG_DATABASE_DETAIL_SQL_DROP_HPP
 
-#include <boost/algorithm/string.hpp>
 #include <brig/database/column_detail.hpp>
 #include <brig/database/detail/is_geometry_type.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/detail/sql_object.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/table_detail.hpp>
-#include <locale>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -19,8 +17,6 @@ namespace brig { namespace database { namespace detail {
 
 inline std::vector<std::string> sql_drop(DBMS sys, const table_detail<column_detail>& tbl)
 {
-  using namespace ::boost::algorithm;
-  auto loc = std::locale::classic();
   std::vector<std::string> res;
 
   if (SQLite == sys)
@@ -43,7 +39,7 @@ inline std::vector<std::string> sql_drop(DBMS sys, const table_detail<column_det
     case Oracle: break;
     case DB2: res.push_back("BEGIN ATOMIC DECLARE msg_code INTEGER; DECLARE msg_text VARCHAR(1024); call DB2GSE.ST_unregister_spatial_column('" + sql_identifier(sys, tbl.table.schema) + "', '" + sql_identifier(sys, tbl.table.name) + "', '" + sql_identifier(sys, p_col->name) + "', msg_code, msg_text); END"); break;
     case Postgres:
-      if (iequals(p_col->type.schema, "USER-DEFINED", loc) && iequals(p_col->type.name, "GEOMETRY", loc))
+      if ("user-defined" == p_col->case_folded_type.schema && "geometry" == p_col->case_folded_type.name)
         res.push_back("SELECT DropGeometryColumn('" + tbl.table.schema + "', '" + tbl.table.name + "', '" + p_col->name + "')");
       break;
     case SQLite: res.push_back("SELECT DiscardGeometryColumn('" + tbl.table.name + "', '" + p_col->name + "')"); break;

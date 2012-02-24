@@ -17,20 +17,18 @@ namespace brig { namespace database { namespace detail {
 
 inline std::string sql_box_filter(DBMS sys, const column_detail& col, const boost::box& box)
 {
-  using namespace ::boost::algorithm;
-  auto loc = std::locale::classic();
   const std::string id(sql_identifier(sys, col.name));
   const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>());
-  std::ostringstream stream; stream.imbue(loc);
+  std::ostringstream stream; stream.imbue(std::locale::classic());
 
   if (Postgres == sys)
   {
     bool geography(false), raster(false);
 
-    if (!iequals(col.type.schema, "USER-DEFINED", loc)) throw std::runtime_error("SQL error");
-    else if (iequals(col.type.name, "RASTER", loc)) raster = true;
-    else if (iequals(col.type.name, "GEOGRAPHY", loc)) geography = true;
-    else if (!iequals(col.type.name, "GEOMETRY", loc)) throw std::runtime_error("SQL error");
+    if ("user-defined" != col.case_folded_type.schema) throw std::runtime_error("SQL error");
+    else if ("raster" == col.case_folded_type.name) raster = true;
+    else if ("geography" == col.case_folded_type.name) geography = true;
+    else if ("geometry" != col.case_folded_type.name) throw std::runtime_error("SQL error");
 
     if (raster) stream << "ST_Envelope(";
     stream << id;
@@ -55,7 +53,7 @@ inline std::string sql_box_filter(DBMS sys, const column_detail& col, const boos
     break;
   case MS_SQL:
     {
-    const bool geography(iequals(col.type.name, "GEOGRAPHY", loc));
+    const bool geography("geography" == col.case_folded_type.name);
     const int srid(0 < col.srid? col.srid: geography? 4326: 0);
     stream << "" << id << ".Filter(";
     if (geography) stream << "GEOGRAPHY::STGeomFromWKB(";

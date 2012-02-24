@@ -3,7 +3,6 @@
 #ifndef BRIG_DATABASE_DETAIL_SQL_MBR_HPP
 #define BRIG_DATABASE_DETAIL_SQL_MBR_HPP
 
-#include <boost/algorithm/string.hpp>
 #include <brig/database/column_detail.hpp>
 #include <brig/database/detail/is_geodetic_type.hpp>
 #include <brig/database/detail/is_geometry_type.hpp>
@@ -11,7 +10,6 @@
 #include <brig/database/detail/sql_object.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/object.hpp>
-#include <locale>
 #include <stdexcept>
 #include <string>
 
@@ -23,15 +21,12 @@ inline std::string sql_mbr(const DBMS sys, const object& tbl, const column_detai
   // 2. geodetic (no sql)
   // 3. aggregate
 
-  using namespace ::boost::algorithm;
-  auto loc = std::locale::classic();
-  
   if (Postgres == sys)
   {
-    if (!iequals(col.type.schema, "USER-DEFINED", loc)) throw std::runtime_error("SQL error");
-    else if (iequals(col.type.name, "RASTER", loc)) return "SELECT ST_XMin(t.r), ST_YMin(t.r), ST_XMax(t.r), ST_YMax(t.r) FROM (SELECT ST_Envelope(extent) r FROM raster_columns WHERE r_table_schema = '" + tbl.schema + "' AND r_table_name = '" + tbl.name + "' AND r_raster_column = '" + col.name + "') t";
-    else if (iequals(col.type.name, "GEOGRAPHY", loc)) return "";
-    else if (iequals(col.type.name, "GEOMETRY", loc)) return "SELECT ST_XMin(t.r), ST_YMin(t.r), ST_XMax(t.r), ST_YMax(t.r) FROM (SELECT ST_Extent(" + sql_identifier(sys, col.name) + ") r FROM " + sql_object(sys, tbl) + ") t";
+    if ("user-defined" != col.case_folded_type.schema) throw std::runtime_error("SQL error");
+    else if ("raster" == col.case_folded_type.name) return "SELECT ST_XMin(t.r), ST_YMin(t.r), ST_XMax(t.r), ST_YMax(t.r) FROM (SELECT ST_Envelope(extent) r FROM raster_columns WHERE r_table_schema = '" + tbl.schema + "' AND r_table_name = '" + tbl.name + "' AND r_raster_column = '" + col.name + "') t";
+    else if ("geography" == col.case_folded_type.name) return "";
+    else if ("geometry" == col.case_folded_type.name) return "SELECT ST_XMin(t.r), ST_YMin(t.r), ST_XMax(t.r), ST_YMax(t.r) FROM (SELECT ST_Extent(" + sql_identifier(sys, col.name) + ") r FROM " + sql_object(sys, tbl) + ") t";
     else throw std::runtime_error("SQL error");
   }
 

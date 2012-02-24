@@ -3,14 +3,13 @@
 #ifndef BRIG_DATABASE_ODBC_DETAIL_LINK_HPP
 #define BRIG_DATABASE_ODBC_DETAIL_LINK_HPP
 
-#include <boost/algorithm/string.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <brig/database/detail/link.hpp>
 #include <brig/database/odbc/detail/binding_factory.hpp>
 #include <brig/database/odbc/detail/get_data_factory.hpp>
 #include <brig/database/odbc/detail/lib.hpp>
+#include <brig/unicode/simple_case_folding.hpp>
 #include <brig/unicode/transform.hpp>
-#include <locale>
 #include <stdexcept>
 #include <string>
 
@@ -121,17 +120,16 @@ inline link::link(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(SQL_NU
   // DBMS
   if (SQL_SUCCEEDED(lib::singleton().p_SQLGetInfoW(m_dbc, SQL_DBMS_NAME, buf, SQL_MAX_MESSAGE_LENGTH, &len)))
   {
-    using namespace ::boost::algorithm;
-    auto loc = std::locale::classic();
-    const std::string sys(brig::unicode::transform<std::string>(buf));
-    if (icontains(sys, "DB2", loc)) m_sys = DB2;
-    else if (icontains(sys, "MICROSOFT", loc)
-          && icontains(sys, "SQL", loc)
-          && icontains(sys, "SERVER", loc)) m_sys = MS_SQL;
-    else if (icontains(sys, "MYSQL", loc)) m_sys = MySQL;
-    else if (icontains(sys, "ORACLE", loc)) m_sys = Oracle;
-    else if (icontains(sys, "POSTGRES", loc)) m_sys = Postgres;
-    else if (icontains(sys, "SQLITE", loc)) m_sys = SQLite;
+    using namespace brig::unicode;
+    const std::string sys(transform<std::string>(buf, simple_case_folding));
+         if (sys.find("db2") != std::string::npos) m_sys = DB2;
+    else if (sys.find("microsoft") != std::string::npos
+          && sys.find("sql") != std::string::npos
+          && sys.find("server") != std::string::npos) m_sys = MS_SQL;
+    else if (sys.find("mysql") != std::string::npos) m_sys = MySQL;
+    else if (sys.find("oracle") != std::string::npos) m_sys = Oracle;
+    else if (sys.find("postgres") != std::string::npos) m_sys = Postgres;
+    else if (sys.find("sqlite") != std::string::npos) m_sys = SQLite;
   }
 }
 

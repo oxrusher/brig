@@ -17,7 +17,7 @@
 namespace brig { namespace database { namespace oracle { namespace detail {
 
 inline define* define_factory(handles* hnd, size_t order, ub2 data_type
-  , ub2 size, sb2 precision, sb1 scale, const object& type)
+  , ub2 size, sb2 precision, sb1 scale, const object& case_folded_type)
 {
   switch (data_type)
   {
@@ -40,7 +40,7 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type
   case SQLT_LVC:
   case SQLT_CFILE:
   case SQLT_CLOB:
-    return new define_string(hnd, order, size, get_charset_form(type));
+    return new define_string(hnd, order, size, get_charset_form(case_folded_type));
 
   // numeric
   case SQLT_INT:
@@ -82,13 +82,9 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type
   case SQLT_TIMESTAMP_LTZ:
     return new define_datetime(hnd, order, true);
 
-  // named data type
+  // named data case_folded_type
   case SQLT_NTY:
-    {
-    using namespace ::boost::algorithm;
-    auto loc = std::locale::classic();
-    if (iequals(type.schema, "MDSYS", loc) && iequals(type.name, "SDO_GEOMETRY", loc)) return new define_geometry(hnd, order);
-    }
+    if ("mdsys" == case_folded_type.schema && "sdo_geometry" == case_folded_type.name) return new define_geometry(hnd, order);
     break;
   }
 

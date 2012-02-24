@@ -15,7 +15,7 @@ class utf16 {
 
 public:
   template <typename InputIterator>
-  static uint32_t get_code_point(InputIterator& in_iter)
+  static uint32_t read_code_point(InputIterator& in_iter)
   {
     static_assert(sizeof(typename std::iterator_traits<InputIterator>::value_type) == sizeof(uint16_t), "UTF-16 error");
     const uint16_t cu1(static_cast<uint16_t>(*in_iter)); ++in_iter;
@@ -29,7 +29,7 @@ public:
   }
 
   template <typename OutputIterator>
-  static void set_code_point(OutputIterator& out_iter, const uint32_t cp)
+  static void write_code_point(OutputIterator& out_iter, const uint32_t cp)
   {
     static_assert(sizeof(typename std::iterator_traits<OutputIterator>::value_type) == sizeof(uint16_t), "UTF-16 error");
     if (cp < 0xffff)

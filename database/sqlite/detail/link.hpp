@@ -11,6 +11,8 @@
 #include <brig/database/sqlite/detail/lib.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
+#include <brig/unicode/simple_case_folding.hpp>
+#include <brig/unicode/transform.hpp>
 #include <cstring>
 #include <memory>
 #include <string>
@@ -86,6 +88,9 @@ inline void link::exec(const std::string& sql, const std::vector<variant>& param
 
 inline void link::columns(std::vector<std::string>& cols)
 {
+  using namespace brig::database::detail;
+  using namespace brig::unicode;
+
   if (!m_stmt) return;
   m_sql = "";
   m_cols.clear();
@@ -98,7 +103,7 @@ inline void link::columns(std::vector<std::string>& cols)
 
     column col;
     if (name_ptr) col.name = name_ptr;
-    col.geometry = type_ptr? brig::database::detail::is_ogc_type(type_ptr) : false;
+    col.geometry = (type_ptr && is_ogc_type(transform<std::string>(type_ptr, simple_case_folding)));
 
     m_cols.push_back(col);
     cols.push_back(col.name);

@@ -33,6 +33,8 @@
 #include <brig/database/table_detail.hpp>
 #include <brig/database/variant.hpp>
 #include <brig/detail/string_cast.hpp>
+#include <brig/unicode/simple_case_folding.hpp>
+#include <brig/unicode/transform.hpp>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -125,6 +127,7 @@ table_detail<column_detail> connection<Threading>::get_table_detail(const object
 {
   using namespace brig::database::detail;
   using namespace brig::detail;
+  using namespace brig::unicode;
 
   auto lnk = get_link();
   const DBMS sys(lnk->system());
@@ -140,7 +143,9 @@ table_detail<column_detail> connection<Threading>::get_table_detail(const object
     column_detail col;
     col.name = string_cast<char>(row[0]);
     col.type.schema = string_cast<char>(row[1]);
-    col.type.name = string_cast<char>(row[2]);
+    col.type.name = string_cast<char>(row[2]); 
+    col.case_folded_type.schema = transform<std::string>(col.type.schema, simple_case_folding);
+    col.case_folded_type.name = transform<std::string>(col.type.name, simple_case_folding);
     numeric_cast(row[3], col.chars);
     numeric_cast(row[4], col.precision);
     numeric_cast(row[5], col.scale);
@@ -193,7 +198,11 @@ table_detail<column_detail> connection<Threading>::get_table_detail(const object
         numeric_cast(row[0], p_col->srid);
         if (row.size() > 1) numeric_cast(row[1], p_col->epsg);
         else p_col->epsg = p_col->srid;
-        if (row.size() > 2) p_col->type_detail = string_cast<char>(row[2]);
+        if (row.size() > 2)
+        {
+          p_col->type_detail = string_cast<char>(row[2]);
+          p_col->case_folded_type_detail = transform<std::string>(p_col->type_detail, simple_case_folding);
+        }
       }
     }
   }
