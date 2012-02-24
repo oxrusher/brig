@@ -14,15 +14,15 @@ inline bool is_geometry_type(DBMS sys, const column_detail& col)
   switch (sys)
   {
   case VoidSystem: break;
-  case DB2: return "db2gse" == col.case_folded_type.schema && is_ogc_type(col.case_folded_type.name);
-  case MS_SQL: return "geometry" == col.case_folded_type.name || "geography" == col.case_folded_type.name;
+  case DB2: return "db2gse" == col.lower_case_type.schema && is_ogc_type(col.lower_case_type.name);
+  case MS_SQL: return "geometry" == col.lower_case_type.name || "geography" == col.lower_case_type.name;
   case MySQL:
-  case SQLite: return is_ogc_type(col.case_folded_type.name);
-  case Oracle: return "mdsys" == col.case_folded_type.schema && ("sdo_geometry" == col.case_folded_type.name || is_ogc_type(col.case_folded_type.name));
+  case SQLite: return is_ogc_type(col.lower_case_type.name);
+  case Oracle: return "mdsys" == col.lower_case_type.schema && ("sdo_geometry" == col.lower_case_type.name || is_ogc_type(col.lower_case_type.name));
   case Postgres:
-    return "user-defined" == col.case_folded_type.schema
-      && ("geometry" == col.case_folded_type.name || "geography" == col.case_folded_type.name)
-      && (col.case_folded_type_detail.empty() || is_ogc_type(col.case_folded_type_detail));
+    return "user-defined" == col.lower_case_type.schema
+      && ("geometry" == col.lower_case_type.name || "geography" == col.lower_case_type.name)
+      && (col.lower_case_type_detail.empty() || is_ogc_type(col.lower_case_type_detail));
   }
   return false;
 }

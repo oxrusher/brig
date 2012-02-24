@@ -16,7 +16,7 @@
 #include <brig/database/oracle/detail/define_factory.hpp>
 #include <brig/database/oracle/detail/handles.hpp>
 #include <brig/database/oracle/detail/lib.hpp>
-#include <brig/unicode/simple_case_folding.hpp>
+#include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
 #include <sstream>
 #include <stdexcept>
@@ -160,11 +160,11 @@ inline void link::columns(std::vector<std::string>& cols)
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_schema, &type_schema_len, OCI_ATTR_SCHEMA_NAME, m_hnd.err));
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_name, &type_name_len, OCI_ATTR_TYPE_NAME, m_hnd.err));
 
-      object case_folded_type;
-      case_folded_type.schema = transform<std::string>(type_schema, simple_case_folding);
-      case_folded_type.name = transform<std::string>(type_name, simple_case_folding);
+      object lower_case_type;
+      lower_case_type.schema = transform<std::string>(type_schema, lower_case);
+      lower_case_type.name = transform<std::string>(type_name, lower_case);
 
-      m_cols.push_back(define_factory(&m_hnd, i + 1, data_type, size, precision, scale, case_folded_type));
+      m_cols.push_back(define_factory(&m_hnd, i + 1, data_type, size, precision, scale, lower_case_type));
       cols.push_back(transform<std::string>(name));
 
     }
@@ -194,7 +194,7 @@ inline bool link::fetch(std::vector<variant>& row)
 inline void link::sql_parameter(size_t order, const column_detail& param_col, std::ostringstream& stream)
 {
   using namespace brig::database::detail;
-  if ("mdsys" == param_col.case_folded_type.schema && is_ogc_type(param_col.case_folded_type.name))
+  if ("mdsys" == param_col.lower_case_type.schema && is_ogc_type(param_col.lower_case_type.name))
     stream << sql_object(Oracle, param_col.type) << "(:" << (order + 1) << ')';
   else
     stream << ':' << (order + 1);
@@ -203,7 +203,7 @@ inline void link::sql_parameter(size_t order, const column_detail& param_col, st
 inline void link::sql_column(const column_detail& col, std::ostringstream& stream)
 {
   using namespace brig::database::detail;
-  if ("mdsys" == col.case_folded_type.schema && is_ogc_type(col.case_folded_type.name))
+  if ("mdsys" == col.lower_case_type.schema && is_ogc_type(col.lower_case_type.name))
     stream << sql_object(Oracle, col.type) << ".GET_SDO_GEOM(" << sql_identifier(Oracle, col.name) << ')';
   else
     stream << sql_identifier(Oracle, col.name);

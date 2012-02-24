@@ -19,8 +19,8 @@ inline bool is_geodetic_type(DBMS sys, const column_detail& col)
     case SQLite: break;
     case DB2: return 2000000000 <= col.srid && col.srid <= 2000001000;
     case MS_SQL:
-    case Postgres: return "geography" == col.case_folded_type.name;
-    case Oracle: return "geographic2d" == col.case_folded_type_detail || "geographic3d" == col.case_folded_type_detail;
+    case Postgres: return "geography" == col.lower_case_type.name;
+    case Oracle: return "geographic2d" == col.lower_case_type_detail || "geographic3d" == col.lower_case_type_detail;
     }
   return false;
 }

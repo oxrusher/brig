@@ -14,7 +14,7 @@
 #include <brig/database/object.hpp>
 #include <brig/database/table_detail.hpp>
 #include <brig/detail/string_cast.hpp>
-#include <brig/unicode/simple_case_folding.hpp>
+#include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
 #include <memory>
 #include <string>
@@ -38,7 +38,7 @@ inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> 
     column_detail col;
     col.name = string_cast<char>(row[1]);
     col.type.name = string_cast<char>(row[2]);
-    col.case_folded_type.name = transform<std::string>(col.type.name, simple_case_folding);
+    col.lower_case_type.name = transform<std::string>(col.type.name, lower_case);
     res.columns.push_back(col);
 
     int key(0);
@@ -101,7 +101,7 @@ inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> 
   // srid, epsg, spatial index
   for (size_t i(0); i < res.columns.size(); ++i)
   {
-    if (is_ogc_type(res.columns[i].case_folded_type.name))
+    if (is_ogc_type(res.columns[i].lower_case_type.name))
     {
       cmd->exec("SELECT c.SRID, (CASE s.AUTH_NAME WHEN 'epsg' THEN s.AUTH_SRID ELSE NULL END) epsg, c.SPATIAL_INDEX_ENABLED FROM (SELECT SRID, SPATIAL_INDEX_ENABLED FROM GEOMETRY_COLUMNS WHERE F_TABLE_NAME = '" + tbl.name + "' AND F_GEOMETRY_COLUMN = '" + res.columns[i].name + "') c LEFT JOIN SPATIAL_REF_SYS s ON c.SRID = s.SRID");
       if (cmd->fetch(row))

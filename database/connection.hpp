@@ -33,7 +33,7 @@
 #include <brig/database/table_detail.hpp>
 #include <brig/database/variant.hpp>
 #include <brig/detail/string_cast.hpp>
-#include <brig/unicode/simple_case_folding.hpp>
+#include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
 #include <memory>
 #include <stdexcept>
@@ -144,8 +144,8 @@ table_detail<column_detail> connection<Threading>::get_table_detail(const object
     col.name = string_cast<char>(row[0]);
     col.type.schema = string_cast<char>(row[1]);
     col.type.name = string_cast<char>(row[2]); 
-    col.case_folded_type.schema = transform<std::string>(col.type.schema, simple_case_folding);
-    col.case_folded_type.name = transform<std::string>(col.type.name, simple_case_folding);
+    col.lower_case_type.schema = transform<std::string>(col.type.schema, lower_case);
+    col.lower_case_type.name = transform<std::string>(col.type.name, lower_case);
     numeric_cast(row[3], col.chars);
     numeric_cast(row[4], col.precision);
     numeric_cast(row[5], col.scale);
@@ -201,7 +201,7 @@ table_detail<column_detail> connection<Threading>::get_table_detail(const object
         if (row.size() > 2)
         {
           p_col->type_detail = string_cast<char>(row[2]);
-          p_col->case_folded_type_detail = transform<std::string>(p_col->type_detail, simple_case_folding);
+          p_col->lower_case_type_detail = transform<std::string>(p_col->type_detail, lower_case);
         }
       }
     }

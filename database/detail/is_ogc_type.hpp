@@ -8,7 +8,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline bool is_ogc_type(const std::string& case_folded_type)
+inline bool is_ogc_type(const std::string& lower_case_type)
 {
   static const char* types[] =
   { "collection", "st_collection" // synonym
@@ -29,8 +29,8 @@ inline bool is_ogc_type(const std::string& case_folded_type)
 
   auto begin = types;
   auto end = types + sizeof(types) / sizeof(types[0]);
-  auto iter = std::find_if(begin, end, [&](const char* type){ return case_folded_type.compare(type) == 0;  });
-  return iter != end && case_folded_type.compare(*iter) == 0;
+  auto iter = std::find_if(begin, end, [&](const char* type){ return lower_case_type.compare(type) == 0;  });
+  return iter != end && lower_case_type.compare(*iter) == 0;
 }
 
 } } } // brig::database::detail

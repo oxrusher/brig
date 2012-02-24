@@ -51,7 +51,7 @@ inline void link::sql_parameter(size_t, const column_detail& param_col, std::ost
 
     case Oracle:
       {
-      const bool conv("sdo_geometry" != param_col.case_folded_type.name);
+      const bool conv("sdo_geometry" != param_col.lower_case_type.name);
       if (conv) stream << sql_object(sys, param_col.type) << '(';
       stream << "MDSYS.SDO_GEOMETRY(TO_BLOB(?), " << param_col.srid << ')';
       if (conv) stream << ')';
@@ -59,7 +59,7 @@ inline void link::sql_parameter(size_t, const column_detail& param_col, std::ost
       return;
 
     case Postgres:
-      if ("geography" == param_col.case_folded_type.name)
+      if ("geography" == param_col.lower_case_type.name)
       {
         if (param_col.srid != 4326) throw std::runtime_error("it only supports wgs 84 long lat (srid:4326)");
         stream << "ST_GeogFromWKB(?)";

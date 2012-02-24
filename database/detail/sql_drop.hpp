@@ -39,7 +39,7 @@ inline std::vector<std::string> sql_drop(DBMS sys, const table_detail<column_det
     case Oracle: break;
     case DB2: res.push_back("BEGIN ATOMIC DECLARE msg_code INTEGER; DECLARE msg_text VARCHAR(1024); call DB2GSE.ST_unregister_spatial_column('" + sql_identifier(sys, tbl.table.schema) + "', '" + sql_identifier(sys, tbl.table.name) + "', '" + sql_identifier(sys, p_col->name) + "', msg_code, msg_text); END"); break;
     case Postgres:
-      if ("user-defined" == p_col->case_folded_type.schema && "geometry" == p_col->case_folded_type.name)
+      if ("user-defined" == p_col->lower_case_type.schema && "geometry" == p_col->lower_case_type.name)
         res.push_back("SELECT DropGeometryColumn('" + tbl.table.schema + "', '" + tbl.table.name + "', '" + p_col->name + "')");
       break;
     case SQLite: res.push_back("SELECT DiscardGeometryColumn('" + tbl.table.name + "', '" + p_col->name + "')"); break;

@@ -8,7 +8,7 @@
 #include <brig/database/odbc/detail/binding_factory.hpp>
 #include <brig/database/odbc/detail/get_data_factory.hpp>
 #include <brig/database/odbc/detail/lib.hpp>
-#include <brig/unicode/simple_case_folding.hpp>
+#include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
 #include <stdexcept>
 #include <string>
@@ -121,7 +121,7 @@ inline link::link(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(SQL_NU
   if (SQL_SUCCEEDED(lib::singleton().p_SQLGetInfoW(m_dbc, SQL_DBMS_NAME, buf, SQL_MAX_MESSAGE_LENGTH, &len)))
   {
     using namespace brig::unicode;
-    const std::string sys(transform<std::string>(buf, simple_case_folding));
+    const std::string sys(transform<std::string>(buf, lower_case));
          if (sys.find("db2") != std::string::npos) m_sys = DB2;
     else if (sys.find("microsoft") != std::string::npos
           && sys.find("sql") != std::string::npos

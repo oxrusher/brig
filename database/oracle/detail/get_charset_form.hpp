@@ -9,12 +9,12 @@
 
 namespace brig { namespace database { namespace oracle { namespace detail {
 
-inline ub1 get_charset_form(const object& case_folded_type)
+inline ub1 get_charset_form(const object& lower_case_type)
 {
-  if (case_folded_type.schema.empty() &&
-    ( case_folded_type.name.find("char") != std::string::npos
-   || case_folded_type.name.find("varchar2") != std::string::npos
-   || case_folded_type.name.find("clob") != std::string::npos)
+  if (lower_case_type.schema.empty() &&
+    ( lower_case_type.name.find("char") != std::string::npos
+   || lower_case_type.name.find("varchar2") != std::string::npos
+   || lower_case_type.name.find("clob") != std::string::npos)
     )
     return SQLCS_IMPLICIT;
   else
