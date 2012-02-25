@@ -4,19 +4,21 @@
 #define BRIG_DATABASE_DETAIL_SQL_SELECT_LIST_HPP
 
 #include <brig/database/column_detail.hpp>
-#include <sstream>
+#include <string>
 #include <vector>
 
 namespace brig { namespace database { namespace detail {
 
 template <typename Dialect>
-void sql_select_list(Dialect* dct, const std::vector<column_detail>& cols, std::ostringstream& stream)
+std::string sql_select_list(Dialect* dct, const std::vector<column_detail>& cols)
 {
+  std::string res;
   for (size_t i(0); i < cols.size(); ++i)
   {
-    if (i > 0) stream << ", ";
-    dct->sql_column(cols[i], stream);
+    if (i > 0) res += ", ";
+    res += dct->sql_column(cols[i]);
   }
+  return std::move(res);
 }
 
 } } } // brig::database::detail

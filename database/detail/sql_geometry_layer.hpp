@@ -66,9 +66,7 @@ std::string sql_geometry_layer
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) stream << " UNION ";
-      stream << "(SELECT ";
-      sql_select_list(dct, unique_cols, stream);
-      stream << " FROM " << sql_object(sys, tbl.table) << " " << sql_hint << " WHERE " << sql_box_filter(sys, *lr_col, boxes[i]) << ")";
+      stream << "(SELECT " << sql_select_list(dct, unique_cols) << " FROM " << sql_object(sys, tbl.table) << " " << sql_hint << " WHERE " << sql_box_filter(sys, *lr_col, boxes[i]) << ")";
     }
   }
   else if (Oracle == sys && boxes.size() > 1)
@@ -78,9 +76,7 @@ std::string sql_geometry_layer
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) stream << " UNION ALL ";
-      stream << "(SELECT " << sql_infix << " ";
-      sql_select_list(dct, unique_cols, stream);
-      stream << " FROM " << sql_object(sys, tbl.table) << " WHERE " << sql_box_filter(sys, *lr_col, boxes[i]);
+      stream << "(SELECT " << sql_infix << " " << sql_select_list(dct, unique_cols) << " FROM " << sql_object(sys, tbl.table) << " WHERE " << sql_box_filter(sys, *lr_col, boxes[i]);
       if (!sql_condition.empty()) stream << " AND " << sql_condition;
       stream << ")";
     }
@@ -104,8 +100,7 @@ std::string sql_geometry_layer
   stream << "SELECT " << sql_infix << " ";
   if (sql_key_tbl.empty())
   {
-    sql_select_list(dct, select_cols, stream);
-    stream << " FROM " << sql_object(sys, tbl.table) << " " << sql_hint << " WHERE ";
+    stream << sql_select_list(dct, select_cols) << " FROM " << sql_object(sys, tbl.table) << " " << sql_hint << " WHERE ";
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) stream << " OR ";
@@ -114,14 +109,10 @@ std::string sql_geometry_layer
   }
   else
   {
-    stream << "v.* FROM (" << sql_key_tbl << ") k INNER JOIN (SELECT ";
-    sql_select_list(dct, select_cols, stream);
+    stream << "v.* FROM (" << sql_key_tbl << ") k INNER JOIN (SELECT " << sql_select_list(dct, select_cols);
     for (size_t i(0); i < unique_cols.size(); ++i)
       if (std::find_if(select_cols.begin(), select_cols.end(), [&](const column_detail& col){ return col.name == unique_cols[i].name; }) == select_cols.end())
-      {
-        stream << ", ";
-        dct->sql_column(unique_cols[i], stream);
-      }
+        stream << ", " << dct->sql_column(unique_cols[i]);
     stream << " FROM " << sql_object(sys, tbl.table) << ") v ON ";
     for (size_t i(0); i < unique_cols.size(); ++i)
     {

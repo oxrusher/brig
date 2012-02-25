@@ -10,8 +10,6 @@
 #include <brig/database/detail/sql_select_list.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/table_detail.hpp>
-#include <locale>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -24,14 +22,13 @@ std::string sql_table(Dialect* dct, const table_detail<column_detail>& tbl, cons
   std::vector<column_detail> select_cols = cols.empty()? tbl.columns: get_columns(tbl, cols);
   std::string sql_infix, sql_condition, sql_suffix;
   sql_limit(sys, rows, sql_infix, sql_condition, sql_suffix);
-  std::ostringstream stream; stream.imbue(std::locale::classic());
+  std::string res;
 
-  stream << "SELECT " << sql_infix << " ";
-  sql_select_list(dct, select_cols, stream);
-  stream << " FROM " << sql_object(sys, tbl.table);
-  if (!sql_condition.empty()) stream << " WHERE " << sql_condition;
-  stream << " " << sql_suffix;
-  return stream.str();
+  res += "SELECT " + sql_infix + " " + sql_select_list(dct, select_cols) + " FROM " + sql_object(sys, tbl.table);
+  if (!sql_condition.empty()) res += " WHERE " + sql_condition;
+  res += " " + sql_suffix;
+
+  return std::move(res);
 }
 
 } } } // brig::database::detail

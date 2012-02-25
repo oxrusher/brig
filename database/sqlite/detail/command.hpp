@@ -1,10 +1,10 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_SQLITE_DETAIL_LINK_HPP
-#define BRIG_DATABASE_SQLITE_DETAIL_LINK_HPP
+#ifndef BRIG_DATABASE_SQLITE_DETAIL_COMMAND_HPP
+#define BRIG_DATABASE_SQLITE_DETAIL_COMMAND_HPP
 
 #include <algorithm>
-#include <brig/database/detail/link.hpp>
+#include <brig/database/command.hpp>
 #include <brig/database/sqlite/detail/binding.hpp>
 #include <brig/database/sqlite/detail/column_geometry.hpp>
 #include <brig/database/sqlite/detail/db_handle.hpp>
@@ -14,13 +14,14 @@
 #include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
 #include <cstring>
+#include <exception>
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace brig { namespace database { namespace sqlite { namespace detail {
 
-class link : public brig::database::detail::link
+class command : public brig::database::command
 {
   struct column  { std::string name; bool geometry; };
 
@@ -28,15 +29,15 @@ class link : public brig::database::detail::link
   sqlite3_stmt* m_stmt;
   std::string m_sql;
   std::vector<column> m_cols;
-  bool m_done;
+  bool m_done, m_autocommit;
 
   void close_stmt();
 
 public:
-  link(std::shared_ptr<db_handle> db) : m_db(db), m_stmt(0), m_done(false)  {}
-  virtual ~link()  { close_stmt(); }
+  command(std::shared_ptr<db_handle> db) : m_db(db), m_stmt(0), m_done(false), m_autocommit(true)  {}
+  virtual ~command();
   virtual DBMS system()  { return SQLite; }
-  virtual void sql_column(const column_detail& col, std::ostringstream& stream)  { stream << brig::database::detail::sql_identifier(SQLite, col.name); }
+  virtual std::string sql_column(const column_detail& col)  { return brig::database::detail::sql_identifier(SQLite, col.name); }
   virtual void exec
     ( const std::string& sql
     , const std::vector<variant>& params = std::vector<variant>()
@@ -45,12 +46,11 @@ public:
   virtual size_t affected()  { return m_db->affected(); }
   virtual void columns(std::vector<std::string>& cols);
   virtual bool fetch(std::vector<variant>& row);
-  virtual void start()  { exec("BEGIN"); }
-  virtual void commit()  { exec("COMMIT"); }
-  virtual void rollback()  { exec("ROLLBACK"); }
-}; // link
+  virtual void set_autocommit(bool autocommit);
+  virtual void commit();
+}; // command
 
-inline void link::close_stmt()
+inline void command::close_stmt()
 {
   if (!m_stmt) return;
   m_done = false;
@@ -60,7 +60,14 @@ inline void link::close_stmt()
   lib::singleton().p_sqlite3_finalize(stmt);
 }
 
-inline void link::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& /*param_cols*/)
+inline command::~command()
+{
+  try  { set_autocommit(true); }
+  catch (const std::exception&)  {}
+  close_stmt();
+}
+
+inline void command::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& /*param_cols*/)
 {
   if (!m_stmt || sql != m_sql || !m_done)
   {
@@ -86,7 +93,7 @@ inline void link::exec(const std::string& sql, const std::vector<variant>& param
   }
 }
 
-inline void link::columns(std::vector<std::string>& cols)
+inline void command::columns(std::vector<std::string>& cols)
 {
   using namespace brig::database::detail;
   using namespace brig::unicode;
@@ -110,7 +117,7 @@ inline void link::columns(std::vector<std::string>& cols)
   }
 }
 
-inline bool link::fetch(std::vector<variant>& row)
+inline bool command::fetch(std::vector<variant>& row)
 {
   if (!m_stmt || m_done) return false;
   if (m_cols.empty())  { std::vector<std::string> cols; columns(cols); }
@@ -150,8 +157,21 @@ inline bool link::fetch(std::vector<variant>& row)
   case SQLITE_ROW: return true;
   case SQLITE_DONE: m_done = true; return true;
   }
-} // link::
+}
+
+inline void command::set_autocommit(bool autocommit)
+{
+  if (m_autocommit == autocommit) return;
+  exec(autocommit? "ROLLBACK": "BEGIN");
+  m_autocommit = autocommit;
+}
+
+inline void command::commit()
+{
+  if (m_autocommit) return;
+  exec("COMMIT");
+} // command::
 
 } } } } // brig::database::sqlite::detail
 
-#endif // BRIG_DATABASE_SQLITE_DETAIL_LINK_HPP
+#endif // BRIG_DATABASE_SQLITE_DETAIL_COMMAND_HPP

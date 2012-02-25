@@ -1,11 +1,11 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_ORACLE_DETAIL_LINK_HPP
-#define BRIG_DATABASE_ORACLE_DETAIL_LINK_HPP
+#ifndef BRIG_DATABASE_ORACLE_DETAIL_COMMAND_HPP
+#define BRIG_DATABASE_ORACLE_DETAIL_COMMAND_HPP
 
 #include <boost/ptr_container/ptr_vector.hpp>
+#include <brig/database/command.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
-#include <brig/database/detail/link.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/detail/sql_object.hpp>
 #include <brig/database/global.hpp>
@@ -18,13 +18,14 @@
 #include <brig/database/oracle/detail/lib.hpp>
 #include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
+#include <locale>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 
 namespace brig { namespace database { namespace oracle { namespace detail {
 
-class link : public brig::database::detail::link {
+class command : public brig::database::command {
   handles m_hnd;
   ::boost::ptr_vector<define> m_cols;
   bool m_autocommit;
@@ -33,11 +34,11 @@ class link : public brig::database::detail::link {
   void close_stmt();
 
 public:
-  link(const std::string& srv, const std::string& usr, const std::string& pwd);
-  virtual ~link()  { close_all(); }
+  command(const std::string& srv, const std::string& usr, const std::string& pwd);
+  virtual ~command()  { close_all(); }
   virtual DBMS system()  { return Oracle; }
-  virtual void sql_parameter(size_t order, const column_detail& param_col, std::ostringstream& stream);
-  virtual void sql_column(const column_detail& col, std::ostringstream& stream);
+  virtual std::string sql_parameter(size_t order, const column_detail& param_col);
+  virtual std::string sql_column(const column_detail& col);
   virtual void exec
     ( const std::string& sql
     , const std::vector<variant>& params = std::vector<variant>()
@@ -46,18 +47,17 @@ public:
   virtual size_t affected();
   virtual void columns(std::vector<std::string>& cols);
   virtual bool fetch(std::vector<variant>& row);
-  virtual void start();
+  virtual void set_autocommit(bool autocommit);
   virtual void commit();
-  virtual void rollback();
-}; // link
+}; // command
 
-inline void link::close_stmt()
+inline void command::close_stmt()
 {
   m_cols.clear();
   handles::free_handle((void**)&m_hnd.stmt, OCI_HTYPE_STMT);
 }
 
-inline void link::close_all()
+inline void command::close_all()
 {
   m_autocommit = true;
   close_stmt();
@@ -69,7 +69,7 @@ inline void link::close_all()
   handles::free_handle((void**)&m_hnd.env, OCI_HTYPE_ENV);
 }
 
-inline link::link(const std::string& srv_, const std::string& usr_, const std::string& pwd_) : m_autocommit(true)
+inline command::command(const std::string& srv_, const std::string& usr_, const std::string& pwd_) : m_autocommit(true)
 {
   using namespace brig::unicode;
 
@@ -107,7 +107,7 @@ inline link::link(const std::string& srv_, const std::string& usr_, const std::s
   catch (const std::exception&)  { close_all(); throw; }
 }
 
-inline void link::exec(const std::string& sql_, const std::vector<variant>& params, const std::vector<column_detail>& param_cols)
+inline void command::exec(const std::string& sql_, const std::vector<variant>& params, const std::vector<column_detail>& param_cols)
 {
   const std::u16string sql(brig::unicode::transform<std::u16string>(sql_));
 
@@ -124,14 +124,14 @@ inline void link::exec(const std::string& sql_, const std::vector<variant>& para
   m_hnd.check(lib::singleton().p_OCIStmtExecute(m_hnd.svc, m_hnd.stmt, m_hnd.err, OCI_STMT_SELECT == stmt_type? 0: 1, 0, 0, 0, m_autocommit? OCI_COMMIT_ON_SUCCESS: OCI_DEFAULT));
 }
 
-inline size_t link::affected()
+inline size_t command::affected()
 {
   ub4 count(0);
   if (0 != m_hnd.stmt) m_hnd.check(lib::singleton().p_OCIAttrGet(m_hnd.stmt, OCI_HTYPE_STMT, &count, 0, OCI_ATTR_ROW_COUNT, m_hnd.err));
   return count;
 }
 
-inline void link::columns(std::vector<std::string>& cols)
+inline void command::columns(std::vector<std::string>& cols)
 {
   using namespace brig::unicode;
 
@@ -176,7 +176,7 @@ inline void link::columns(std::vector<std::string>& cols)
   m_hnd.check(lib::singleton().p_OCIAttrSet(m_hnd.stmt, OCI_HTYPE_STMT, &rows, 0, OCI_ATTR_PREFETCH_ROWS, m_hnd.err));
 }
 
-inline bool link::fetch(std::vector<variant>& row)
+inline bool command::fetch(std::vector<variant>& row)
 {
   if (0 == m_hnd.stmt) return false;
   if (m_cols.empty())  { std::vector<std::string> cols; columns(cols); }
@@ -191,44 +191,41 @@ inline bool link::fetch(std::vector<variant>& row)
   return true;
 }
 
-inline void link::sql_parameter(size_t order, const column_detail& param_col, std::ostringstream& stream)
+inline std::string command::sql_parameter(size_t order, const column_detail& param_col)
 {
   using namespace brig::database::detail;
+  std::ostringstream stream; stream.imbue(std::locale::classic());
   if ("mdsys" == param_col.lower_case_type.schema && is_ogc_type(param_col.lower_case_type.name))
-    stream << sql_object(Oracle, param_col.type) << "(:" << (order + 1) << ')';
+    stream << sql_object(Oracle, param_col.type) << "(:" << (order + 1) << ")";
   else
-    stream << ':' << (order + 1);
+    stream << ":" << (order + 1);
+  return stream.str();
 }
 
-inline void link::sql_column(const column_detail& col, std::ostringstream& stream)
+inline std::string command::sql_column(const column_detail& col)
 {
   using namespace brig::database::detail;
   if ("mdsys" == col.lower_case_type.schema && is_ogc_type(col.lower_case_type.name))
-    stream << sql_object(Oracle, col.type) << ".GET_SDO_GEOM(" << sql_identifier(Oracle, col.name) << ')';
+    return sql_object(Oracle, col.type) + ".GET_SDO_GEOM(" + sql_identifier(Oracle, col.name) + ")";
   else
-    stream << sql_identifier(Oracle, col.name);
+    return sql_identifier(Oracle, col.name);
 }
 
-inline void link::start()
+inline void command::set_autocommit(bool autocommit)
 {
+  if (m_autocommit == autocommit) return;
   close_stmt();
-  m_autocommit = false;
+  if (autocommit) m_hnd.check(lib::singleton().p_OCITransRollback(m_hnd.svc, m_hnd.err, OCI_DEFAULT));
+  m_autocommit = autocommit;
 }
 
-inline void link::commit()
+inline void command::commit()
 {
+  if (m_autocommit) return;
   close_stmt();
   m_hnd.check(lib::singleton().p_OCITransCommit(m_hnd.svc, m_hnd.err, OCI_DEFAULT));
-  m_autocommit = true;
-}
-
-inline void link::rollback()
-{
-  close_stmt();
-  m_hnd.check(lib::singleton().p_OCITransRollback(m_hnd.svc, m_hnd.err, OCI_DEFAULT));
-  m_autocommit = true;
-} // link::
+} // command::
 
 } } } } // brig::database::oracle::detail
 
-#endif // BRIG_DATABASE_ORACLE_DETAIL_LINK_HPP
+#endif // BRIG_DATABASE_ORACLE_DETAIL_COMMAND_HPP

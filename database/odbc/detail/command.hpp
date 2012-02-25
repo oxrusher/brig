@@ -1,10 +1,10 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_ODBC_DETAIL_LINK_HPP
-#define BRIG_DATABASE_ODBC_DETAIL_LINK_HPP
+#ifndef BRIG_DATABASE_ODBC_DETAIL_COMMAND_HPP
+#define BRIG_DATABASE_ODBC_DETAIL_COMMAND_HPP
 
 #include <boost/ptr_container/ptr_vector.hpp>
-#include <brig/database/detail/link.hpp>
+#include <brig/database/command.hpp>
 #include <brig/database/odbc/detail/binding_factory.hpp>
 #include <brig/database/odbc/detail/get_data_factory.hpp>
 #include <brig/database/odbc/detail/lib.hpp>
@@ -15,7 +15,7 @@
 
 namespace brig { namespace database { namespace odbc { namespace detail {
 
-class link : public brig::database::detail::link {
+class command : public brig::database::command {
   SQLHANDLE m_env, m_dbc, m_stmt;
   DBMS m_sys;
   std::string m_sql;
@@ -24,10 +24,11 @@ class link : public brig::database::detail::link {
   void close_stmt();
   void close_all();
   void check(SQLSMALLINT type, SQLHANDLE handle, SQLRETURN r);
+  bool get_autocommit();
 
 public:
-  link(const std::string& str);
-  virtual ~link()  { close_all(); }
+  command(const std::string& str);
+  virtual ~command()  { close_all(); }
   virtual DBMS system()  { return m_sys; }
   virtual void exec
     ( const std::string& sql
@@ -37,12 +38,11 @@ public:
   virtual size_t affected();
   virtual void columns(std::vector<std::string>& cols);
   virtual bool fetch(std::vector<variant>& row);
-  virtual void start();
+  virtual void set_autocommit(bool autocommit);
   virtual void commit();
-  virtual void rollback();
-}; // link
+}; // command
 
-inline void link::close_stmt()
+inline void command::close_stmt()
 {
   if (SQL_NULL_HANDLE == m_stmt) return;
   m_cols.clear();
@@ -52,7 +52,7 @@ inline void link::close_stmt()
   lib::singleton().p_SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 }
 
-inline void link::close_all()
+inline void command::close_all()
 {
   close_stmt();
   m_sys = VoidSystem;
@@ -69,7 +69,7 @@ inline void link::close_all()
   }
 }
 
-inline void link::check(SQLSMALLINT type, SQLHANDLE handle, SQLRETURN r)
+inline void command::check(SQLSMALLINT type, SQLHANDLE handle, SQLRETURN r)
 {
   if (SQL_SUCCEEDED(r)) return;
   std::basic_string<SQLWCHAR> msg;
@@ -87,7 +87,7 @@ inline void link::check(SQLSMALLINT type, SQLHANDLE handle, SQLRETURN r)
   throw std::runtime_error(msg.empty()? "ODBC error": brig::unicode::transform<std::string>(msg));
 }
 
-inline link::link(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(SQL_NULL_HANDLE), m_stmt(SQL_NULL_HANDLE), m_sys(VoidSystem)
+inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(SQL_NULL_HANDLE), m_stmt(SQL_NULL_HANDLE), m_sys(VoidSystem)
 {
   SQLWCHAR buf[SQL_MAX_MESSAGE_LENGTH];
   SQLSMALLINT len(0);
@@ -111,11 +111,7 @@ inline link::link(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(SQL_NU
       , 0, 0, &len, SQL_DRIVER_NOPROMPT
       ));
   }
-  catch (const std::exception&)
-  {
-    close_all();
-    throw;
-  }
+  catch (const std::exception&)  { close_all(); throw; }
   
   // DBMS
   if (SQL_SUCCEEDED(lib::singleton().p_SQLGetInfoW(m_dbc, SQL_DBMS_NAME, buf, SQL_MAX_MESSAGE_LENGTH, &len)))
@@ -133,7 +129,7 @@ inline link::link(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(SQL_NU
   }
 }
 
-inline void link::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& param_cols)
+inline void command::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& param_cols)
 {
   if (SQL_NULL_HANDLE == m_stmt || sql != m_sql)
   {
@@ -162,7 +158,7 @@ inline void link::exec(const std::string& sql, const std::vector<variant>& param
   if (SQL_NO_DATA != r) check(SQL_HANDLE_STMT, m_stmt, r);
 }
 
-inline size_t link::affected()
+inline size_t command::affected()
 {
   SQLLEN count(0);
   if (SQL_NULL_HANDLE != m_stmt) check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLRowCount(m_stmt, &count));
@@ -170,7 +166,7 @@ inline size_t link::affected()
   return count;
 }
 
-inline void link::columns(std::vector<std::string>& cols)
+inline void command::columns(std::vector<std::string>& cols)
 {
   if (SQL_NULL_HANDLE == m_stmt) return;
   m_sql = "";
@@ -204,7 +200,7 @@ inline void link::columns(std::vector<std::string>& cols)
   }
 }
 
-inline bool link::fetch(std::vector<variant>& row)
+inline bool command::fetch(std::vector<variant>& row)
 {
   if (SQL_NULL_HANDLE == m_stmt) return false;
   if (m_cols.empty())  { std::vector<std::string> cols; columns(cols); }
@@ -219,26 +215,29 @@ inline bool link::fetch(std::vector<variant>& row)
   return true;
 }
 
-inline void link::start()
+inline bool command::get_autocommit()
 {
-  close_stmt();
-  check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLSetConnectAttr(m_dbc,  SQL_ATTR_AUTOCOMMIT, SQLPOINTER(SQL_AUTOCOMMIT_OFF), 0));
+  SQLUINTEGER attr(0);
+  SQLINTEGER len(sizeof(attr));
+  check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLGetConnectAttr(m_dbc, SQL_ATTR_AUTOCOMMIT, &attr, sizeof(attr), &len));
+  return SQL_AUTOCOMMIT_ON == attr;
 }
 
-inline void link::commit()
+inline void command::set_autocommit(bool autocommit)
 {
+  if (get_autocommit() == autocommit) return;
+  close_stmt();
+  if (autocommit) check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLEndTran(SQL_HANDLE_DBC, m_dbc, SQL_ROLLBACK));
+  check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLSetConnectAttr(m_dbc,  SQL_ATTR_AUTOCOMMIT, SQLPOINTER(autocommit? SQL_AUTOCOMMIT_ON: SQL_AUTOCOMMIT_OFF), 0));
+}
+
+inline void command::commit()
+{
+  if (get_autocommit()) return;
   close_stmt();
   check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLEndTran(SQL_HANDLE_DBC, m_dbc, SQL_COMMIT));
-  check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLSetConnectAttr(m_dbc,  SQL_ATTR_AUTOCOMMIT, SQLPOINTER(SQL_AUTOCOMMIT_ON), 0));
-}
-
-inline void link::rollback()
-{
-  close_stmt();
-  check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLEndTran(SQL_HANDLE_DBC, m_dbc, SQL_ROLLBACK));
-  check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLSetConnectAttr(m_dbc,  SQL_ATTR_AUTOCOMMIT, SQLPOINTER(SQL_AUTOCOMMIT_ON), 0));
-} // link::
+} // command::
 
 } } } } // brig::database::odbc::detail
 
-#endif // BRIG_DATABASE_ODBC_DETAIL_LINK_HPP
+#endif // BRIG_DATABASE_ODBC_DETAIL_COMMAND_HPP

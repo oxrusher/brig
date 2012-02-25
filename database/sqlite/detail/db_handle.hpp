@@ -21,7 +21,7 @@ public:
   void check(int r)  { if (SQLITE_OK != r) error(); }
   void error();
   sqlite3_stmt* prepare_stmt(const std::string& sql);
-  void load(db_handle& from);
+  void load_backup(db_handle& from);
 }; // db_handle
 
 inline void db_handle::error()
@@ -47,7 +47,7 @@ inline sqlite3_stmt* db_handle::prepare_stmt(const std::string& sql)
   return stmt;
 }
 
-inline void db_handle::load(db_handle& from)
+inline void db_handle::load_backup(db_handle& from)
 {
   sqlite3_backup* backup(lib::singleton().p_sqlite3_backup_init(m_db, "main", from.m_db, "main"));
   if (!backup) error();

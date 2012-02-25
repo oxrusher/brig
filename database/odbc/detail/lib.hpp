@@ -25,6 +25,7 @@ public:
   decltype(SQLFetch) *p_SQLFetch;
   decltype(SQLFreeHandle) *p_SQLFreeHandle;
   decltype(SQLFreeStmt) *p_SQLFreeStmt;
+  decltype(SQLGetConnectAttr) *p_SQLGetConnectAttr;
   decltype(SQLGetData) *p_SQLGetData;
   decltype(SQLGetDiagRecW) *p_SQLGetDiagRecW;
   decltype(SQLGetInfoW) *p_SQLGetInfoW;
@@ -53,6 +54,7 @@ inline lib::lib() : p_SQLSetEnvAttr(0)
     && (p_SQLFetch = BRIG_DL_FUNCTION(handle, SQLFetch))
     && (p_SQLFreeHandle = BRIG_DL_FUNCTION(handle, SQLFreeHandle))
     && (p_SQLFreeStmt = BRIG_DL_FUNCTION(handle, SQLFreeStmt))
+    && (p_SQLGetConnectAttr = BRIG_DL_FUNCTION(handle, SQLGetConnectAttr))
     && (p_SQLGetData = BRIG_DL_FUNCTION(handle, SQLGetData))
     && (p_SQLGetDiagRecW = BRIG_DL_FUNCTION(handle, SQLGetDiagRecW))
     && (p_SQLGetInfoW = BRIG_DL_FUNCTION(handle, SQLGetInfoW))

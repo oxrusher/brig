@@ -25,7 +25,7 @@ public:
   void fill(rowset* rs);
 }; // double_page
 
-void double_page::prefill(rowset* rs)
+inline void double_page::prefill(rowset* rs)
 {
   if (m_sync && !m_done)
   {
@@ -34,7 +34,7 @@ void double_page::prefill(rowset* rs)
   }
 }
     
-void double_page::fill(rowset* rs)
+inline void double_page::fill(rowset* rs)
 {
   if (!m_sync)
   {

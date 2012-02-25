@@ -10,8 +10,6 @@
 #include <brig/database/global.hpp>
 #include <brig/database/object.hpp>
 #include <brig/database/table_detail.hpp>
-#include <locale>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -22,26 +20,24 @@ std::string sql_insert(Dialect* dct, const table_detail<column_detail>& tbl, con
 {
   const DBMS sys(dct->system());
   std::vector<column_detail> insert_cols = cols.empty()? tbl.columns: get_columns(tbl, cols);
-  auto loc = std::locale::classic();
-  std::ostringstream prefix, suffix;
-  prefix.imbue(loc); suffix.imbue(loc);
+  std::string prefix, suffix;
 
-  prefix << "INSERT INTO " << sql_object(sys, tbl.table) << "(";
-  suffix << "VALUES(";
+  prefix += "INSERT INTO " + sql_object(sys, tbl.table) + "(";
+  suffix += "VALUES(";
   for (size_t i(0); i < insert_cols.size(); ++i)
   {
     if (i > 0)
     {
-      prefix << ", ";
-      suffix << ", ";
+      prefix += ", ";
+      suffix += ", ";
     }
-    prefix << sql_identifier(sys, insert_cols[i].name);
-    dct->sql_parameter(i, insert_cols[i], suffix);
+    prefix += sql_identifier(sys, insert_cols[i].name);
+    suffix += dct->sql_parameter(i, insert_cols[i]);
   }
-  prefix << ")";
-  suffix << ")";
+  prefix += ")";
+  suffix += ")";
 
-  return prefix.str() + " " + suffix.str();
+  return prefix + " " + suffix;
 }
 
 } } } // brig::database::detail

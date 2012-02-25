@@ -8,10 +8,10 @@
 #include <brig/database/column.hpp>
 #include <brig/database/column_abstract.hpp>
 #include <brig/database/column_detail.hpp>
+#include <brig/database/command.hpp>
+#include <brig/database/command_allocator.hpp>
 #include <brig/database/detail/deleter.hpp>
 #include <brig/database/detail/get_type.hpp>
-#include <brig/database/detail/link.hpp>
-#include <brig/database/detail/linker.hpp>
 #include <brig/database/detail/pool.hpp>
 #include <brig/database/detail/sql_columns.hpp>
 #include <brig/database/detail/sql_create.hpp>
@@ -45,13 +45,12 @@ namespace brig { namespace database {
 template <bool Threading>
 class connection {
   typedef detail::pool<Threading> pool_type;
-  std::shared_ptr<pool_type> m_pl;
-  std::shared_ptr<detail::link> get_link()  { return std::shared_ptr<detail::link>(m_pl->pull(), detail::deleter<pool_type>(m_pl)); }
+  std::shared_ptr<pool_type> m_pool;
 
 public:
-  explicit connection(std::shared_ptr<detail::linker> lkr) : m_pl(new pool_type(lkr))  {}
+  explicit connection(std::shared_ptr<command_allocator> allocator) : m_pool(new pool_type(allocator))  {}
 
-  std::shared_ptr<command> get_command()  { return get_link(); }
+  std::shared_ptr<command> get_command()  { return std::shared_ptr<command>(m_pool->allocate(), detail::deleter<pool_type>(m_pool)); }
 
   std::vector<object> get_tables();
   std::vector<column> get_geometry_layers();
@@ -69,8 +68,8 @@ public:
     );
 
   void before_create(table_detail<column_abstract>& tbl);
-  std::vector<std::string> sql_create(table_detail<column_abstract>& tbl)  { return detail::sql_create(get_link()->system(), tbl); }
-  std::vector<std::string> sql_drop(const table_detail<column_detail>& tbl)  { return detail::sql_drop(get_link()->system(), tbl); }
+  std::vector<std::string> sql_create(table_detail<column_abstract>& tbl)  { return detail::sql_create(get_command()->system(), tbl); }
+  std::vector<std::string> sql_drop(const table_detail<column_detail>& tbl)  { return detail::sql_drop(get_command()->system(), tbl); }
   std::string sql_insert(const table_detail<column_detail>& tbl, const std::vector<std::string>& cols = std::vector<std::string>());
 }; // connection
 
@@ -81,10 +80,10 @@ std::vector<object> connection<Threading>::get_tables()
   using namespace brig::detail;
 
   std::vector<object> res;
-  auto lnk = get_link();
-  lnk->exec(sql_tables(lnk->system()));
+  auto cmd = get_command();
+  cmd->exec(sql_tables(cmd->system()));
   std::vector<variant> row;
-  while (lnk->fetch(row))
+  while (cmd->fetch(row))
   {
     object tbl;
     tbl.schema = string_cast<char>(row[0]);
@@ -100,18 +99,18 @@ std::vector<column> connection<Threading>::get_geometry_layers()
   using namespace brig::database::detail;
   using namespace brig::detail;
 
-  auto lnk = get_link();
-  const DBMS sys(lnk->system());
+  auto cmd = get_command();
+  const DBMS sys(cmd->system());
   std::vector<variant> row;
   if (SQLite == sys)
   {
-    lnk->exec(sql_tables(sys, "GEOMETRY_COLUMNS"));
-    if (!lnk->fetch(row)) return std::vector<column>();
+    cmd->exec(sql_tables(sys, "GEOMETRY_COLUMNS"));
+    if (!cmd->fetch(row)) return std::vector<column>();
   }
 
   std::vector<column> res;
-  lnk->exec(sql_geometry_layers(sys));
-  while (lnk->fetch(row))
+  cmd->exec(sql_geometry_layers(sys));
+  while (cmd->fetch(row))
   {
     column col;
     col.table.schema = string_cast<char>(row[0]);
@@ -129,16 +128,16 @@ table_detail<column_detail> connection<Threading>::get_table_detail(const object
   using namespace brig::detail;
   using namespace brig::unicode;
 
-  auto lnk = get_link();
-  const DBMS sys(lnk->system());
-  if (SQLite == sys) return sqlite_table_detail(lnk, tbl);
+  auto cmd = get_command();
+  const DBMS sys(cmd->system());
+  if (SQLite == sys) return sqlite_table_detail(cmd, tbl);
 
   // columns
   table_detail<column_detail> res;
   res.table = tbl;
-  lnk->exec(sql_columns(sys, tbl));
+  cmd->exec(sql_columns(sys, tbl));
   std::vector<variant> row;
-  while (lnk->fetch(row))
+  while (cmd->fetch(row))
   {
     column_detail col;
     col.name = string_cast<char>(row[0]);
@@ -153,9 +152,9 @@ table_detail<column_detail> connection<Threading>::get_table_detail(const object
   }
 
   // indexes
-  lnk->exec(sql_indexed_columns(sys, tbl));
+  cmd->exec(sql_indexed_columns(sys, tbl));
   index_detail idx;
-  while (lnk->fetch(row))
+  while (cmd->fetch(row))
   {
     object index;
     index.schema = string_cast<char>(row[0]);
@@ -192,8 +191,8 @@ table_detail<column_detail> connection<Threading>::get_table_detail(const object
     const std::string sql(sql_srid(sys, tbl, *p_col));
     if (!sql.empty())
     {
-      lnk->exec(sql);
-      if (lnk->fetch(row))
+      cmd->exec(sql);
+      if (cmd->fetch(row))
       {
         numeric_cast(row[0], p_col->srid);
         if (row.size() > 1) numeric_cast(row[1], p_col->epsg);
@@ -212,8 +211,8 @@ table_detail<column_detail> connection<Threading>::get_table_detail(const object
 template <bool Threading>
 table_detail<column_abstract> connection<Threading>::get_table_abstract(const table_detail<column_detail>& tbl)
 {
-  auto lnk = get_link();
-  const DBMS sys(lnk->system());
+  auto cmd = get_command();
+  const DBMS sys(cmd->system());
   table_detail<column_abstract> res;
   res.table.name = tbl.table.name;
 
@@ -250,15 +249,15 @@ brig::boost::box connection<Threading>::get_mbr(const object& tbl, const column_
 {
   using namespace brig::boost;
 
-  auto lnk = get_link();
-  const std::string sql(detail::sql_mbr(lnk->system(), tbl, col));
+  auto cmd = get_command();
+  const std::string sql(detail::sql_mbr(cmd->system(), tbl, col));
   if (sql.empty())
     return box(point(-180, -90), point(180, 90)); // geodetic
 
-  lnk->exec(sql);
+  cmd->exec(sql);
   std::vector<variant> row;
   double xmin(0), ymin(0), xmax(0), ymax(0);
-  if ( lnk->fetch(row)
+  if ( cmd->fetch(row)
     && numeric_cast(row[0], xmin)
     && numeric_cast(row[1], ymin)
     && numeric_cast(row[2], xmax)
@@ -272,9 +271,9 @@ brig::boost::box connection<Threading>::get_mbr(const object& tbl, const column_
 template <bool Threading>
 std::shared_ptr<rowset> connection<Threading>::get_table(const table_detail<column_detail>& tbl, const std::vector<std::string>& cols, int rows)
 {
-  auto lnk = get_link();
-  lnk->exec(detail::sql_table(lnk.get(), tbl, cols, rows));
-  return lnk;
+  auto cmd = get_command();
+  cmd->exec(detail::sql_table(cmd.get(), tbl, cols, rows));
+  return cmd;
 }
 
 template <bool Threading>
@@ -283,16 +282,16 @@ std::shared_ptr<rowset> connection<Threading>::get_geometry_layer
   , const std::vector<std::string>& cols, int rows
   )
 {
-  auto lnk = get_link();
-  lnk->exec(detail::sql_geometry_layer(lnk.get(), tbl, lr, box, cols, rows));
-  return lnk;
+  auto cmd = get_command();
+  cmd->exec(detail::sql_geometry_layer(cmd.get(), tbl, lr, box, cols, rows));
+  return cmd;
 }
 
 template <bool Threading>
 void connection<Threading>::before_create(table_detail<column_abstract>& tbl)
 {
-  auto lnk = get_link();
-  const DBMS sys(lnk->system());
+  auto cmd = get_command();
+  const DBMS sys(cmd->system());
 
   for (auto p_col = tbl.columns.begin(); p_col != tbl.columns.end(); ++p_col)
     if (Geometry == p_col->type && Oracle == sys && typeid(bool) == p_col->mbr_need.type()) p_col->mbr_need = true;
@@ -308,8 +307,8 @@ void connection<Threading>::before_create(table_detail<column_abstract>& tbl)
 template <bool Threading>
 std::string connection<Threading>::sql_insert(const table_detail<column_detail>& tbl, const std::vector<std::string>& cols)
 {
-  auto lnk = get_link();
-  return detail::sql_insert(lnk.get(), tbl, cols);
+  auto cmd = get_command();
+  return detail::sql_insert(cmd.get(), tbl, cols);
 }
 
 } } // brig::database
