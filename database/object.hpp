@@ -7,11 +7,7 @@
 
 namespace brig { namespace database {
 
-struct object {
-  std::string schema, name;
-
-  bool operator==(const object& r) const  { return schema == r.schema && name == r.name; }
-}; // object
+struct object  { std::string schema, name; };
 
 } } // brig::database
 

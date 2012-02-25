@@ -18,8 +18,7 @@
 
 namespace brig { namespace database {
 
-struct command : public rowset
-{
+struct command : public rowset {
   virtual void exec
     ( const std::string& sql
     , const std::vector<variant>& params = std::vector<variant>()

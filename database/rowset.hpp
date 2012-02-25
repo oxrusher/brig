@@ -5,6 +5,7 @@
 
 #include <boost/utility.hpp>
 #include <brig/database/variant.hpp>
+#include <string>
 #include <vector>
 
 namespace brig { namespace database {

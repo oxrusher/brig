@@ -50,14 +50,14 @@ class connection {
 public:
   explicit connection(std::shared_ptr<command_allocator> allocator) : m_pool(new pool_type(allocator))  {}
 
-  std::shared_ptr<command> get_command()  { return std::shared_ptr<command>(m_pool->allocate(), detail::deleter<pool_type>(m_pool)); }
-
+  // metadata
   std::vector<object> get_tables();
   std::vector<column> get_geometry_layers();
   table_detail<column_detail> get_table_detail(const object& tbl);
   table_detail<column_abstract> get_table_abstract(const table_detail<column_detail>& tbl);
   brig::boost::box get_mbr(const object& tbl, const column_detail& col);
 
+  // data
   std::shared_ptr<rowset> get_table
     ( const table_detail<column_detail>& tbl
     , const std::vector<std::string>& cols = std::vector<std::string>(), int rows = -1
@@ -67,6 +67,8 @@ public:
     , const std::vector<std::string>& cols = std::vector<std::string>(), int rows = -1
     );
 
+  // sql
+  std::shared_ptr<command> get_command()  { return std::shared_ptr<command>(m_pool->allocate(), detail::deleter<pool_type>(m_pool)); }
   void before_create(table_detail<column_abstract>& tbl);
   std::vector<std::string> sql_create(table_detail<column_abstract>& tbl)  { return detail::sql_create(get_command()->system(), tbl); }
   std::vector<std::string> sql_drop(const table_detail<column_detail>& tbl)  { return detail::sql_drop(get_command()->system(), tbl); }
@@ -160,7 +162,7 @@ table_detail<column_detail> connection<Threading>::get_table_detail(const object
     index.schema = string_cast<char>(row[0]);
     index.name = string_cast<char>(row[1]);
 
-    if (!(index == idx.index))
+    if (index.schema != idx.index.schema || index.name != idx.index.name)
     {
       if (VoidIndex != idx.type) res.indexes.push_back(std::move(idx));
 
@@ -309,7 +311,7 @@ std::string connection<Threading>::sql_insert(const table_detail<column_detail>&
 {
   auto cmd = get_command();
   return detail::sql_insert(cmd.get(), tbl, cols);
-}
+} // connection::
 
 } } // brig::database
 

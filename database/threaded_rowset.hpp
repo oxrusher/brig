@@ -12,8 +12,7 @@
 
 namespace brig { namespace database {
 
-class threaded_rowset : public rowset
-{
+class threaded_rowset : public rowset {
   struct mediator : brig::detail::mediator<rowset>  { detail::double_page dpg; };
   std::shared_ptr<mediator> m_med;
   static void worker(std::shared_ptr<rowset> rs, std::shared_ptr<mediator> med);
@@ -44,7 +43,7 @@ inline bool threaded_rowset::fetch(std::vector<variant>& row)
     m_med->call(&bnd);
   }
   return m_med->dpg.fetch(row);
-}
+} // threaded_rowset::
 
 } } // brig::database
 
