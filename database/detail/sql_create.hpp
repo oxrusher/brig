@@ -247,7 +247,7 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
     }
     res.push_back(stream.str());
   }
-  return std::move(res);
+  return res;
 }
 
 } } } // brig::database::detail

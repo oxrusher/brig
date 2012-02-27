@@ -31,7 +31,7 @@ public:
 inline pool<false>::~pool()
 {
   for (size_t i(0); i < m_commands.size(); ++i)
-    delete m_commands[i];
+    m_allocator->deallocate(m_commands[i]);
 }
 
 inline command* pool<false>::allocate()
@@ -54,7 +54,7 @@ inline void pool<false>::deallocate(command* cmd)
     }
     catch (const std::exception&)  {}
   }
-  delete cmd;
+  m_allocator->deallocate(cmd);
 } // pool<false>::
 
 template <> class pool<true> : public pool<false> {

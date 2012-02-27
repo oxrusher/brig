@@ -9,7 +9,7 @@
 
 namespace brig { namespace boost { namespace detail {
 
-inline linestring to_line(const linearring& r)  { linestring l; l.assign(r.begin(), r.end()); return std::move(l); }
+inline linestring to_line(const linearring& r)  { linestring l; l.assign(r.begin(), r.end()); return l; }
 inline void assign_outer(polygon& p, const polygon::ring_type& r)  { p.outer().assign(r.begin(), r.end()); }
 inline void add_inner(polygon& p, const polygon::ring_type& r)  { p.inners().push_back(r); }
 

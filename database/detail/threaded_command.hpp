@@ -27,7 +27,7 @@ public:
   virtual std::string sql_column(const column_detail& col);
   virtual void exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& param_cols);
   virtual size_t affected();
-  virtual void columns(std::vector<std::string>& cols);
+  virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
   virtual void set_autocommit(bool autocommit);
   virtual void commit();
@@ -53,14 +53,14 @@ inline std::string threaded_command::sql_parameter(size_t order, const column_de
 {
   auto bnd(mediator::bind(std::bind(&command::sql_parameter, std::placeholders::_1, order, std::cref(param_col))));
   m_med->call(&bnd);
-  return bnd.r;
+  return std::move(bnd.r);
 }
 
 inline std::string threaded_command::sql_column(const column_detail& col)
 {
   auto bnd(mediator::bind(std::bind(&command::sql_column, std::placeholders::_1, std::cref(col))));
   m_med->call(&bnd);
-  return bnd.r;
+  return std::move(bnd.r);
 }
 
 inline void threaded_command::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& param_cols)
@@ -77,10 +77,11 @@ inline size_t threaded_command::affected()
   return bnd.r;
 }
 
-inline void threaded_command::columns(std::vector<std::string>& cols)
+inline std::vector<std::string> threaded_command::columns()
 {
-  auto bnd(mediator::bind(std::bind(&command::columns, std::placeholders::_1, std::ref(cols))));
+  auto bnd(mediator::bind(std::bind(&command::columns, std::placeholders::_1)));
   m_med->call(&bnd);
+  return std::move(bnd.r);
 }
 
 inline bool threaded_command::fetch(std::vector<variant>& row)

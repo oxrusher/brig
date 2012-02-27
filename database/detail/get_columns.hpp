@@ -19,7 +19,7 @@ inline std::vector<column_detail> get_columns(const table_detail<column_detail>&
     if (p_col == tbl.columns.end()) throw std::runtime_error("table error");
     res.push_back(*p_col);
   }
-  return std::move(res);
+  return res;
 }
 
 } } } // brig::database::detail

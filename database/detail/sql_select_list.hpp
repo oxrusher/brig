@@ -18,7 +18,7 @@ std::string sql_select_list(Dialect* dct, const std::vector<column_detail>& cols
     if (i > 0) res += ", ";
     res += dct->sql_column(cols[i]);
   }
-  return std::move(res);
+  return res;
 }
 
 } } } // brig::database::detail

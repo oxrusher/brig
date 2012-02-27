@@ -12,7 +12,7 @@ namespace brig { namespace database {
 
 struct rowset : ::boost::noncopyable {
   virtual ~rowset()  {}
-  virtual void columns(std::vector<std::string>& cols) = 0;
+  virtual std::vector<std::string> columns() = 0;
   virtual bool fetch(std::vector<variant>& row) = 0;
 }; // rowset
 

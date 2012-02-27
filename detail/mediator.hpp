@@ -35,7 +35,7 @@ public:
   }; // functor_impl<void, Func>
 
   template <typename Func>
-  static functor_impl<typename Func::result_type, Func> bind(Func&& func)  { return std::move(functor_impl<typename Func::result_type, Func>(std::move(func))); }
+  static functor_impl<typename Func::result_type, Func> bind(Func&& func)  { return functor_impl<typename Func::result_type, Func>(std::move(func)); }
 
 private:
   enum state  { BeforeStart, Idle, Calling, AfterFinish };

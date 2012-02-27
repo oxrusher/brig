@@ -33,7 +33,7 @@ OutputString transform(const InputCodeUnit* ptr, Mapping mapping)
     auto out_iter = brig::detail::back_inserter(res);
     detail::transform(ptr, out_iter, mapping);
   }
-  return std::move(res);
+  return res;
 }
 
 template <typename OutputString, typename InputCodeUnit>
@@ -50,7 +50,7 @@ OutputString transform(const std::basic_string<InputCodeUnit>& str, Mapping mapp
   auto in_ptr = str.c_str();
   auto out_iter = brig::detail::back_inserter(res);
   detail::transform(in_ptr, out_iter, mapping);
-  return std::move(res);
+  return res;
 }
 
 template <typename OutputString, typename InputCodeUnit>

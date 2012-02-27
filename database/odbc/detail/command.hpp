@@ -36,7 +36,7 @@ public:
     , const std::vector<column_detail>& param_cols = std::vector<column_detail>()
     );
   virtual size_t affected();
-  virtual void columns(std::vector<std::string>& cols);
+  virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
   virtual void set_autocommit(bool autocommit);
   virtual void commit();
@@ -166,9 +166,10 @@ inline size_t command::affected()
   return count;
 }
 
-inline void command::columns(std::vector<std::string>& cols)
+inline std::vector<std::string> command::columns()
 {
-  if (SQL_NULL_HANDLE == m_stmt) return;
+  std::vector<std::string> cols;
+  if (SQL_NULL_HANDLE == m_stmt) return cols;
   m_sql = "";
   m_cols.clear();
 
@@ -198,12 +199,13 @@ inline void command::columns(std::vector<std::string>& cols)
     m_cols.push_back(get_data_factory(SQLSMALLINT(sql_type)));
     cols.push_back(brig::unicode::transform<std::string>(buf));
   }
+  return cols;
 }
 
 inline bool command::fetch(std::vector<variant>& row)
 {
   if (SQL_NULL_HANDLE == m_stmt) return false;
-  if (m_cols.empty())  { std::vector<std::string> cols; columns(cols); }
+  if (m_cols.empty()) columns();
 
   const SQLRETURN r(lib::singleton().p_SQLFetch(m_stmt));
   if (SQL_NO_DATA == r) return false;

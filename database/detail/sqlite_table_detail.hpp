@@ -119,7 +119,7 @@ inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> 
       }
     }
   }
-  return std::move(res);
+  return res;
 }
 
 } } } // brig::database::detail

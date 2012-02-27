@@ -45,7 +45,7 @@ public:
     , const std::vector<column_detail>& param_cols = std::vector<column_detail>()
     );
   virtual size_t affected();
-  virtual void columns(std::vector<std::string>& cols);
+  virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
   virtual void set_autocommit(bool autocommit);
   virtual void commit();
@@ -131,11 +131,12 @@ inline size_t command::affected()
   return count;
 }
 
-inline void command::columns(std::vector<std::string>& cols)
+inline std::vector<std::string> command::columns()
 {
   using namespace brig::unicode;
 
-  if (0 == m_hnd.stmt) return;
+  std::vector<std::string> cols;
+  if (0 == m_hnd.stmt) return cols;
   m_cols.clear();
   ub4 count(0);
   m_hnd.check(lib::singleton().p_OCIAttrGet(m_hnd.stmt, OCI_HTYPE_STMT, &count, 0, OCI_ATTR_PARAM_COUNT, m_hnd.err));
@@ -174,12 +175,13 @@ inline void command::columns(std::vector<std::string>& cols)
 
   ub4 rows = ub4(PageSize);
   m_hnd.check(lib::singleton().p_OCIAttrSet(m_hnd.stmt, OCI_HTYPE_STMT, &rows, 0, OCI_ATTR_PREFETCH_ROWS, m_hnd.err));
+  return cols;
 }
 
 inline bool command::fetch(std::vector<variant>& row)
 {
   if (0 == m_hnd.stmt) return false;
-  if (m_cols.empty())  { std::vector<std::string> cols; columns(cols); }
+  if (m_cols.empty()) columns();
 
   const sword r(lib::singleton().p_OCIStmtFetch2(m_hnd.stmt, m_hnd.err, 1, OCI_FETCH_NEXT, 1, OCI_DEFAULT));
   if (OCI_NO_DATA == r) return false;

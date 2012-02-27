@@ -44,7 +44,7 @@ public:
     , const std::vector<column_detail>& param_cols = std::vector<column_detail>()
     );
   virtual size_t affected()  { return m_db->affected(); }
-  virtual void columns(std::vector<std::string>& cols);
+  virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
   virtual void set_autocommit(bool autocommit);
   virtual void commit();
@@ -93,12 +93,13 @@ inline void command::exec(const std::string& sql, const std::vector<variant>& pa
   }
 }
 
-inline void command::columns(std::vector<std::string>& cols)
+inline std::vector<std::string> command::columns()
 {
   using namespace brig::database::detail;
   using namespace brig::unicode;
 
-  if (!m_stmt) return;
+  std::vector<std::string> cols;
+  if (!m_stmt) return cols;
   m_sql = "";
   m_cols.clear();
 
@@ -115,12 +116,13 @@ inline void command::columns(std::vector<std::string>& cols)
     m_cols.push_back(col);
     cols.push_back(col.name);
   }
+  return cols;
 }
 
 inline bool command::fetch(std::vector<variant>& row)
 {
   if (!m_stmt || m_done) return false;
-  if (m_cols.empty())  { std::vector<std::string> cols; columns(cols); }
+  if (m_cols.empty()) columns();
 
   const int count = int(m_cols.size());
   row.resize(count);

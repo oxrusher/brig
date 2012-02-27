@@ -92,7 +92,7 @@ std::vector<object> connection<Threading>::get_tables()
     tbl.name = string_cast<char>(row[1]);
     res.push_back(tbl);
   }
-  return std::move(res);
+  return res;
 }
 
 template <bool Threading>
@@ -120,7 +120,7 @@ std::vector<column> connection<Threading>::get_geometry_layers()
     col.name = string_cast<char>(row[2]);
     res.push_back(col);
   }
-  return std::move(res);
+  return res;
 }
 
 template <bool Threading>
@@ -150,7 +150,7 @@ table_detail<column_detail> connection<Threading>::get_table_detail(const object
     numeric_cast(row[3], col.chars);
     numeric_cast(row[4], col.precision);
     numeric_cast(row[5], col.scale);
-    res.columns.push_back(std::move(col));
+    res.columns.push_back(col);
   }
 
   // indexes
@@ -207,7 +207,7 @@ table_detail<column_detail> connection<Threading>::get_table_detail(const object
       }
     }
   }
-  return std::move(res);
+  return res;
 }
 
 template <bool Threading>
@@ -243,7 +243,7 @@ table_detail<column_abstract> connection<Threading>::get_table_abstract(const ta
       res.indexes.back().index.schema = "";
     }
   }
-  return std::move(res);
+  return res;
 }
 
 template <bool Threading>

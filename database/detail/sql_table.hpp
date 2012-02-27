@@ -28,7 +28,7 @@ std::string sql_table(Dialect* dct, const table_detail<column_detail>& tbl, cons
   if (!sql_condition.empty()) res += " WHERE " + sql_condition;
   res += " " + sql_suffix;
 
-  return std::move(res);
+  return res;
 }
 
 } } } // brig::database::detail

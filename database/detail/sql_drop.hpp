@@ -47,7 +47,7 @@ inline std::vector<std::string> sql_drop(DBMS sys, const table_detail<column_det
   }
 
   res.push_back("DROP TABLE " + sql_object(sys, tbl.table));
-  return std::move(res);
+  return res;
 }
 
 } } } // brig::database::detail
