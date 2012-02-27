@@ -10,10 +10,7 @@
 namespace brig { namespace unicode { namespace detail {
 
 class utf8 {
-  static void check_continuation(uint8_t cu)
-  {
-    if ((cu >> 6) != 0x2) throw std::runtime_error("UTF-8 error");
-  }
+  static void check_continuation(uint8_t cu)  { if ((cu >> 6) != 0x2) throw std::runtime_error("UTF-8 error"); }
 
 public:
   template <typename InputIterator>

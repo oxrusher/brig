@@ -39,6 +39,7 @@ OutputString transform(const InputCodeUnit* ptr, Mapping mapping)
 template <typename OutputString, typename InputCodeUnit>
 OutputString transform(const InputCodeUnit* ptr)
 {
+  if (sizeof(InputCodeUnit) == sizeof(OutputString::value_type)) return (const OutputString::value_type*)ptr;
   auto mapping = [](uint32_t cp){ return cp; };
   return transform<OutputString, InputCodeUnit, decltype(mapping)>(ptr, mapping);
 }
@@ -56,6 +57,7 @@ OutputString transform(const std::basic_string<InputCodeUnit>& str, Mapping mapp
 template <typename OutputString, typename InputCodeUnit>
 OutputString transform(const std::basic_string<InputCodeUnit>& str)
 {
+  if (sizeof(InputCodeUnit) == sizeof(OutputString::value_type)) return (const OutputString::value_type*)str.c_str();
   auto mapping = [](uint32_t cp){ return cp; };
   return transform<OutputString, InputCodeUnit, decltype(mapping)>(str, mapping);
 }

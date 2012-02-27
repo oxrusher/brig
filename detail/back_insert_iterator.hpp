@@ -15,10 +15,7 @@ struct back_insert_iterator : std::back_insert_iterator<Container>
 }; // back_insert_iterator
 
 template<class Container>
-back_insert_iterator<Container> back_inserter(Container& cont)
-{
-  return back_insert_iterator<Container>(cont);
-}
+back_insert_iterator<Container> back_inserter(Container& cont)  { return back_insert_iterator<Container>(cont); }
 
 } } // brig::detail
 
