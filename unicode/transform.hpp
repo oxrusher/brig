@@ -4,25 +4,11 @@
 #define BRIG_UNICODE_TRANSFORM_HPP
 
 #include <brig/detail/back_insert_iterator.hpp>
-#include <brig/unicode/detail/utf.hpp>
+#include <brig/unicode/detail/transform.hpp>
 #include <cstdint>
 #include <string>
 
-namespace brig { namespace unicode { namespace detail {
-
-template <typename InputIterator, typename OutputIterator, typename Mapping>
-void transform(InputIterator& in_iter, OutputIterator& out_iter, Mapping mapping)
-{
-  while (true)
-  {
-    uint32_t cp(detail::utf<InputIterator>::type::read_code_point(in_iter));
-    if (cp == 0) break;
-    cp = mapping(cp);
-    detail::utf<OutputIterator>::type::write_code_point(out_iter, cp);
-  }
-}
-
-} // detail
+namespace brig { namespace unicode {
 
 template <typename OutputString, typename InputCodeUnit, typename Mapping>
 OutputString transform(const InputCodeUnit* ptr, Mapping mapping)

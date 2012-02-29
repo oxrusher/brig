@@ -42,7 +42,7 @@ void transform_line(uint8_t byte_order, InputType*& in_ptr, OutputType*& out_ptr
       write<double>(out_ptr, read<double>(byte_order, in_ptr));
       write<double>(out_ptr, read<double>(byte_order, in_ptr));
     }
-  transform(point_xy_begin, point_xy_count, in_pj, out_pj);
+  transform(point_xy_begin, long(point_xy_count), in_pj, out_pj);
 }
 
 } } } // brig::proj::detail
