@@ -11,12 +11,12 @@
 
 namespace brig { namespace wkt {
 
-inline void print(const blob_t& in_wkb, std::string& out_wkt)
+inline std::string print(const blob_t& wkb)
 {
-  auto in_ptr = in_wkb.data();
-  std::ostringstream out_stream; out_stream.imbue(std::locale::classic());
-  detail::print_geometry(in_ptr, out_stream);
-  out_wkt = out_stream.str();
+  auto ptr = wkb.data();
+  std::ostringstream stream; stream.imbue(std::locale::classic());
+  detail::print_geometry(ptr, stream);
+  return stream.str();
 }
 
 } } // brig::wkt

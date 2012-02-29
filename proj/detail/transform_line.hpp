@@ -31,7 +31,7 @@ void transform_line(uint8_t byte_order, InputType*& in_ptr, OutputType*& out_ptr
   double* point_xy_begin((double*)out_ptr);
   if (system_byte_order() == byte_order)
   {
-    const uint32_t bytes(point_xy_count * 2 * sizeof(double));
+    const size_t bytes(point_xy_count * 2 * sizeof(double));
     if (in_ptr != out_ptr) memcpy(out_ptr, in_ptr, bytes);
     in_ptr += bytes;
     out_ptr += bytes;

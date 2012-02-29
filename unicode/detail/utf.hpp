@@ -14,10 +14,10 @@ namespace brig { namespace unicode { namespace detail {
 
 template <typename Iterator>
 struct utf {
-  typedef typename std::iterator_traits<Iterator>::value_type code_unit;
-  typedef typename std::conditional<sizeof(code_unit) == sizeof(uint8_t), utf8
-        , typename std::conditional<sizeof(code_unit) == sizeof(uint16_t), utf16
-        , typename std::conditional<sizeof(code_unit) == sizeof(uint32_t), utf32
+  typedef typename std::iterator_traits<Iterator>::value_type code_unit_type;
+  typedef typename std::conditional<sizeof(code_unit_type) == sizeof(uint8_t), utf8
+        , typename std::conditional<sizeof(code_unit_type) == sizeof(uint16_t), utf16
+        , typename std::conditional<sizeof(code_unit_type) == sizeof(uint32_t), utf32
         , void>::type>::type>::type type;
 }; // utf
 

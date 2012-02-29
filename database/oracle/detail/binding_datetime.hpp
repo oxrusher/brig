@@ -29,8 +29,8 @@ public:
 
 inline void binding_datetime::bind(handles* hnd, size_t order, ub2 dty)
 {
-  OCIBind* bind(0);
-  hnd->check(lib::singleton().p_OCIBindByPos(hnd->stmt, &bind, hnd->err, ub4(order), &m_dt, sizeof(m_dt), dty, &m_ind, 0, 0, 0, 0, OCI_DEFAULT));
+  OCIBind* bnd(0);
+  hnd->check(lib::singleton().p_OCIBindByPos(hnd->stmt, &bnd, hnd->err, ub4(order), &m_dt, sizeof(m_dt), dty, &m_ind, 0, 0, 0, 0, OCI_DEFAULT));
 }
 
 inline binding_datetime::binding_datetime(handles* hnd, size_t order) : m_dt(0), m_ind(OCI_IND_NULL)

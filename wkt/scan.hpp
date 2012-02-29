@@ -4,20 +4,16 @@
 #define BRIG_WKT_SCAN_HPP
 
 #include <brig/blob_t.hpp>
-#include <brig/boost/geometry.hpp>
-#include <brig/boost/read_wkt.hpp>
-#include <brig/boost/write_wkb.hpp>
-#include <string>
+#include <brig/boost/as_binary.hpp>
+#include <brig/boost/geom_from_text.hpp>
 
 namespace brig { namespace wkt {
 
 template <typename Text>
-void scan(Text in_wkt, blob_t& out_wkb)
+blob_t scan(Text wkt)
 {
   using namespace brig::boost;
-  geometry geom;
-  read_wkt(in_wkt, geom);
-  write_wkb(geom, out_wkb);
+  return as_binary(geom_from_text(wkt));
 }
 
 } } // brig::wkt

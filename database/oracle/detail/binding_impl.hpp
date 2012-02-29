@@ -15,15 +15,15 @@ class binding_impl : public binding {
   OCIInd m_ind;
   void bind(handles* hnd, size_t order);
 public:
-  binding_impl(handles* hnd, size_t order) :  m_val(), m_ind(OCI_IND_NULL)  { bind (hnd, order); }
-  binding_impl(handles* hnd, size_t order, T val) : m_val(val), m_ind(sizeof(val))  { bind (hnd, order); }
+  binding_impl(handles* hnd, size_t order) :  m_val(), m_ind(OCI_IND_NULL)  { bind(hnd, order); }
+  binding_impl(handles* hnd, size_t order, T val) : m_val(val), m_ind(sizeof(val))  { bind(hnd, order); }
 }; // binding_impl
 
 template <typename T, ub2 TargetType>
 void binding_impl<T, TargetType>::bind(handles* hnd, size_t order)
 {
-  OCIBind* bind(0);
-  hnd->check(lib::singleton().p_OCIBindByPos(hnd->stmt, &bind, hnd->err, ub4(order), &m_val, sizeof(m_val), TargetType, &m_ind, 0, 0, 0, 0, OCI_DEFAULT));
+  OCIBind* bnd(0);
+  hnd->check(lib::singleton().p_OCIBindByPos(hnd->stmt, &bnd, hnd->err, ub4(order), &m_val, sizeof(m_val), TargetType, &m_ind, 0, 0, 0, 0, OCI_DEFAULT));
 } // binding_impl::
 
 } } } } // brig::database::oracle::detail

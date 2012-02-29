@@ -149,9 +149,9 @@ inline binding_geometry::binding_geometry(handles* hnd, size_t order, const blob
   try
   {
     m_ind = new geometry_ind(); m_ind->reset();
-    OCIBind* bind(0);
-    m_hnd->check(lib::singleton().p_OCIBindByPos(m_hnd->stmt, &bind, m_hnd->err, ub4(order), 0, 0, SQLT_NTY, 0, 0, 0, 0, 0, OCI_DEFAULT));
-    m_hnd->check(lib::singleton().p_OCIBindObject(bind, m_hnd->err, m_hnd->geom, (void**)&m_geom, 0, (void**)&m_ind, 0));
+    OCIBind* bnd(0);
+    m_hnd->check(lib::singleton().p_OCIBindByPos(m_hnd->stmt, &bnd, m_hnd->err, ub4(order), 0, 0, SQLT_NTY, 0, 0, 0, 0, 0, OCI_DEFAULT));
+    m_hnd->check(lib::singleton().p_OCIBindObject(bnd, m_hnd->err, m_hnd->geom, (void**)&m_geom, 0, (void**)&m_ind, 0));
     
     if (0 == blob.size()) return;
     m_ind->atomic = OCI_IND_NOTNULL;

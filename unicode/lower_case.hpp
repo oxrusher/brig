@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <iterator>
 #include <utility>
 
 namespace brig { namespace unicode {
@@ -15,7 +16,6 @@ namespace brig { namespace unicode {
 inline uint32_t lower_case(const uint32_t cp)
 {
   using namespace std;
-
   static const pair<uint32_t, uint32_t> mapping[] =
   {
   make_pair(0x41, 0x61), // LATIN CAPITAL LETTER A
@@ -1062,11 +1062,8 @@ inline uint32_t lower_case(const uint32_t cp)
   make_pair(0x10426, 0x1044e), // DESERET CAPITAL LETTER OI
   make_pair(0x10427, 0x1044f), // DESERET CAPITAL LETTER EW
   };
-
-  auto begin = mapping;
-  auto end = mapping + sizeof(mapping) / sizeof(mapping[0]);
-  auto iter = lower_bound(begin, end, make_pair<uint32_t, uint32_t>(cp, 0));
-  return (iter == end || iter->first != cp)? cp: iter->second;
+  auto iter = lower_bound(std::begin(mapping), std::end(mapping), make_pair<uint32_t, uint32_t>(cp, 0));
+  return (iter != std::end(mapping) && iter->first == cp)? iter->second: cp;
 }
 
 } } // brig::unicode

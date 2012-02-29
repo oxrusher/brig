@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_BOOST_READ_WKT_HPP
-#define BRIG_BOOST_READ_WKT_HPP
+#ifndef BRIG_BOOST_GEOM_FROM_TEXT_HPP
+#define BRIG_BOOST_GEOM_FROM_TEXT_HPP
 
 #include <boost/spirit/include/qi.hpp>
 #include <brig/boost/detail/grammar.hpp>
@@ -11,20 +11,21 @@
 
 namespace brig { namespace boost {
 
-inline void read_wkt(const char* in_wkt, geometry& out_geom)
+inline geometry geom_from_text(const char* wkt)
 {
   using namespace ::boost::spirit::qi;
   detail::grammar<const char*> gr;
-  if (!phrase_parse(in_wkt, (const char*)0, gr, blank, out_geom) || *in_wkt != 0)
+  geometry geom;
+  if (!phrase_parse(wkt, (const char*)0, gr, blank, geom) || *wkt != 0)
     throw std::runtime_error("wkt error");
+  return geom;
 }
 
-inline void read_wkt(const std::string& in_wkt, geometry& out_geom)
+inline geometry geom_from_text(const std::string& wkt)
 {
-  auto in_ptr = in_wkt.c_str();
-  read_wkt(in_ptr, out_geom);
+  return geom_from_text(wkt.c_str());
 }
 
 } } // brig::boost
 
-#endif // BRIG_BOOST_READ_WKT_HPP
+#endif // BRIG_BOOST_GEOM_FROM_TEXT_HPP
