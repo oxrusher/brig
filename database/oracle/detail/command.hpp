@@ -207,10 +207,13 @@ inline std::string command::sql_parameter(size_t order, const column_detail& par
 inline std::string command::sql_column(const column_detail& col)
 {
   using namespace brig::database::detail;
-  if ("mdsys" == col.lower_case_type.schema && is_ogc_type(col.lower_case_type.name))
-    return sql_object(Oracle, col.type) + ".GET_SDO_GEOM(" + sql_identifier(Oracle, col.name) + ")";
+  if (col.sql_expression.empty() && "mdsys" == col.lower_case_type.schema && is_ogc_type(col.lower_case_type.name))
+  {
+    const std::string id(sql_identifier(Oracle, col.name));
+    return sql_object(Oracle, col.type) + ".GET_SDO_GEOM(" + id + ") " + id;
+  }
   else
-    return sql_identifier(Oracle, col.name);
+    return brig::database::command::sql_column(col);
 }
 
 inline void command::set_autocommit(bool autocommit)

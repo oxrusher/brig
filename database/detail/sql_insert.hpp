@@ -19,7 +19,7 @@ template <typename Dialect>
 std::string sql_insert(Dialect* dct, const table_detail<column_detail>& tbl, const std::vector<std::string>& cols)
 {
   const DBMS sys(dct->system());
-  std::vector<column_detail> insert_cols = cols.empty()? tbl.columns: get_columns(tbl, cols);
+  std::vector<column_detail> insert_cols = cols.empty()? tbl.columns: get_columns(tbl.columns, cols);
   std::string prefix, suffix;
 
   prefix += "INSERT INTO " + sql_object(sys, tbl.table) + "(";

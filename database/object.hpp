@@ -8,6 +8,7 @@
 namespace brig { namespace database {
 
 struct object  { std::string schema, name; };
+struct subobject : object  { std::string qualifier; };
 
 } } // brig::database
 

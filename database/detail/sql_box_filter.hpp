@@ -25,10 +25,10 @@ inline std::string sql_box_filter(DBMS sys, const column_detail& col, const boos
   {
     bool geography(false), raster(false);
 
-    if ("user-defined" != col.lower_case_type.schema) throw std::runtime_error("SQL error");
+    if ("user-defined" != col.lower_case_type.schema) throw std::runtime_error("sql error");
     else if ("raster" == col.lower_case_type.name) raster = true;
     else if ("geography" == col.lower_case_type.name) geography = true;
-    else if ("geometry" != col.lower_case_type.name) throw std::runtime_error("SQL error");
+    else if ("geometry" != col.lower_case_type.name) throw std::runtime_error("sql error");
 
     if (raster) stream << "ST_Envelope(";
     stream << id;
@@ -42,12 +42,12 @@ inline std::string sql_box_filter(DBMS sys, const column_detail& col, const boos
   }
 
   else if (!is_geometry_type(sys, col))
-    throw std::runtime_error("SQL error");
+    throw std::runtime_error("sql error");
 
   else switch (sys)
   {
   default:
-    throw std::runtime_error("SQL error");
+    throw std::runtime_error("sql error");
   case DB2:
     stream << "DB2GSE.EnvelopesIntersect(" << id << ", " << xmin << ", " << ymin << ", " << xmax << ", " << ymax << ", " << (0 < col.srid? col.srid: 0) << ") = 1";
     break;

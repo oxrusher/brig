@@ -44,6 +44,7 @@ inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> 
     int key(0);
     if (numeric_cast(row[5], key) && key) keys.push_back(col.name);
   }
+  if (res.columns.empty()) throw std::runtime_error("table error");
 
   if (!keys.empty())
   {

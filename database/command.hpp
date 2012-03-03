@@ -83,17 +83,30 @@ inline std::string command::sql_column(const column_detail& col)
 {
   using namespace detail;
   const DBMS sys(system());
+  const std::string id(sql_identifier(sys, col.name));
+
+  if (!col.sql_expression.empty()) return col.sql_expression + " " + id;
+
+  if (Postgres == sys)
+  {
+    if ("user-defined" != col.lower_case_type.schema) return id;
+    else if ("raster" == col.lower_case_type.name) return "ST_AsBinary(ST_Envelope(" + id + ")) " + id;
+    else if ("geography" == col.lower_case_type.name
+          || "geometry" == col.lower_case_type.name) return "ST_AsBinary(" + id + ") " + id;
+    else return id;
+  }
+
   if (is_geometry_type(sys, col))
     switch (sys)
     {
-    case DB2: return "DB2GSE.ST_AsBinary(" + sql_identifier(sys, col.name) + ")";
-    case MS_SQL: return sql_identifier(sys, col.name) + ".STAsBinary() " + sql_identifier(sys, col.name);
+    case DB2: return "DB2GSE.ST_AsBinary(" + id + ") " + id;
+    case MS_SQL: return id + ".STAsBinary() " + id;
     case MySQL:
-    case SQLite: return "AsBinary(" + sql_identifier(sys, col.name) + ")";
-    case Oracle: return sql_object(sys, col.type) + ".GET_WKB(" + sql_identifier(sys, col.name) + ")";
-    case Postgres: return "ST_AsBinary(" + sql_identifier(sys, col.name) + ")";
+    case SQLite: return "AsBinary(" + id + ") " + id;
+    case Oracle: return sql_object(sys, col.type) + ".GET_WKB(" + id + ") " + id;
     }
-  return sql_identifier(sys, col.name);
+
+  return id;
 } // command::
 
 } } // brig::database

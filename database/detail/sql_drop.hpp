@@ -23,7 +23,7 @@ inline std::vector<std::string> sql_drop(DBMS sys, const table_detail<column_det
     for (auto p_idx = tbl.indexes.begin(); p_idx != tbl.indexes.end(); ++p_idx)
       if (Spatial == p_idx->type)
       {
-        if (1 != p_idx->columns.size()) throw std::runtime_error("SQL error");
+        if (1 != p_idx->columns.size()) throw std::runtime_error("sql error");
         res.push_back("SELECT DisableSpatialIndex('" + tbl.table.name + "', '" + p_idx->columns.front() + "')");
         res.push_back("DROP TABLE " + sql_identifier(sys, "idx_" + tbl.table.name + "_" + p_idx->columns.front()));
       }
@@ -33,7 +33,7 @@ inline std::vector<std::string> sql_drop(DBMS sys, const table_detail<column_det
     if (!is_geometry_type(sys, *p_col)) continue;
     switch (sys)
     {
-    case VoidSystem: throw std::runtime_error("SQL error");
+    case VoidSystem: throw std::runtime_error("sql error");
     case MS_SQL:
     case MySQL:
     case Oracle: break;

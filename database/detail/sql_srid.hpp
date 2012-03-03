@@ -30,7 +30,7 @@ inline std::string sql_srid(const DBMS sys, const object& tbl, const column_deta
 
   switch (sys)
   {
-  default: throw std::runtime_error("SQL error");
+  default: throw std::runtime_error("sql error");
   case DB2: return "SELECT c.SRS_ID, (CASE s.ORGANIZATION WHEN 'EPSG' THEN s.ORGANIZATION_COORDSYS_ID ELSE NULL END) epsg FROM (SELECT SRS_ID FROM DB2GSE.ST_GEOMETRY_COLUMNS WHERE TABLE_SCHEMA = '" + tbl.schema + "' AND TABLE_NAME = '" + tbl.name + "' AND COLUMN_NAME = '" + col.name + "') c LEFT JOIN DB2GSE.ST_SPATIAL_REFERENCE_SYSTEMS s ON c.SRS_ID = s.SRS_ID";
   case MS_SQL: return "SELECT TOP 1 " + sql_identifier(sys, col.name) + ".STSrid FROM " + sql_object(sys, tbl);
   case MySQL: return "SELECT SRID(" + sql_identifier(sys, col.name) + ") FROM " + sql_object(sys, tbl) + " LIMIT 1";

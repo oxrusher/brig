@@ -22,7 +22,7 @@ inline bool is_geometry_type(DBMS sys, const column_detail& col)
   case Postgres:
     return "user-defined" == col.lower_case_type.schema
       && ("geometry" == col.lower_case_type.name || "geography" == col.lower_case_type.name)
-      && (col.lower_case_type_detail.empty() || is_ogc_type(col.lower_case_type_detail));
+      && (col.lower_case_type.qualifier.empty() || is_ogc_type(col.lower_case_type.qualifier));
   }
   return false;
 }

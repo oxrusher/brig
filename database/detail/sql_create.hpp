@@ -57,12 +57,12 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
     bool not_null(false);
     switch (sys)
     {
-    case VoidSystem: throw std::runtime_error("SQL error");
+    case VoidSystem: throw std::runtime_error("sql error");
 
     case DB2:
       switch (p_col->type)
       {
-      case VoidColumn: throw std::runtime_error("SQL error");
+      case VoidColumn: throw std::runtime_error("sql error");
       case Date: stream << "DATE"; break;
       case DateTime: stream << "TIMESTAMP"; break;
       case Double: stream << "DOUBLE"; break;
@@ -81,7 +81,7 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
     case MS_SQL:
       switch (p_col->type)
       {
-      case VoidColumn: throw std::runtime_error("SQL error");
+      case VoidColumn: throw std::runtime_error("sql error");
       case Date: stream << "DATE"; break;
       case DateTime: stream << "DATETIME"; break;
       case Double: stream << "FLOAT"; break;
@@ -94,7 +94,7 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
     case MySQL:
       switch (p_col->type)
       {
-      case VoidColumn: throw std::runtime_error("SQL error");
+      case VoidColumn: throw std::runtime_error("sql error");
       case Date: stream << "DATE"; break;
       case DateTime: stream << "DATETIME"; break;
       case Double: stream << "DOUBLE"; break;
@@ -104,7 +104,7 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
         for (auto p_idx = tbl.indexes.begin(); p_idx != tbl.indexes.end(); ++p_idx)
           if (Spatial == p_idx->type)
           {
-            if (1 != p_idx->columns.size()) throw std::runtime_error("SQL error");
+            if (1 != p_idx->columns.size()) throw std::runtime_error("sql error");
             if (p_idx->columns.front() == p_col->name) not_null = true;
           }
         break;
@@ -116,7 +116,7 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
     case Oracle:
       switch (p_col->type)
       {
-      case VoidColumn: throw std::runtime_error("SQL error");
+      case VoidColumn: throw std::runtime_error("sql error");
       case Date: stream << "DATE"; break;
       case DateTime: stream << "TIMESTAMP"; break;
       case Double: stream << "BINARY_DOUBLE"; break;
@@ -130,7 +130,7 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
       switch (p_col->type)
       {
       case VoidColumn:
-      case Geometry: throw std::runtime_error("SQL error");
+      case Geometry: throw std::runtime_error("sql error");
       case Date: stream << "DATE"; break;
       case DateTime: stream << "TIMESTAMP"; break;
       case Double: stream << "DOUBLE PRECISION"; break;
@@ -143,7 +143,7 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
       switch (p_col->type)
       {
       case VoidColumn:
-      case Geometry: throw std::runtime_error("SQL error");
+      case Geometry: throw std::runtime_error("sql error");
       case Date: stream << "DATE"; break; // numeric affinity
       case DateTime: stream << "DATETIME"; break; // numeric affinity
       case Double: stream << "REAL"; break; // real affinity
@@ -181,13 +181,13 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
       stream = std::ostringstream(); stream.imbue(loc);
       switch (sys)
       {
-      case VoidSystem: throw std::runtime_error("SQL error");
+      case VoidSystem: throw std::runtime_error("sql error");
       case DB2: stream << "BEGIN ATOMIC DECLARE msg_code INTEGER; DECLARE msg_text VARCHAR(1024); call DB2GSE.ST_register_spatial_column(NULL, '" << sql_identifier(sys, tbl.table.name) << "', '" << sql_identifier(sys, p_col->name) << "', (SELECT SRS_NAME FROM DB2GSE.ST_SPATIAL_REFERENCE_SYSTEMS WHERE ORGANIZATION LIKE 'EPSG' AND ORGANIZATION_COORDSYS_ID = " << p_col->epsg << " ORDER BY SRS_ID FETCH FIRST 1 ROWS ONLY), msg_code, msg_text); END"; break;
       case MS_SQL:
       case MySQL: break;
       case Oracle:
         {
-        if (p_col->mbr_need.type() != typeid(brig::boost::box)) throw std::runtime_error("SQL error");
+        if (p_col->mbr_need.type() != typeid(brig::boost::box)) throw std::runtime_error("sql error");
         auto box = ::boost::get<brig::boost::box>(p_col->mbr_need);
         const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>()), eps(0.000001);
         stream << "BEGIN DELETE FROM MDSYS.USER_SDO_GEOM_METADATA WHERE TABLE_NAME = '" << tbl.table.name << "' AND COLUMN_NAME = '" << p_col->name << "'; INSERT INTO MDSYS.USER_SDO_GEOM_METADATA (TABLE_NAME, COLUMN_NAME, DIMINFO, SRID) VALUES ('" << tbl.table.name << "', '" << p_col->name << "', MDSYS.SDO_DIM_ARRAY(MDSYS.SDO_DIM_ELEMENT('X', " << xmin << ", " << xmax << ", " << eps << "), MDSYS.SDO_DIM_ELEMENT('Y', " << ymin << ", " << ymax << ", " << eps << ")), (SELECT SRID FROM MDSYS.SDO_COORD_REF_SYS WHERE DATA_SOURCE LIKE 'EPSG' AND SRID = " << p_col->epsg << " AND ROWNUM <= 1)); END;";
@@ -212,15 +212,15 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
     stream = std::ostringstream(); stream.imbue(loc);
     if (Spatial == p_idx->type)
     {
-      if (1 != p_idx->columns.size()) throw std::runtime_error("SQL error");
+      if (1 != p_idx->columns.size()) throw std::runtime_error("sql error");
       switch (sys)
       {
-      case VoidSystem: throw std::runtime_error("SQL error");
+      case VoidSystem: throw std::runtime_error("sql error");
       case DB2: stream << "CREATE INDEX " << sql_identifier(sys, p_idx->index.name) << " ON " << sql_identifier(sys, tbl.table.name) << " (" << sql_identifier(sys, p_idx->columns.front()) << ") EXTEND USING DB2GSE.SPATIAL_INDEX (1, 0, 0)"; break;
       case MS_SQL:
         {
         auto p_col = std::find_if(tbl.columns.begin(), tbl.columns.end(), [&](const column_abstract& col){ return col.name == p_idx->columns.front(); });
-        if (p_col == tbl.columns.end() || p_col->mbr_need.type() != typeid(brig::boost::box)) throw std::runtime_error("SQL error");
+        if (p_col == tbl.columns.end() || p_col->mbr_need.type() != typeid(brig::boost::box)) throw std::runtime_error("sql error");
         auto box = ::boost::get<brig::boost::box>(p_col->mbr_need);
         const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>());
         stream << "CREATE SPATIAL INDEX " << sql_identifier(sys, p_idx->index.name) << " ON " << sql_identifier(sys, tbl.table.name) << " (" << sql_identifier(sys, p_idx->columns.front()) << ") USING GEOMETRY_GRID WITH (BOUNDING_BOX = (" << xmin << ", " << ymin << ", " << xmax << ", " << ymax << "))";

@@ -37,7 +37,7 @@ public:
   command(std::shared_ptr<db_handle> db) : m_db(db), m_stmt(0), m_done(false), m_autocommit(true)  {}
   virtual ~command();
   virtual DBMS system()  { return SQLite; }
-  virtual std::string sql_column(const column_detail& col)  { return brig::database::detail::sql_identifier(SQLite, col.name); }
+  virtual std::string sql_column(const column_detail& col);
   virtual void exec
     ( const std::string& sql
     , const std::vector<variant>& params = std::vector<variant>()
@@ -159,6 +159,15 @@ inline bool command::fetch(std::vector<variant>& row)
   case SQLITE_ROW: return true;
   case SQLITE_DONE: m_done = true; return true;
   }
+}
+
+inline std::string command::sql_column(const column_detail& col)
+{
+  using namespace brig::database::detail;
+  if (col.sql_expression.empty() && is_ogc_type(col.lower_case_type.name))
+    return sql_identifier(SQLite, col.name);
+  else
+    return brig::database::command::sql_column(col);
 }
 
 inline void command::set_autocommit(bool autocommit)
