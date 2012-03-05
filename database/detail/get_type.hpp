@@ -43,7 +43,7 @@ inline column_type get_type(DBMS sys, const column_detail& col)
       else if ("binary_float" == col.lower_case_type.name
             || "binary_double" == col.lower_case_type.name) return Double;
       else if ("bfile" == col.lower_case_type.name
-            || (col.lower_case_type.name.find("long") != std::string::npos && col.lower_case_type.name.find("row") != std::string::npos)) return Blob;
+            || col.lower_case_type.name.find("raw") != std::string::npos) return Blob;
       break;
 
     case Postgres:

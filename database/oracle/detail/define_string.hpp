@@ -8,7 +8,7 @@
 #include <brig/database/oracle/detail/lib.hpp>
 #include <brig/database/variant.hpp>
 #include <brig/unicode/transform.hpp>
-#include <limits.h>
+#include <climits>
 #include <string>
 
 namespace brig { namespace database { namespace oracle { namespace detail {

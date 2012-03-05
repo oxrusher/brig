@@ -23,8 +23,8 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 siz
   switch (data_type)
   {
   // binary
-  //case SQLT_BIN:
-  //case SQLT_VBI:
+  case SQLT_BIN:
+  case SQLT_VBI:
   case SQLT_LBI:
   case SQLT_LVB:
   case SQLT_BFILE:
