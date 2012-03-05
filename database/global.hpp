@@ -17,6 +17,7 @@ enum DBMS {
 
 enum column_type {
   VoidColumn,
+  Blob,
   Date,
   DateTime,
   Double,

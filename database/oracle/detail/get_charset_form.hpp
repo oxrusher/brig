@@ -11,14 +11,10 @@ namespace brig { namespace database { namespace oracle { namespace detail {
 
 inline ub1 get_charset_form(const object& lower_case_type)
 {
-  if (lower_case_type.schema.empty() &&
-    ( lower_case_type.name.find("char") != std::string::npos
-   || lower_case_type.name.find("varchar2") != std::string::npos
-   || lower_case_type.name.find("clob") != std::string::npos)
-    )
-    return SQLCS_IMPLICIT;
-  else
+  if (lower_case_type.schema.empty() && (lower_case_type.name.find("nchar") != std::string::npos || lower_case_type.name.find("nvarchar2") != std::string::npos || lower_case_type.name.find("nclob") != std::string::npos))
     return SQLCS_NCHAR;
+  else
+    return SQLCS_IMPLICIT;
 }
 
 } } } } // brig::database::oracle::detail

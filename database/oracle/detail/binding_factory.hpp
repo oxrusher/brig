@@ -13,6 +13,7 @@
 #include <brig/database/detail/is_geometry_type.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/oracle/detail/binding.hpp>
+#include <brig/database/oracle/detail/binding_blob.hpp>
 #include <brig/database/oracle/detail/binding_datetime.hpp>
 #include <brig/database/oracle/detail/binding_geometry.hpp>
 #include <brig/database/oracle/detail/binding_impl.hpp>
@@ -48,6 +49,7 @@ inline binding* binding_visitor::operator()(const null_t&) const
   switch (col? brig::database::detail::get_type(Oracle, *col): VoidColumn)
   {
     default: throw std::runtime_error("unsupported OCI parameter");
+    case Blob: return new binding_blob(hnd, i, 0, 0);
     case Date:
     case DateTime: return new binding_datetime(hnd, i);
     case Double: return new binding_impl<double, SQLT_FLT>(hnd, i);
@@ -62,7 +64,7 @@ inline binding* binding_visitor::operator()(const blob_t& r) const
   if (col && brig::database::detail::is_geometry_type(Oracle, *col))
     return new binding_geometry(hnd, i, r, col->srid);
   else
-    throw std::runtime_error("unsupported OCI parameter");
+    return new binding_blob(hnd, i, (void*)r.data(), ub4(r.size()));
 } // binding_visitor::
 
 inline binding* binding_factory(handles* hnd, size_t param, const variant& var, const column_detail* param_col)

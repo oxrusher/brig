@@ -5,10 +5,12 @@
 
 #include <brig/database/object.hpp>
 #include <brig/database/oracle/detail/define.hpp>
+#include <brig/database/oracle/detail/define_blob.hpp>
 #include <brig/database/oracle/detail/define_datetime.hpp>
 #include <brig/database/oracle/detail/define_geometry.hpp>
 #include <brig/database/oracle/detail/define_impl.hpp>
 #include <brig/database/oracle/detail/define_string.hpp>
+#include <brig/database/oracle/detail/get_charset_form.hpp>
 #include <brig/database/oracle/detail/handles.hpp>
 #include <brig/database/oracle/detail/lib.hpp>
 #include <cstdint>
@@ -16,18 +18,18 @@
 
 namespace brig { namespace database { namespace oracle { namespace detail {
 
-inline define* define_factory(handles* hnd, size_t order, ub2 data_type
-  , ub2 size, sb2 precision, sb1 scale, const object& lower_case_type)
+inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 size, sb2 precision, sb1 scale, const object& lower_case_type)
 {
   switch (data_type)
   {
   // binary
   //case SQLT_BIN:
   //case SQLT_VBI:
-  //case SQLT_LBI:
-  //case SQLT_LVB:
-  //case SQLT_BFILE:
-  //case SQLT_BLOB:
+  case SQLT_LBI:
+  case SQLT_LVB:
+  case SQLT_BFILE:
+  case SQLT_BLOB:
+    return new define_blob(hnd, order);
 
   // string
   case SQLT_AFC:

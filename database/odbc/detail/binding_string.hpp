@@ -12,15 +12,15 @@ namespace brig { namespace database { namespace odbc { namespace detail {
 
 class binding_string : public binding {
   std::basic_string<SQLWCHAR> m_str;
-  SQLSMALLINT m_sql_type;
   SQLLEN m_ind;
+  DBMS m_sys;
 public:
-  binding_string(const std::string& str, SQLSMALLINT sql_type)
+  binding_string(const std::string& str, DBMS sys)
     : m_str(brig::unicode::transform<decltype(m_str)>(str))
-    , m_sql_type(sql_type)
+    , m_sys(sys)
     { m_ind = m_str.size() * sizeof(SQLWCHAR); }
   virtual SQLSMALLINT c_type()  { return SQL_C_WCHAR; }
-  virtual SQLSMALLINT sql_type()  { return m_sql_type; }
+  virtual SQLSMALLINT sql_type()  { return get_sql_type_string(m_sys); }
   virtual SQLULEN precision()  { return m_str.size(); }
   virtual SQLPOINTER val_ptr()  { return SQLPOINTER(m_str.c_str()); }
   virtual SQLLEN* ind()  { return &m_ind; }

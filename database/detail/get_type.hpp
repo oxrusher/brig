@@ -29,6 +29,7 @@ inline column_type get_type(DBMS sys, const column_detail& col)
       else if ("datetime" == col.lower_case_type.name
             || "datetime2" == col.lower_case_type.name
             || "smalldatetime" == col.lower_case_type.name) return DateTime;
+      else if ("image" == col.lower_case_type.name) return Blob;
       break;
 
     case MySQL:
@@ -39,11 +40,16 @@ inline column_type get_type(DBMS sys, const column_detail& col)
     case Oracle:
       if (!col.lower_case_type.schema.empty()) return VoidColumn;
       else if ("long" == col.lower_case_type.name) return String;
+      else if ("binary_float" == col.lower_case_type.name
+            || "binary_double" == col.lower_case_type.name) return Double;
+      else if ("bfile" == col.lower_case_type.name
+            || (col.lower_case_type.name.find("long") != std::string::npos && col.lower_case_type.name.find("row") != std::string::npos)) return Blob;
       break;
 
     case Postgres:
       if ("user-defined" == col.lower_case_type.schema) return VoidColumn;
       else if (col.lower_case_type.name.find("serial") != std::string::npos) return Integer;
+      else if ("bytea" == col.lower_case_type.name) return Blob;
       break;
     }
 
@@ -59,6 +65,8 @@ inline column_type get_type(DBMS sys, const column_detail& col)
         || col.lower_case_type.name.find("double") != std::string::npos) return Double;
   else if (col.lower_case_type.name.find("dec") == 0
         || col.lower_case_type.name.find("num") == 0) return col.scale == 0? Integer: Double;
+  else if (col.lower_case_type.name.find("binary") != std::string::npos
+        || col.lower_case_type.name.find("blob") != std::string::npos) return Blob;
   else return VoidColumn;
 }
 

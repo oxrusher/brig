@@ -15,6 +15,7 @@ public:
   decltype(OCIAttrGet) *p_OCIAttrGet;
   decltype(OCIAttrSet) *p_OCIAttrSet;
   decltype(OCIBindByPos) *p_OCIBindByPos;
+  decltype(OCIBindDynamic) *p_OCIBindDynamic;
   decltype(OCIBindObject) *p_OCIBindObject;
   decltype(OCICollAppend) *p_OCICollAppend;
   decltype(OCICollGetElem) *p_OCICollGetElem;
@@ -23,6 +24,7 @@ public:
   decltype(OCIDateTimeGetDate) *p_OCIDateTimeGetDate;
   decltype(OCIDateTimeGetTime) *p_OCIDateTimeGetTime;
   decltype(OCIDefineByPos) *p_OCIDefineByPos;
+  decltype(OCIDefineDynamic) *p_OCIDefineDynamic;
   decltype(OCIDefineObject) *p_OCIDefineObject;
   decltype(OCIDescriptorAlloc) *p_OCIDescriptorAlloc;
   decltype(OCIDescriptorFree) *p_OCIDescriptorFree;
@@ -57,6 +59,7 @@ inline lib::lib() : p_OCITypeByName(0)
     && (p_OCIAttrGet = BRIG_DL_FUNCTION(handle, OCIAttrGet))
     && (p_OCIAttrSet = BRIG_DL_FUNCTION(handle, OCIAttrSet))
     && (p_OCIBindByPos = BRIG_DL_FUNCTION(handle, OCIBindByPos))
+    && (p_OCIBindDynamic = BRIG_DL_FUNCTION(handle, OCIBindDynamic))
     && (p_OCIBindObject = BRIG_DL_FUNCTION(handle, OCIBindObject))
     && (p_OCICollAppend = BRIG_DL_FUNCTION(handle, OCICollAppend))
     && (p_OCICollGetElem = BRIG_DL_FUNCTION(handle, OCICollGetElem))
@@ -65,6 +68,7 @@ inline lib::lib() : p_OCITypeByName(0)
     && (p_OCIDateTimeGetDate = BRIG_DL_FUNCTION(handle, OCIDateTimeGetDate))
     && (p_OCIDateTimeGetTime = BRIG_DL_FUNCTION(handle, OCIDateTimeGetTime))
     && (p_OCIDefineByPos = BRIG_DL_FUNCTION(handle, OCIDefineByPos))
+    && (p_OCIDefineDynamic = BRIG_DL_FUNCTION(handle, OCIDefineDynamic))
     && (p_OCIDefineObject = BRIG_DL_FUNCTION(handle, OCIDefineObject))
     && (p_OCIDescriptorAlloc = BRIG_DL_FUNCTION(handle, OCIDescriptorAlloc))
     && (p_OCIDescriptorFree = BRIG_DL_FUNCTION(handle, OCIDescriptorFree))

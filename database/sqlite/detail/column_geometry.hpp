@@ -8,6 +8,7 @@
 #include <brig/database/sqlite/detail/lib.hpp>
 #include <brig/detail/ogc.hpp>
 #include <cstdint>
+#include <cstring>
 #include <stdexcept>
 
 namespace brig { namespace database { namespace sqlite { namespace detail {

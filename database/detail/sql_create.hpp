@@ -29,6 +29,8 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
     // The TABLE_NAME and COLUMN_NAME values are always converted to uppercase when you insert them into the USER_SDO_GEOM_METADATA view
     tbl.table.name = transform<std::string>(tbl.table.name, upper_case);
 
+  auto pri_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_detail& idx){ return Primary == idx.type; });
+
   std::ostringstream stream; stream.imbue(loc);
   stream << "CREATE TABLE " << sql_identifier(sys, tbl.table.name) << " (";
   bool first(true);
@@ -55,6 +57,11 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
     stream << sql_identifier(sys, p_col->name) << " ";
 
     bool not_null(false);
+    if (pri_idx != tbl.indexes.end())
+      for (auto p_col_name = pri_idx->columns.begin(); p_col_name != pri_idx->columns.end(); ++p_col_name)
+        if (*p_col_name == p_col->name)
+           not_null = true;
+
     switch (sys)
     {
     case VoidSystem: throw std::runtime_error("sql error");
@@ -63,6 +70,7 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
       switch (p_col->type)
       {
       case VoidColumn: throw std::runtime_error("sql error");
+      case Blob: stream << "BLOB"; break;
       case Date: stream << "DATE"; break;
       case DateTime: stream << "TIMESTAMP"; break;
       case Double: stream << "DOUBLE"; break;
@@ -71,17 +79,19 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
       case String: stream << "VARGRAPHIC(255)"; break;
       }
       // When UNIQUE is used, null values are treated as any other values. For example, if the key is a single column that may contain null values, that column may contain no more than one null value.
-      for (auto p_idx = tbl.indexes.begin(); p_idx != tbl.indexes.end(); ++p_idx)
-        if (Primary == p_idx->type || Unique == p_idx->type)
-          for (auto p_col_name = p_idx->columns.begin(); p_col_name != p_idx->columns.end(); ++p_col_name)
-            if (*p_col_name == p_col->name)
-              not_null = true;
+      if (!not_null)
+        for (auto p_idx = tbl.indexes.begin(); p_idx != tbl.indexes.end(); ++p_idx)
+          if (Unique == p_idx->type)
+            for (auto p_col_name = p_idx->columns.begin(); p_col_name != p_idx->columns.end(); ++p_col_name)
+              if (*p_col_name == p_col->name)
+                not_null = true;
       break;
 
     case MS_SQL:
       switch (p_col->type)
       {
       case VoidColumn: throw std::runtime_error("sql error");
+      case Blob: stream << "VARBINARY(MAX)"; break;
       case Date: stream << "DATE"; break;
       case DateTime: stream << "DATETIME"; break;
       case Double: stream << "FLOAT"; break;
@@ -95,6 +105,7 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
       switch (p_col->type)
       {
       case VoidColumn: throw std::runtime_error("sql error");
+      case Blob: stream << "BLOB"; break;
       case Date: stream << "DATE"; break;
       case DateTime: stream << "DATETIME"; break;
       case Double: stream << "DOUBLE"; break;
@@ -117,6 +128,7 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
       switch (p_col->type)
       {
       case VoidColumn: throw std::runtime_error("sql error");
+      case Blob: stream << "BLOB"; break;
       case Date: stream << "DATE"; break;
       case DateTime: stream << "TIMESTAMP"; break;
       case Double: stream << "BINARY_DOUBLE"; break;
@@ -131,6 +143,7 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
       {
       case VoidColumn:
       case Geometry: throw std::runtime_error("sql error");
+      case Blob: stream << "BYTEA"; break;
       case Date: stream << "DATE"; break;
       case DateTime: stream << "TIMESTAMP"; break;
       case Double: stream << "DOUBLE PRECISION"; break;
@@ -144,6 +157,7 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
       {
       case VoidColumn:
       case Geometry: throw std::runtime_error("sql error");
+      case Blob: stream << "BLOB"; break;
       case Date: stream << "DATE"; break; // numeric affinity
       case DateTime: stream << "DATETIME"; break; // numeric affinity
       case Double: stream << "REAL"; break; // real affinity
@@ -157,13 +171,12 @@ inline std::vector<std::string> sql_create(DBMS sys, table_detail<column_abstrac
   }
 
   // primary key
-  auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_detail& idx){ return Primary == idx.type; });
-  if (p_idx != tbl.indexes.end())
+  if (pri_idx != tbl.indexes.end())
   {
-    p_idx->index = object();
+    pri_idx->index = object();
     stream << ", PRIMARY KEY (";
     first = true;
-    for (auto p_col_name = p_idx->columns.begin(); p_col_name != p_idx->columns.end(); ++p_col_name)
+    for (auto p_col_name = pri_idx->columns.begin(); p_col_name != pri_idx->columns.end(); ++p_col_name)
     {
       if (first)  { stream << ", "; first = false; }
       stream << sql_identifier(sys, *p_col_name);

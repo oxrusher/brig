@@ -21,8 +21,8 @@ inline bool is_geometry_type(DBMS sys, const column_detail& col)
   case Oracle: return "mdsys" == col.lower_case_type.schema && ("sdo_geometry" == col.lower_case_type.name || is_ogc_type(col.lower_case_type.name));
   case Postgres:
     return "user-defined" == col.lower_case_type.schema
-      && ("geometry" == col.lower_case_type.name || "geography" == col.lower_case_type.name)
-      && (col.lower_case_type.qualifier.empty() || is_ogc_type(col.lower_case_type.qualifier));
+       && ("raster" == col.lower_case_type.name || "geography" == col.lower_case_type.name || "geometry" == col.lower_case_type.name)
+       && (col.lower_case_type.qualifier.empty() || is_ogc_type(col.lower_case_type.qualifier));
   }
   return false;
 }

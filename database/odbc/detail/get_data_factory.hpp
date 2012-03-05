@@ -23,7 +23,7 @@ inline get_data* get_data_factory(SQLSMALLINT sql_type)
 
   switch (sql_type)
   {
-  // arithmetic
+  // numeric
   case SQL_BIT:
   case SQL_TINYINT:
   case SQL_SMALLINT: return new get_data_impl<int16_t, SQL_C_SSHORT>();
