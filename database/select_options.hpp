@@ -12,11 +12,10 @@
 namespace brig { namespace database {
 
 struct select_options {
+  std::vector<column_detail> expression_columns;
+  std::string sql_filter;
   std::string geometry_column;
   brig::boost::box box;
-  std::string sql_filter;
-  std::vector<variant> parameters;
-  std::vector<column_detail> expression_columns;
   std::vector<std::string> select_columns;
   int rows;
 

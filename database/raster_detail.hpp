@@ -3,26 +3,23 @@
 #ifndef BRIG_DATABASE_RASTER_DETAIL_HPP
 #define BRIG_DATABASE_RASTER_DETAIL_HPP
 
+#include <boost/variant/get.hpp>
+#include <boost/variant/variant.hpp>
 #include <brig/boost/geometry.hpp>
 #include <brig/database/column_detail.hpp>
-#include <brig/database/object.hpp>
-#include <brig/database/variant.hpp>
+#include <brig/database/identifier.hpp>
 #include <string>
-#include <vector>
 
 namespace brig { namespace database {
 
 struct raster_detail {
   brig::boost::point resolution;
-  subobject geometry_layer;
+  identifier geometry_layer;
+  ::boost::variant<std::string, column_detail> raster_column;
   std::string sql_filter;
-  std::vector<variant> parameters;
-  column_detail raster_column;
 
   raster_detail() : resolution(0, 0)  {}
 }; // raster_detail
-
-struct raster_pyramid : std::vector<raster_detail>  { subobject base; };
 
 } } // brig::database
 

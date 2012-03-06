@@ -6,7 +6,6 @@
 #include <brig/database/column_detail.hpp>
 #include <brig/database/detail/is_geometry_type.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
-#include <brig/database/detail/sql_object.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/rowset.hpp>
 #include <brig/database/variant.hpp>
@@ -45,11 +44,11 @@ inline std::string command::sql_parameter(size_t, const column_detail& param_col
     switch (sys)
     {
     case DB2:
-      stream << sql_object(sys, param_col.type) << "(CAST(? AS BLOB (100M)), " << param_col.srid << ")";
+      stream << sql_identifier(sys, param_col.type) << "(CAST(? AS BLOB (100M)), " << param_col.srid << ")";
       return stream.str();
 
     case MS_SQL:
-      stream << sql_object(sys, param_col.type) << "::STGeomFromWKB(?, " << param_col.srid << ")";
+      stream << sql_identifier(sys, param_col.type) << "::STGeomFromWKB(?, " << param_col.srid << ")";
       return stream.str();
 
     case MySQL:
@@ -60,7 +59,7 @@ inline std::string command::sql_parameter(size_t, const column_detail& param_col
     case Oracle:
       {
       const bool conv("sdo_geometry" != param_col.lower_case_type.name);
-      if (conv) stream << sql_object(sys, param_col.type) << "(";
+      if (conv) stream << sql_identifier(sys, param_col.type) << "(";
       stream << "MDSYS.SDO_GEOMETRY(TO_BLOB(?), " << param_col.srid << ")";
       if (conv) stream << ")";
       }
@@ -103,7 +102,7 @@ inline std::string command::sql_column(const column_detail& col)
     case MS_SQL: return id + ".STAsBinary() " + id;
     case MySQL:
     case SQLite: return "AsBinary(" + id + ") " + id;
-    case Oracle: return sql_object(sys, col.type) + ".GET_WKB(" + id + ") " + id;
+    case Oracle: return sql_identifier(sys, col.type) + ".GET_WKB(" + id + ") " + id;
     }
 
   return id;

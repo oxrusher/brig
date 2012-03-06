@@ -12,13 +12,11 @@
 #include <brig/database/detail/sql_box_filter.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/detail/sql_limit.hpp>
-#include <brig/database/detail/sql_object.hpp>
 #include <brig/database/detail/sql_select_list.hpp>
 #include <brig/database/global.hpp>
-#include <brig/database/index_detail.hpp>
-#include <brig/database/object.hpp>
+#include <brig/database/index_definition.hpp>
 #include <brig/database/select_options.hpp>
-#include <brig/database/table_detail.hpp>
+#include <brig/database/table_definition.hpp>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -28,7 +26,7 @@ namespace brig { namespace database { namespace detail {
 template <typename Dialect>
 std::string sql_table
   ( Dialect* dct
-  , const table_detail<column_detail>& tbl
+  , const table_definition<column_detail>& tbl
   , const select_options& opts
   )
 {
@@ -49,7 +47,7 @@ std::string sql_table
   {
     std::string res;
     if (!sql_condition.empty()) res += "SELECT * FROM (";
-    res += "SELECT " + sql_infix + " " + sql_select_list(dct, select_cols) + " FROM " + sql_object(sys, tbl.table);
+    res += "SELECT " + sql_infix + " " + sql_select_list(dct, select_cols) + " FROM " + sql_identifier(sys, tbl.id);
     if (!opts.sql_filter.empty()) res += " WHERE " + opts.sql_filter;
     if (!sql_condition.empty()) res += ") WHERE " + sql_condition;
     res += " " + sql_suffix;
@@ -66,18 +64,18 @@ std::string sql_table
   std::string sql_hint;
   if (MS_SQL == sys)
   {
-    auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_detail& idx){ return idx.type == Spatial && idx.columns.front() == opts.geometry_column; });
+    auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return idx.type == Spatial && idx.columns.front() == opts.geometry_column; });
     if (p_idx == tbl.indexes.end()) throw std::runtime_error("sql error");
-    sql_hint = "WITH(INDEX(" + sql_object(sys, p_idx->index) + "))";
+    sql_hint = "WITH(INDEX(" + sql_identifier(sys, p_idx->id) + "))";
   }
 
   std::vector<column_detail> unique_cols;
-  auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_detail& idx){ return idx.type == Primary; });
-  if (p_idx == tbl.indexes.end()) p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_detail& idx){ return idx.type == Unique; });
+  auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return idx.type == Primary; });
+  if (p_idx == tbl.indexes.end()) p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return idx.type == Unique; });
   if (p_idx != tbl.indexes.end()) unique_cols = get_columns(cols, p_idx->columns);
 
   // key table
-  std::string sql_key_tbl, sql_tbl(sql_object(sys, tbl.table));
+  std::string sql_key_tbl, sql_tbl(sql_identifier(sys, tbl.id));
   if (MS_SQL == sys && boxes.size() > 1)
   {
     if (unique_cols.empty()) throw std::runtime_error("sql error");
@@ -103,7 +101,7 @@ std::string sql_table
   else if (SQLite == sys)
   {
     if (unique_cols.size() != 1) throw std::runtime_error("sql error");
-    sql_key_tbl += "SELECT pkid " + sql_identifier(sys, unique_cols[0].name) + " FROM " + sql_identifier(sys, "idx_" + tbl.table.name + "_" + opts.geometry_column) + " WHERE ";
+    sql_key_tbl += "SELECT pkid " + sql_identifier(sys, unique_cols[0].name) + " FROM " + sql_identifier(sys, "idx_" + tbl.id.name + "_" + opts.geometry_column) + " WHERE ";
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql_key_tbl += " OR ";

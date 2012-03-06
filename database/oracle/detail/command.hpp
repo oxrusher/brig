@@ -7,9 +7,8 @@
 #include <brig/database/command.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
-#include <brig/database/detail/sql_object.hpp>
 #include <brig/database/global.hpp>
-#include <brig/database/object.hpp>
+#include <brig/database/identifier.hpp>
 #include <brig/database/oracle/detail/binding.hpp>
 #include <brig/database/oracle/detail/binding_factory.hpp>
 #include <brig/database/oracle/detail/define.hpp>
@@ -161,7 +160,7 @@ inline std::vector<std::string> command::columns()
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_schema, &type_schema_len, OCI_ATTR_SCHEMA_NAME, m_hnd.err));
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_name, &type_name_len, OCI_ATTR_TYPE_NAME, m_hnd.err));
 
-      object lower_case_type;
+      identifier lower_case_type;
       lower_case_type.schema = transform<std::string>(type_schema, lower_case);
       lower_case_type.name = transform<std::string>(type_name, lower_case);
 
@@ -198,7 +197,7 @@ inline std::string command::sql_parameter(size_t order, const column_detail& par
   using namespace brig::database::detail;
   std::ostringstream stream; stream.imbue(std::locale::classic());
   if ("mdsys" == param_col.lower_case_type.schema && is_ogc_type(param_col.lower_case_type.name))
-    stream << sql_object(Oracle, param_col.type) << "(:" << (order + 1) << ")";
+    stream << sql_identifier(Oracle, param_col.type) << "(:" << (order + 1) << ")";
   else
     stream << ":" << (order + 1);
   return stream.str();
@@ -210,7 +209,7 @@ inline std::string command::sql_column(const column_detail& col)
   if (col.sql_expression.empty() && "mdsys" == col.lower_case_type.schema && is_ogc_type(col.lower_case_type.name))
   {
     const std::string id(sql_identifier(Oracle, col.name));
-    return sql_object(Oracle, col.type) + ".GET_SDO_GEOM(" + id + ") " + id;
+    return sql_identifier(Oracle, col.type) + ".GET_SDO_GEOM(" + id + ") " + id;
   }
   else
     return brig::database::command::sql_column(col);

@@ -3,7 +3,7 @@
 #ifndef BRIG_DATABASE_ORACLE_DETAIL_DEFINE_FACTORY_HPP
 #define BRIG_DATABASE_ORACLE_DETAIL_DEFINE_FACTORY_HPP
 
-#include <brig/database/object.hpp>
+#include <brig/database/identifier.hpp>
 #include <brig/database/oracle/detail/define.hpp>
 #include <brig/database/oracle/detail/define_blob.hpp>
 #include <brig/database/oracle/detail/define_datetime.hpp>
@@ -18,7 +18,7 @@
 
 namespace brig { namespace database { namespace oracle { namespace detail {
 
-inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 size, sb2 precision, sb1 scale, const object& lower_case_type)
+inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 size, sb2 precision, sb1 scale, const identifier& lower_case_type)
 {
   switch (data_type)
   {

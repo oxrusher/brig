@@ -7,12 +7,12 @@
 #include <brig/database/column_detail.hpp>
 #include <brig/database/command.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
-#include <brig/database/detail/sql_object.hpp>
+#include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
-#include <brig/database/index_detail.hpp>
+#include <brig/database/identifier.hpp>
+#include <brig/database/index_definition.hpp>
 #include <brig/database/numeric_cast.hpp>
-#include <brig/database/object.hpp>
-#include <brig/database/table_detail.hpp>
+#include <brig/database/table_definition.hpp>
 #include <brig/detail/string_cast.hpp>
 #include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
@@ -22,17 +22,17 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> cmd, const object& tbl)
+inline table_definition<column_detail> sqlite_table_detail(std::shared_ptr<command> cmd, const identifier& tbl)
 {
   using namespace brig::detail;
   using namespace brig::unicode;
 
   // columns
-  table_detail<column_detail> res;
-  res.table = tbl;
+  table_definition<column_detail> res;
+  res.id = tbl;
   std::vector<std::string> keys;
   std::vector<variant> row;
-  cmd->exec("PRAGMA TABLE_INFO(" + sql_object(SQLite, tbl) + ')');
+  cmd->exec("PRAGMA TABLE_INFO(" + sql_identifier(SQLite, tbl) + ')');
   while (cmd->fetch(row))
   {
     column_detail col;
@@ -48,7 +48,7 @@ inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> 
 
   if (!keys.empty())
   {
-    index_detail pri_idx;
+    index_definition pri_idx;
     pri_idx.type = Primary;
     pri_idx.columns = keys;
     res.indexes.push_back(pri_idx);
@@ -56,11 +56,11 @@ inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> 
   }
 
   // indexes
-  cmd->exec("PRAGMA INDEX_LIST(" + sql_object(SQLite, tbl) + ')');
+  cmd->exec("PRAGMA INDEX_LIST(" + sql_identifier(SQLite, tbl) + ')');
   while (cmd->fetch(row))
   {
-    index_detail idx;
-    idx.index.name = string_cast<char>(row[1]);
+    index_definition idx;
+    idx.id.name = string_cast<char>(row[1]);
     int unique(0);
     idx.type = (numeric_cast(row[2], unique) && !unique)? Duplicate: Unique;
     res.indexes.push_back(idx);
@@ -69,9 +69,9 @@ inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> 
   // indexed columns
   for (size_t i(0); i < res.indexes.size(); ++i)
   {
-    if (res.indexes[i].index.name.empty()) continue;
+    if (res.indexes[i].id.name.empty()) continue;
 
-    cmd->exec("PRAGMA INDEX_INFO(" + sql_object(SQLite, res.indexes[i].index) + ')');
+    cmd->exec("PRAGMA INDEX_INFO(" + sql_identifier(SQLite, res.indexes[i].id) + ')');
     std::vector<std::string> cols;
     std::vector<std::pair<int, std::string>> seq_cols;
     while (cmd->fetch(row))
@@ -96,7 +96,7 @@ inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> 
       res.indexes[0].columns = std::move(res.indexes[i].columns);
     }
   }
-  auto end = std::remove_if(res.indexes.begin(), res.indexes.end(), [](const index_detail& idx){ return VoidIndex == idx.type; });
+  auto end = std::remove_if(res.indexes.begin(), res.indexes.end(), [](const index_definition& idx){ return VoidIndex == idx.type; });
   res.indexes.resize(std::distance(res.indexes.begin(), end));
 
   // srid, epsg, spatial index
@@ -112,7 +112,7 @@ inline table_detail<column_detail> sqlite_table_detail(std::shared_ptr<command> 
         int indexed(0);
         if (numeric_cast(row[2], indexed) && indexed == 1)
         {
-          index_detail idx;
+          index_definition idx;
           idx.type = Spatial;
           idx.columns.push_back(res.columns[i].name);
           res.indexes.push_back(idx);

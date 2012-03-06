@@ -14,8 +14,7 @@ namespace brig { namespace database { namespace detail {
 
 inline std::string sql_tables(DBMS sys, const std::string& tbl_filter = std::string())  // TABLE_SCHEMA, TABLE_NAME
 {
-  std::ostringstream stream;
-  stream.imbue(std::locale::classic());
+  std::ostringstream stream; stream.imbue(std::locale::classic());
   switch (sys)
   {
   default: throw std::runtime_error("sql error");

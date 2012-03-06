@@ -4,13 +4,13 @@
 #define BRIG_DATABASE_DETAIL_SQL_COLUMNS_HPP
 
 #include <brig/database/global.hpp>
-#include <brig/database/object.hpp>
+#include <brig/database/identifier.hpp>
 #include <stdexcept>
 #include <string>
 
 namespace brig { namespace database { namespace detail {
 
-inline std::string sql_columns(DBMS sys, const object& tbl)
+inline std::string sql_columns(DBMS sys, const identifier& tbl)
 {
   switch (sys)
   {
