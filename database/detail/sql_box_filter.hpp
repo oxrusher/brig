@@ -4,8 +4,7 @@
 #define BRIG_DATABASE_DETAIL_SQL_BOX_FILTER_HPP
 
 #include <brig/boost/geometry.hpp>
-#include <brig/database/column_detail.hpp>
-#include <brig/database/detail/is_geometry_type.hpp>
+#include <brig/database/column_definition.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
 #include <locale>
@@ -16,7 +15,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline std::string sql_box_filter(DBMS sys, const column_detail& col, const boost::box& box)
+inline std::string sql_box_filter(DBMS sys, const column_definition& col, const boost::box& box)
 {
   const std::string id(sql_identifier(sys, col.name));
   const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>());
@@ -42,7 +41,7 @@ inline std::string sql_box_filter(DBMS sys, const column_detail& col, const boos
     if (geography) stream << "))";
   }
 
-  else if (!is_geometry_type(sys, col))
+  else if (Geometry != col.type)
     throw std::runtime_error("sql error");
 
   else switch (sys)

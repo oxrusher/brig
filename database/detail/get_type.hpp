@@ -3,13 +3,13 @@
 #ifndef BRIG_DATABASE_DETAIL_GET_TYPE_HPP
 #define BRIG_DATABASE_DETAIL_GET_TYPE_HPP
 
-#include <brig/database/column_detail.hpp>
+#include <brig/database/column_definition.hpp>
 #include <brig/database/detail/is_geometry_type.hpp>
 #include <brig/database/global.hpp>
 
 namespace brig { namespace database { namespace detail {
 
-inline column_type get_type(DBMS sys, const column_detail& col)
+inline column_type get_type(DBMS sys, const column_definition& col)
 {
   if (is_geometry_type(sys, col)) return Geometry;
   else

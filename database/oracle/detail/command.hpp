@@ -36,12 +36,12 @@ public:
   command(const std::string& srv, const std::string& usr, const std::string& pwd);
   virtual ~command()  { close_all(); }
   virtual DBMS system()  { return Oracle; }
-  virtual std::string sql_parameter(size_t order, const column_detail& param_col);
-  virtual std::string sql_column(const column_detail& col);
+  virtual std::string sql_parameter(size_t order, const column_definition& param_col);
+  virtual std::string sql_column(const column_definition& col);
   virtual void exec
     ( const std::string& sql
     , const std::vector<variant>& params = std::vector<variant>()
-    , const std::vector<column_detail>& param_cols = std::vector<column_detail>()
+    , const std::vector<column_definition>& param_cols = std::vector<column_definition>()
     );
   virtual size_t affected();
   virtual std::vector<std::string> columns();
@@ -106,7 +106,7 @@ inline command::command(const std::string& srv_, const std::string& usr_, const 
   catch (const std::exception&)  { close_all(); throw; }
 }
 
-inline void command::exec(const std::string& sql_, const std::vector<variant>& params, const std::vector<column_detail>& param_cols)
+inline void command::exec(const std::string& sql_, const std::vector<variant>& params, const std::vector<column_definition>& param_cols)
 {
   const std::u16string sql(brig::unicode::transform<std::u16string>(sql_));
 
@@ -192,24 +192,24 @@ inline bool command::fetch(std::vector<variant>& row)
   return true;
 }
 
-inline std::string command::sql_parameter(size_t order, const column_detail& param_col)
+inline std::string command::sql_parameter(size_t order, const column_definition& param_col)
 {
   using namespace brig::database::detail;
   std::ostringstream stream; stream.imbue(std::locale::classic());
   if ("mdsys" == param_col.lower_case_type.schema && is_ogc_type(param_col.lower_case_type.name))
-    stream << sql_identifier(Oracle, param_col.type) << "(:" << (order + 1) << ")";
+    stream << sql_identifier(Oracle, param_col.dbms_type) << "(:" << (order + 1) << ")";
   else
     stream << ":" << (order + 1);
   return stream.str();
 }
 
-inline std::string command::sql_column(const column_detail& col)
+inline std::string command::sql_column(const column_definition& col)
 {
   using namespace brig::database::detail;
   if (col.sql_expression.empty() && "mdsys" == col.lower_case_type.schema && is_ogc_type(col.lower_case_type.name))
   {
     const std::string id(sql_identifier(Oracle, col.name));
-    return sql_identifier(Oracle, col.type) + ".GET_SDO_GEOM(" + id + ") " + id;
+    return sql_identifier(Oracle, col.dbms_type) + ".GET_SDO_GEOM(" + id + ") " + id;
   }
   else
     return brig::database::command::sql_column(col);

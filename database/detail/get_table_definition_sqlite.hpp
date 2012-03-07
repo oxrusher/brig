@@ -1,11 +1,12 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_DETAIL_SQLITE_TABLE_DETAIL_HPP
-#define BRIG_DATABASE_DETAIL_SQLITE_TABLE_DETAIL_HPP
+#ifndef BRIG_DATABASE_DETAIL_GET_TABLE_DEFINITION_SQLITE_HPP
+#define BRIG_DATABASE_DETAIL_GET_TABLE_DEFINITION_SQLITE_HPP
 
 #include <algorithm>
-#include <brig/database/column_detail.hpp>
+#include <brig/database/column_definition.hpp>
 #include <brig/database/command.hpp>
+#include <brig/database/detail/get_type.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
@@ -13,32 +14,36 @@
 #include <brig/database/index_definition.hpp>
 #include <brig/database/numeric_cast.hpp>
 #include <brig/database/table_definition.hpp>
+#include <brig/database/variant.hpp>
 #include <brig/detail/string_cast.hpp>
 #include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-inline table_definition<column_detail> sqlite_table_detail(std::shared_ptr<command> cmd, const identifier& tbl)
+inline table_definition get_table_definition_sqlite(std::shared_ptr<command> cmd, const identifier& tbl)
 {
   using namespace brig::detail;
   using namespace brig::unicode;
 
   // columns
-  table_definition<column_detail> res;
+  table_definition res;
   res.id = tbl;
   std::vector<std::string> keys;
   std::vector<variant> row;
   cmd->exec("PRAGMA TABLE_INFO(" + sql_identifier(SQLite, tbl) + ')');
   while (cmd->fetch(row))
   {
-    column_detail col;
+    column_definition col;
     col.name = string_cast<char>(row[1]);
-    col.type.name = string_cast<char>(row[2]);
-    col.lower_case_type.name = transform<std::string>(col.type.name, lower_case);
+    col.dbms_type.name = string_cast<char>(row[2]);
+    col.lower_case_type.name = transform<std::string>(col.dbms_type.name, lower_case);
+    col.type = get_type(SQLite, col);
     res.columns.push_back(col);
 
     int key(0);
@@ -125,4 +130,4 @@ inline table_definition<column_detail> sqlite_table_detail(std::shared_ptr<comma
 
 } } } // brig::database::detail
 
-#endif // BRIG_DATABASE_DETAIL_SQLITE_TABLE_DETAIL_HPP
+#endif // BRIG_DATABASE_DETAIL_GET_TABLE_DEFINITION_SQLITE_HPP

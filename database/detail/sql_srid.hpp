@@ -3,8 +3,7 @@
 #ifndef BRIG_DATABASE_DETAIL_SQL_SRID_HPP
 #define BRIG_DATABASE_DETAIL_SQL_SRID_HPP
 
-#include <brig/database/column_detail.hpp>
-#include <brig/database/detail/is_geometry_type.hpp>
+#include <brig/database/column_definition.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/identifier.hpp>
@@ -13,7 +12,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline std::string sql_srid(const DBMS sys, const identifier& tbl, const column_detail& col)
+inline std::string sql_srid(const DBMS sys, const identifier& tbl, const column_definition & col)
 {
   if (Postgres == sys)
   {
@@ -24,7 +23,7 @@ inline std::string sql_srid(const DBMS sys, const identifier& tbl, const column_
     else return "";
   }
 
-  if (!is_geometry_type(sys, col))
+  if (Geometry != col.type)
     return "";
 
   switch (sys)

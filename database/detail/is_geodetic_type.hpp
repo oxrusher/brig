@@ -3,15 +3,14 @@
 #ifndef BRIG_DATABASE_DETAIL_IS_GEODETIC_TYPE_HPP
 #define BRIG_DATABASE_DETAIL_IS_GEODETIC_TYPE_HPP
 
-#include <brig/database/column_detail.hpp>
-#include <brig/database/detail/is_geometry_type.hpp>
+#include <brig/database/column_definition.hpp>
 #include <brig/database/global.hpp>
 
 namespace brig { namespace database { namespace detail {
 
-inline bool is_geodetic_type(DBMS sys, const column_detail& col)
+inline bool is_geodetic_type(DBMS sys, const column_definition& col)
 {
-  if (is_geometry_type(sys, col))
+  if (Geometry == col.type)
     switch (sys)
     {
     case DB2: return 2000000000 <= col.srid && col.srid <= 2000001000;

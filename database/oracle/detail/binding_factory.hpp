@@ -8,9 +8,7 @@
 #include <boost/variant/apply_visitor.hpp>
 #include <boost/variant/static_visitor.hpp>
 #include <brig/blob_t.hpp>
-#include <brig/database/column_detail.hpp>
-#include <brig/database/detail/get_type.hpp>
-#include <brig/database/detail/is_geometry_type.hpp>
+#include <brig/database/column_definition.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/oracle/detail/binding.hpp>
 #include <brig/database/oracle/detail/binding_blob.hpp>
@@ -30,8 +28,8 @@ namespace brig { namespace database { namespace oracle { namespace detail {
 struct binding_visitor : ::boost::static_visitor<binding*> {
   handles* hnd;
   size_t i;
-  const column_detail* col;
-  binding_visitor(handles* hnd_, size_t i_, const column_detail* col_) : hnd(hnd_), i(i_), col(col_)  {}
+  const column_definition* col;
+  binding_visitor(handles* hnd_, size_t i_, const column_definition* col_) : hnd(hnd_), i(i_), col(col_)  {}
   binding* operator()(const null_t&) const;
   binding* operator()(int16_t v) const  { return new binding_impl<int16_t, SQLT_INT>(hnd, i, v); }
   binding* operator()(int32_t v) const  { return new binding_impl<int32_t, SQLT_INT>(hnd, i, v); }
@@ -46,7 +44,7 @@ struct binding_visitor : ::boost::static_visitor<binding*> {
 
 inline binding* binding_visitor::operator()(const null_t&) const
 {
-  switch (col? brig::database::detail::get_type(Oracle, *col): VoidColumn)
+  switch (col? col->type: VoidColumn)
   {
     default: throw std::runtime_error("unsupported OCI parameter");
     case Blob: return new binding_blob(hnd, i, 0, 0);
@@ -61,13 +59,13 @@ inline binding* binding_visitor::operator()(const null_t&) const
 
 inline binding* binding_visitor::operator()(const blob_t& r) const
 {
-  if (col && brig::database::detail::is_geometry_type(Oracle, *col))
+  if (col && Geometry == col->type)
     return new binding_geometry(hnd, i, r, col->srid);
   else
     return new binding_blob(hnd, i, (void*)r.data(), ub4(r.size()));
 } // binding_visitor::
 
-inline binding* binding_factory(handles* hnd, size_t param, const variant& var, const column_detail* param_col)
+inline binding* binding_factory(handles* hnd, size_t param, const variant& var, const column_definition* param_col)
 {
   return ::boost::apply_visitor(binding_visitor(hnd, param + 1, param_col), var);
 }

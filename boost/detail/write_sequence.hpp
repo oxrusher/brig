@@ -13,9 +13,9 @@
 namespace brig { namespace boost { namespace detail {
 
 template <typename Geometry> struct traits;
-template <> struct traits<multilinestring>  { static const uint32_t ogc_type = brig::detail::ogc::MultiLineString; };
-template <> struct traits<multipoint>  { static const uint32_t ogc_type = brig::detail::ogc::MultiPoint; };
-template <> struct traits<multipolygon>  { static const uint32_t ogc_type = brig::detail::ogc::MultiPolygon; };
+template <> struct traits<multi_linestring>  { static const uint32_t ogc_type = brig::detail::ogc::MultiLineString; };
+template <> struct traits<multi_point>  { static const uint32_t ogc_type = brig::detail::ogc::MultiPoint; };
+template <> struct traits<multi_polygon>  { static const uint32_t ogc_type = brig::detail::ogc::MultiPolygon; };
 
 template <typename OutputIterator, typename Sequence>
 void write(OutputIterator& iter, const Sequence& seq)

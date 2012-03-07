@@ -3,8 +3,6 @@
 #ifndef BRIG_DATABASE_DETAIL_SQL_DROP_HPP
 #define BRIG_DATABASE_DETAIL_SQL_DROP_HPP
 
-#include <brig/database/column_detail.hpp>
-#include <brig/database/detail/is_geometry_type.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/table_definition.hpp>
@@ -14,7 +12,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline std::vector<std::string> sql_drop(DBMS sys, const table_definition<column_detail>& tbl)
+inline std::vector<std::string> sql_drop(DBMS sys, const table_definition& tbl)
 {
   std::vector<std::string> res;
 
@@ -29,7 +27,7 @@ inline std::vector<std::string> sql_drop(DBMS sys, const table_definition<column
 
   for (auto p_col = tbl.columns.begin(); p_col != tbl.columns.end(); ++p_col)
   {
-    if (!is_geometry_type(sys, *p_col)) continue;
+    if (Geometry != p_col->type) continue;
     switch (sys)
     {
     case VoidSystem: throw std::runtime_error("sql error");

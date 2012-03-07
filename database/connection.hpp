@@ -6,41 +6,33 @@
 #include <algorithm>
 #include <brig/boost/geometry.hpp>
 #include <brig/database/column_definition.hpp>
-#include <brig/database/column_detail.hpp>
 #include <brig/database/command.hpp>
 #include <brig/database/command_allocator.hpp>
 #include <brig/database/detail/deleter.hpp>
-#include <brig/database/detail/get_rasters.hpp>
+#include <brig/database/detail/get_raster_layers_postgres.hpp>
+#include <brig/database/detail/get_raster_layers_simple.hpp>
+#include <brig/database/detail/get_raster_layers_sqlite.hpp>
+#include <brig/database/detail/get_table_definition.hpp>
 #include <brig/database/detail/get_type.hpp>
 #include <brig/database/detail/pool.hpp>
-#include <brig/database/detail/sql_columns.hpp>
 #include <brig/database/detail/sql_create.hpp>
 #include <brig/database/detail/sql_drop.hpp>
 #include <brig/database/detail/sql_geometry_layers.hpp>
-#include <brig/database/detail/sql_indexed_columns.hpp>
 #include <brig/database/detail/sql_insert.hpp>
 #include <brig/database/detail/sql_mbr.hpp>
-#include <brig/database/detail/sql_srid.hpp>
 #include <brig/database/detail/sql_table.hpp>
 #include <brig/database/detail/sql_tables.hpp>
-#include <brig/database/detail/sqlite_table_detail.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/identifier.hpp>
 #include <brig/database/index_definition.hpp>
 #include <brig/database/numeric_cast.hpp>
-#include <brig/database/raster_detail.hpp>
-#include <brig/database/raster_pyramid.hpp>
+#include <brig/database/raster_definition.hpp>
 #include <brig/database/rowset.hpp>
 #include <brig/database/table_definition.hpp>
 #include <brig/database/variant.hpp>
 #include <brig/detail/string_cast.hpp>
-#include <brig/unicode/lower_case.hpp>
-#include <brig/unicode/transform.hpp>
-#include <ios>
 #include <iterator>
-#include <locale>
 #include <memory>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -57,19 +49,17 @@ public:
 
   std::vector<identifier> get_tables();
   std::vector<identifier> get_geometry_layers();
-  std::vector<raster_pyramid<raster_detail>> get_raster_layers();
-  table_definition<column_detail> get_table_detail(const identifier& tbl);
-  table_definition<column_definition> as_table_definition(const table_definition<column_detail>& tbl);
+  std::vector<raster_definition> get_raster_layers();
+  table_definition get_table_definition(const identifier& tbl);
+  void get_mbr(const identifier& tbl, column_definition& col);
 
-  brig::boost::box get_mbr(const identifier& tbl, const column_detail& col);
-
-  std::shared_ptr<rowset> get_table(const table_definition<column_detail>& tbl, const select_options& opts = select_options());
+  std::shared_ptr<rowset> get_table(const table_definition& tbl, const select_options& opts = select_options());
 
   std::shared_ptr<command> get_command()  { return std::shared_ptr<command>(m_pool->allocate(), detail::deleter<pool_type>(m_pool)); }
-  void before_create(table_definition<column_definition>& tbl);
-  std::vector<std::string> sql_create(table_definition<column_definition>& tbl)  { return detail::sql_create(get_command()->system(), tbl); }
-  std::vector<std::string> sql_drop(const table_definition<column_detail>& tbl)  { return detail::sql_drop(get_command()->system(), tbl); }
-  std::string sql_insert(const table_definition<column_detail>& tbl, const std::vector<std::string>& cols = std::vector<std::string>());
+  void before_create(table_definition& tbl);
+  std::vector<std::string> sql_create(table_definition& tbl);
+  std::vector<std::string> sql_drop(const table_definition& tbl)  { return detail::sql_drop(get_command()->system(), tbl); }
+  std::string sql_insert(const table_definition& tbl, const std::vector<std::string>& cols = std::vector<std::string>());
 }; // connection
 
 template <bool Threading>
@@ -121,218 +111,45 @@ std::vector<identifier> connection<Threading>::get_geometry_layers()
 }
 
 template <bool Threading>
-std::vector<raster_pyramid<raster_detail>> connection<Threading>::get_raster_layers()
+std::vector<raster_definition> connection<Threading>::get_raster_layers()
 {
   using namespace brig::database::detail;
-  using namespace brig::detail;
-  using namespace brig::unicode;
 
   auto cmd = get_command();
-  const DBMS sys(cmd->system());
-  std::vector<raster_pyramid<raster_detail>> simple;
-  auto cmp = [](const raster_pyramid<raster_detail>& a, const raster_pyramid<raster_detail>& b){ return a.base.schema < b.base.schema || a.base.name < b.base.name || a.base.qualifier < b.base.qualifier; };
-  std::vector<variant> row;
+  std::vector<raster_definition> simple = get_raster_layers_simple(cmd);
 
-  /*cmd->exec(sql_tables(sys, "simple_rasters"));
-  if (cmd->fetch(row))
+  std::vector<raster_definition> specific;
+  switch (cmd->system())
   {
-    identifier tbl;
-    tbl.schema = string_cast<char>(row[0]);
-    tbl.name = string_cast<char>(row[1]);
-    cmd->exec("SELECT r.base_schema base_scm, r.base_table base_tbl, r.base_raster_column base_col, r.resolution_x res_x, r.resolution_y res_y, r.schema, r.table, r.geometry_column, r.raster_column FROM " + sql_identifier(sys, tbl) + " r JOIN (" + sql_geometry_layers(sys) + ") g ON r.schema = g.scm AND r.table = g.tbl AND r.geometry_column = g.col ORDER BY base_scm, base_tbl, base_col, res_x, res_y");
-    simple = get_rasters(cmd);
-  }*/
-
-  if (SQLite == sys)
-  {
-    cmd->exec(sql_tables(sys, "raster_pyramids"));
-    if (cmd->fetch(row))
-    {
-      cmd->exec("SELECT '', (r.table_prefix || '_rasters') base_tbl, 'raster' base_col, r.pixel_x_size res_x, r.pixel_y_size res_y, '', (r.table_prefix || '_metadata'), 'geometry', 'raster' FROM raster_pyramids r JOIN (" + sql_geometry_layers(sys) + ") g ON g.tbl = (r.table_prefix || '_metadata') ORDER BY base_tbl, base_col, res_x, res_y");
-      auto rasterlite = get_rasters(cmd);
-      for (size_t r(0); r < rasterlite.size(); ++r)
-        for (size_t l(0); l < rasterlite[r].size(); ++l)
-        {
-          const std::string tbl(sql_identifier(sys, rasterlite[r].base));
-          const std::string hint((double(l) / double(rasterlite[r].size())) < 0.15? "+": "");
-
-          column_detail col;
-          col.name = ::boost::get<std::string>(rasterlite[r][l].raster_column);
-          col.sql_expression = "(SELECT raster FROM " + tbl + " WHERE " + tbl + ".id = id)";
-          col.type.name = "BLOB";
-          col.lower_case_type.name = transform<std::string>(col.type.name, lower_case);
-          rasterlite[r][l].raster_column = col;
-
-          std::ostringstream stream; stream.imbue(std::locale::classic()); stream << std::scientific; stream.precision(16);
-          stream << "pixel_x_size = " << rasterlite[r][l].resolution.get<0>() << " AND " + hint + "pixel_y_size = " << rasterlite[r][l].resolution.get<1>();
-          rasterlite[r][l].sql_filter = stream.str();
-        }
-      std::vector<raster_pyramid<raster_detail>> res;
-      std::merge(rasterlite.begin(), rasterlite.end(), simple.begin(), simple.end(), std::back_inserter(res), cmp);
-      return res;
-    }
+  case SQLite: specific = get_raster_layers_sqlite(cmd); break;
+  case Postgres: specific = get_raster_layers_postgres(cmd); break;
   }
 
-  else if (Postgres == sys)
-  {
-    cmd->exec(sql_tables(sys, "raster_columns"));
-    while (cmd->fetch(row))
-      if (string_cast<char>(row[0]) == "public" && string_cast<char>(row[1]) == "raster_columns")
-      {
-        cmd->exec("SELECT COALESCE(o.r_table_schema, r.r_table_schema) base_scm, COALESCE(o.r_table_name, r.r_table_name) base_tbl, COALESCE(o.r_raster_column, r.r_raster_column) base_col, abs(r.scale_x) res_x, abs(r.scale_y) res_y, r.r_table_schema, r.r_table_name, r.r_raster_column, r.r_raster_column FROM public.raster_columns r LEFT JOIN public.raster_overviews o ON r.r_table_schema = o.o_table_schema AND r.r_table_name = o.o_table_name AND r.r_raster_column = o.o_raster_column ORDER BY base_scm, base_tbl, base_col, res_x, res_y");
-        auto wktraster = get_rasters(cmd);
-        for (size_t r(0); r < wktraster.size(); ++r)
-          for (size_t l(0); l < wktraster[r].size(); ++l)
-          {
-            column_detail col;
-            col.name = ::boost::get<std::string>(wktraster[r][l].raster_column) + "_as_jpg";
-            col.sql_expression = "ST_AsJPEG(" + sql_identifier(sys, col.name) + ")";
-            col.type.name = "bytea";
-            col.lower_case_type.name = transform<std::string>(col.type.name, lower_case);
-            wktraster[r][l].raster_column = col;
-          }
-        std::vector<raster_pyramid<raster_detail>> res;
-        std::merge(wktraster.begin(), wktraster.end(), simple.begin(), simple.end(), std::back_inserter(res), cmp);
-        return res;
-      }
-  }
-
-  return simple;
-}
-
-template <bool Threading>
-table_definition<column_detail> connection<Threading>::get_table_detail(const identifier& tbl)
-{
-  using namespace brig::database::detail;
-  using namespace brig::detail;
-  using namespace brig::unicode;
-
-  auto cmd = get_command();
-  const DBMS sys(cmd->system());
-  if (SQLite == sys) return sqlite_table_detail(cmd, tbl);
-
-  // columns
-  table_definition<column_detail> res;
-  res.id = tbl;
-  cmd->exec(sql_columns(sys, tbl));
-  std::vector<variant> row;
-  while (cmd->fetch(row))
-  {
-    column_detail col;
-    col.name = string_cast<char>(row[0]);
-    col.type.schema = string_cast<char>(row[1]);
-    col.type.name = string_cast<char>(row[2]); 
-    col.lower_case_type.schema = transform<std::string>(col.type.schema, lower_case);
-    col.lower_case_type.name = transform<std::string>(col.type.name, lower_case);
-    numeric_cast(row[3], col.chars);
-    numeric_cast(row[4], col.precision);
-    numeric_cast(row[5], col.scale);
-    res.columns.push_back(col);
-  }
-  if (res.columns.empty()) throw std::runtime_error("table error");
-
-  // indexes
-  cmd->exec(sql_indexed_columns(sys, tbl));
-  index_definition idx;
-  while (cmd->fetch(row))
-  {
-    identifier index;
-    index.schema = string_cast<char>(row[0]);
-    index.name = string_cast<char>(row[1]);
-
-    if (index.schema != idx.id.schema || index.name != idx.id.name)
-    {
-      if (VoidIndex != idx.type) res.indexes.push_back(std::move(idx));
-
-      idx = index_definition();
-      idx.id = index;
-      int primary(0), unique(0), spatial(0);
-      numeric_cast(row[2], primary);
-      numeric_cast(row[3], unique);
-      numeric_cast(row[4], spatial);
-      if (primary) idx.type = Primary;
-      else if (unique) idx.type = Unique;
-      else if (spatial) idx.type = Spatial;
-      else idx.type = Duplicate;
-    }
-
-    const std::string col_name(string_cast<char>(row[5]));
-    idx.columns.push_back(col_name);
-    if (std::find_if(res.columns.begin(), res.columns.end(), [&](const column_detail& col){ return col.name == col_name; }) == res.columns.end()) idx.type = VoidIndex; // expression
-
-    int desc(0);
-    if (numeric_cast(row[6], desc) && desc) idx.type = VoidIndex; // descending
-  }
-  if (VoidIndex != idx.type) res.indexes.push_back(std::move(idx));
-
-  // srid, epsg, type qualifier
-  for (auto p_col = res.columns.begin(); p_col != res.columns.end(); ++p_col)
-  {
-    const std::string sql(sql_srid(sys, tbl, *p_col));
-    if (!sql.empty())
-    {
-      cmd->exec(sql);
-      if (cmd->fetch(row))
-      {
-        numeric_cast(row[0], p_col->srid);
-        if (row.size() > 1) numeric_cast(row[1], p_col->epsg);
-        else p_col->epsg = p_col->srid;
-        if (row.size() > 2)
-        {
-          p_col->type.qualifier = string_cast<char>(row[2]);
-          p_col->lower_case_type.qualifier = transform<std::string>(p_col->type.qualifier, lower_case);
-        }
-      }
-    }
-  }
+  std::vector<raster_definition> res;
+  auto cmp = [](const raster_definition& a, const raster_definition& b){ return a.id.schema < b.id.schema || a.id.name < b.id.name || a.id.qualifier < b.id.qualifier; };
+  std::merge(specific.begin(), specific.end(), simple.begin(), simple.end(), std::back_inserter(res), cmp);
   return res;
 }
 
 template <bool Threading>
-table_definition<column_definition> connection<Threading>::as_table_definition(const table_definition<column_detail>& tbl)
+table_definition connection<Threading>::get_table_definition(const identifier& tbl)
 {
   auto cmd = get_command();
-  const DBMS sys(cmd->system());
-  table_definition<column_definition> res;
-  res.id.name = tbl.id.name;
-
-  for (auto p_col = tbl.columns.begin(); p_col != tbl.columns.end(); ++p_col)
-  {
-    column_definition col;
-    col.name = p_col->name;
-    col.type = detail::get_type(sys, *p_col);
-    col.epsg = p_col->epsg;
-    if (VoidColumn != col.type) res.columns.push_back(col);
-  }
-
-  for (auto p_idx = tbl.indexes.begin(); p_idx != tbl.indexes.end(); ++p_idx)
-  {
-    bool valid((Spatial == p_idx->type && 1 == p_idx->columns.size()) || (VoidIndex != p_idx->type && !p_idx->columns.empty()));
-
-    for (auto p_col_name = p_idx->columns.begin(); p_col_name != p_idx->columns.end() && valid; ++p_col_name)
-    {
-      auto p_col = std::find_if(res.columns.begin(), res.columns.end(), [&](const column_definition& col){ return *p_col_name == col.name; });
-      if (p_col == res.columns.end() || (Spatial == p_idx->type && Geometry != p_col->type)) valid = false;
-    }
-
-    if (valid)
-    {
-      res.indexes.push_back(*p_idx);
-      res.indexes.back().id.schema = "";
-    }
-  }
-  return res;
+  return detail::get_table_definition(cmd, tbl);
 }
 
 template <bool Threading>
-brig::boost::box connection<Threading>::get_mbr(const identifier& tbl, const column_detail& col)
+void connection<Threading>::get_mbr(const identifier& tbl, column_definition& col)
 {
   using namespace brig::boost;
 
   auto cmd = get_command();
   const std::string sql(detail::sql_mbr(cmd->system(), tbl, col));
   if (sql.empty())
-    return box(point(-180, -90), point(180, 90)); // geodetic
+  {
+    col.mbr = box(point(-180, -90), point(180, 90)); // geodetic
+    return;
+  }
 
   cmd->exec(sql);
   std::vector<variant> row;
@@ -343,13 +160,16 @@ brig::boost::box connection<Threading>::get_mbr(const identifier& tbl, const col
     && numeric_cast(row[2], xmax)
     && numeric_cast(row[3], ymax)
      )
-    return box(point(xmin, ymin), point(xmax, ymax));
+  {
+    col.mbr = box(point(xmin, ymin), point(xmax, ymax));
+    return;
+  }
 
   throw std::runtime_error("mbr error");
 }
 
 template <bool Threading>
-std::shared_ptr<rowset> connection<Threading>::get_table(const table_definition<column_detail>& tbl, const select_options& opts)
+std::shared_ptr<rowset> connection<Threading>::get_table(const table_definition& tbl, const select_options& opts)
 {
   auto cmd = get_command();
   cmd->exec(detail::sql_table(cmd.get(), tbl, opts));
@@ -357,24 +177,57 @@ std::shared_ptr<rowset> connection<Threading>::get_table(const table_definition<
 }
 
 template <bool Threading>
-void connection<Threading>::before_create(table_definition<column_definition>& tbl)
+void connection<Threading>::before_create(table_definition& tbl)
 {
   auto cmd = get_command();
   const DBMS sys(cmd->system());
+  switch (sys)
+  {
+  case Oracle:
+    for (auto p_col = tbl.columns.begin(); p_col != tbl.columns.end(); ++p_col)
+      if (Geometry == p_col->type && typeid(bool) == p_col->mbr.type()) p_col->mbr = true;
+    break;
 
-  for (auto p_col = tbl.columns.begin(); p_col != tbl.columns.end(); ++p_col)
-    if (Geometry == p_col->type && Oracle == sys && typeid(bool) == p_col->mbr_need.type()) p_col->mbr_need = true;
-
-  for (auto p_idx = tbl.indexes.begin(); p_idx != tbl.indexes.end(); ++p_idx)
-    if (Spatial == p_idx->type && MS_SQL == sys)
-    {
-      auto p_col = std::find_if(tbl.columns.begin(), tbl.columns.end(), [&](const column_definition& col){ return col.name == p_idx->columns.front(); });
-      if (typeid(bool) == p_col->mbr_need.type()) p_col->mbr_need = true;
-    }
+  case MS_SQL:
+    for (auto p_idx = tbl.indexes.begin(); p_idx != tbl.indexes.end(); ++p_idx)
+      if (Spatial == p_idx->type)
+      {
+        auto p_col = std::find_if(tbl.columns.begin(), tbl.columns.end(), [&](const column_definition& col){ return col.name == p_idx->columns.front(); });
+        if (typeid(bool) == p_col->mbr.type()) p_col->mbr = true;
+      }
+    break;
+  }
 }
 
 template <bool Threading>
-std::string connection<Threading>::sql_insert(const table_definition<column_detail>& tbl, const std::vector<std::string>& cols)
+std::vector<std::string> connection<Threading>::sql_create(table_definition& tbl)
+{
+  auto cmd = get_command();
+  const DBMS sys(cmd->system());
+  auto res = detail::sql_create(sys, tbl);
+
+  std::string sql;
+  switch (sys)
+  {
+  case DB2: sql = "VALUES CURRENT_SCHEMA"; break;
+  case MySQL: sql = "select schema()"; break;
+  case Oracle: sql = "SELECT SYS_CONTEXT('USERENV','SESSION_SCHEMA') FROM DUAL"; break;
+  case Postgres: sql = "select current_schema()"; break;
+  case MS_SQL: sql = "SELECT SCHEMA_NAME()"; break;
+  }
+
+  if (!sql.empty())
+  {
+    cmd->exec(sql);
+    std::vector<variant> row;
+    if (cmd->fetch(row)) tbl.id.schema = brig::detail::string_cast<char>(row[0]);
+  }
+
+  return res;
+}
+
+template <bool Threading>
+std::string connection<Threading>::sql_insert(const table_definition& tbl, const std::vector<std::string>& cols)
 {
   auto cmd = get_command();
   return detail::sql_insert(cmd.get(), tbl, cols);

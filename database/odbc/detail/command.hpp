@@ -33,7 +33,7 @@ public:
   virtual void exec
     ( const std::string& sql
     , const std::vector<variant>& params = std::vector<variant>()
-    , const std::vector<column_detail>& param_cols = std::vector<column_detail>()
+    , const std::vector<column_definition>& param_cols = std::vector<column_definition>()
     );
   virtual size_t affected();
   virtual std::vector<std::string> columns();
@@ -129,7 +129,7 @@ inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(
   }
 }
 
-inline void command::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& param_cols)
+inline void command::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_definition>& param_cols)
 {
   if (SQL_NULL_HANDLE == m_stmt || sql != m_sql)
   {

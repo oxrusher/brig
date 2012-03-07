@@ -23,9 +23,9 @@ public:
   explicit threaded_command(std::shared_ptr<command_allocator> allocator) : m_med(new mediator())  { ::boost::thread(worker, allocator, m_med); }
   virtual ~threaded_command()  { m_med->stop(); }
   virtual DBMS system();
-  virtual std::string sql_parameter(size_t order, const column_detail& param_col);
-  virtual std::string sql_column(const column_detail& col);
-  virtual void exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& param_cols);
+  virtual std::string sql_parameter(size_t order, const column_definition& param_col);
+  virtual std::string sql_column(const column_definition& col);
+  virtual void exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_definition>& param_cols);
   virtual size_t affected();
   virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
@@ -49,21 +49,21 @@ inline DBMS threaded_command::system()
   return bnd.r;
 }
 
-inline std::string threaded_command::sql_parameter(size_t order, const column_detail& param_col)
+inline std::string threaded_command::sql_parameter(size_t order, const column_definition& param_col)
 {
   auto bnd(mediator::bind(std::bind(&command::sql_parameter, std::placeholders::_1, order, std::cref(param_col))));
   m_med->call(&bnd);
   return std::move(bnd.r);
 }
 
-inline std::string threaded_command::sql_column(const column_detail& col)
+inline std::string threaded_command::sql_column(const column_definition& col)
 {
   auto bnd(mediator::bind(std::bind(&command::sql_column, std::placeholders::_1, std::cref(col))));
   m_med->call(&bnd);
   return std::move(bnd.r);
 }
 
-inline void threaded_command::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& param_cols)
+inline void threaded_command::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_definition>& param_cols)
 {
   m_med->dpg.clear();
   auto bnd(mediator::bind(std::bind(&command::exec, std::placeholders::_1, std::cref(sql), std::cref(params), std::cref(param_cols))));

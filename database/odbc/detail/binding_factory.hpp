@@ -8,8 +8,7 @@
 #include <boost/variant/apply_visitor.hpp>
 #include <boost/variant/static_visitor.hpp>
 #include <brig/blob_t.hpp>
-#include <brig/database/column_detail.hpp>
-#include <brig/database/detail/get_type.hpp>
+#include <brig/database/column_definition.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/odbc/detail/binding.hpp>
 #include <brig/database/odbc/detail/binding_blob.hpp>
@@ -24,9 +23,9 @@ namespace brig { namespace database { namespace odbc { namespace detail {
 
 struct binding_visitor : ::boost::static_visitor<binding*> {
   const DBMS sys;
-  const column_detail* col;
-  explicit binding_visitor(DBMS sys_, const column_detail* col_) : sys(sys_), col(col_)  {}
-  binding* operator()(const null_t&) const  { return new binding_null(col? brig::database::detail::get_type(sys, *col): VoidColumn, sys); }
+  const column_definition* col;
+  explicit binding_visitor(DBMS sys_, const column_definition* col_) : sys(sys_), col(col_)  {}
+  binding* operator()(const null_t&) const  { return new binding_null(col? col->type: VoidColumn, sys); }
   binding* operator()(int16_t v) const  { return new binding_impl<int16_t, SQL_C_SSHORT, SQL_SMALLINT>(v); }
   binding* operator()(int32_t v) const  { return new binding_impl<int32_t, SQL_C_SLONG, SQL_INTEGER>(v); }
   binding* operator()(int64_t v) const  { return Postgres == sys? operator()(int32_t(v)): new binding_impl<int64_t, SQL_C_SBIGINT, SQL_BIGINT>(v); }
@@ -62,7 +61,7 @@ inline binding* binding_visitor::operator()(const ::boost::posix_time::ptime& r)
   return new binding_impl<TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP, SQL_TIMESTAMP>(v);
 } // binding_visitor::
 
-inline binding* binding_factory(DBMS sys, const variant& var, const column_detail* param_col)
+inline binding* binding_factory(DBMS sys, const variant& var, const column_definition* param_col)
 {
   return ::boost::apply_visitor(binding_visitor(sys, param_col), var);
 }

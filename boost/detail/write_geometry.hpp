@@ -17,7 +17,7 @@
 namespace brig { namespace boost { namespace detail {
 
 template <typename OutputIterator>
-void write(OutputIterator& iter, const geometrycollection& coll);
+void write(OutputIterator& iter, const geometry_collection& coll);
 
 template <typename OutputIterator>
 struct write_visitor : ::boost::static_visitor<void> {
@@ -25,7 +25,7 @@ struct write_visitor : ::boost::static_visitor<void> {
   explicit write_visitor(OutputIterator& iter_) : iter(iter_)  {}
   template <typename T>
   void operator()(const T& r) const  { write<>(iter, r); }
-  void operator()(const ::boost::recursive_wrapper<geometrycollection>& coll) const  { write<>(iter, coll.get()); }
+  void operator()(const ::boost::recursive_wrapper<geometry_collection>& coll) const  { write<>(iter, coll.get()); }
 }; // write_visitor
 
 template <typename OutputIterator>
@@ -35,7 +35,7 @@ void write(OutputIterator& iter, const geometry& geom)
 }
 
 template <typename OutputIterator>
-void write(OutputIterator& iter, const geometrycollection& coll)
+void write(OutputIterator& iter, const geometry_collection& coll)
 {
   using namespace brig::detail;
   using namespace brig::detail::ogc;

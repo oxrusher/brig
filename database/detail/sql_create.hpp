@@ -14,12 +14,13 @@
 #include <brig/unicode/upper_case.hpp>
 #include <locale>
 #include <stdexcept>
+#include <sstream>
 #include <string>
 #include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-inline std::vector<std::string> sql_create(DBMS sys, table_definition<column_definition>& tbl)
+inline std::vector<std::string> sql_create(DBMS sys, table_definition& tbl)
 {
   using namespace brig::unicode;
 
@@ -202,8 +203,8 @@ inline std::vector<std::string> sql_create(DBMS sys, table_definition<column_def
       case MySQL: break;
       case Oracle:
         {
-        if (p_col->mbr_need.type() != typeid(brig::boost::box)) throw std::runtime_error("sql error");
-        auto box = ::boost::get<brig::boost::box>(p_col->mbr_need);
+        if (p_col->mbr.type() != typeid(brig::boost::box)) throw std::runtime_error("sql error");
+        auto box = ::boost::get<brig::boost::box>(p_col->mbr);
         const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>()), eps(0.000001);
         stream << "BEGIN DELETE FROM MDSYS.USER_SDO_GEOM_METADATA WHERE TABLE_NAME = '" << tbl.id.name << "' AND COLUMN_NAME = '" << p_col->name << "'; INSERT INTO MDSYS.USER_SDO_GEOM_METADATA (TABLE_NAME, COLUMN_NAME, DIMINFO, SRID) VALUES ('" << tbl.id.name << "', '" << p_col->name << "', MDSYS.SDO_DIM_ARRAY(MDSYS.SDO_DIM_ELEMENT('X', " << xmin << ", " << xmax << ", " << eps << "), MDSYS.SDO_DIM_ELEMENT('Y', " << ymin << ", " << ymax << ", " << eps << ")), (SELECT SRID FROM MDSYS.SDO_COORD_REF_SYS WHERE DATA_SOURCE LIKE 'EPSG' AND SRID = " << p_col->epsg << " AND ROWNUM <= 1)); END;";
         }
@@ -235,8 +236,8 @@ inline std::vector<std::string> sql_create(DBMS sys, table_definition<column_def
       case MS_SQL:
         {
         auto p_col = std::find_if(tbl.columns.begin(), tbl.columns.end(), [&](const column_definition& col){ return col.name == p_idx->columns.front(); });
-        if (p_col == tbl.columns.end() || p_col->mbr_need.type() != typeid(brig::boost::box)) throw std::runtime_error("sql error");
-        auto box = ::boost::get<brig::boost::box>(p_col->mbr_need);
+        if (p_col == tbl.columns.end() || p_col->mbr.type() != typeid(brig::boost::box)) throw std::runtime_error("sql error");
+        auto box = ::boost::get<brig::boost::box>(p_col->mbr);
         const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>());
         stream << "CREATE SPATIAL INDEX " << sql_identifier(sys, p_idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (" << sql_identifier(sys, p_idx->columns.front()) << ") USING GEOMETRY_GRID WITH (BOUNDING_BOX = (" << xmin << ", " << ymin << ", " << xmax << ", " << ymax << "))";
         }

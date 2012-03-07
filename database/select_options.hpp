@@ -4,7 +4,7 @@
 #define BRIG_DATABASE_SELECT_OPTIONS_HPP
 
 #include <brig/boost/geometry.hpp>
-#include <brig/database/column_detail.hpp>
+#include <brig/database/column_definition.hpp>
 #include <brig/database/variant.hpp>
 #include <string>
 #include <vector>
@@ -12,7 +12,7 @@
 namespace brig { namespace database {
 
 struct select_options {
-  std::vector<column_detail> expression_columns;
+  std::vector<column_definition> expression_columns;
   std::string sql_filter;
   std::string geometry_column;
   brig::boost::box box;

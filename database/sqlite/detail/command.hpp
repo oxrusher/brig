@@ -37,11 +37,11 @@ public:
   command(std::shared_ptr<db_handle> db) : m_db(db), m_stmt(0), m_done(false), m_autocommit(true)  {}
   virtual ~command();
   virtual DBMS system()  { return SQLite; }
-  virtual std::string sql_column(const column_detail& col);
+  virtual std::string sql_column(const column_definition& col);
   virtual void exec
     ( const std::string& sql
     , const std::vector<variant>& params = std::vector<variant>()
-    , const std::vector<column_detail>& param_cols = std::vector<column_detail>()
+    , const std::vector<column_definition>& param_cols = std::vector<column_definition>()
     );
   virtual size_t affected()  { return m_db->affected(); }
   virtual std::vector<std::string> columns();
@@ -67,7 +67,7 @@ inline command::~command()
   close_stmt();
 }
 
-inline void command::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_detail>& /*param_cols*/)
+inline void command::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_definition>& /*param_cols*/)
 {
   if (!m_stmt || sql != m_sql || !m_done)
   {
@@ -161,7 +161,7 @@ inline bool command::fetch(std::vector<variant>& row)
   }
 }
 
-inline std::string command::sql_column(const column_detail& col)
+inline std::string command::sql_column(const column_definition& col)
 {
   using namespace brig::database::detail;
   if (col.sql_expression.empty() && is_ogc_type(col.lower_case_type.name))

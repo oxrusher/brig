@@ -3,9 +3,8 @@
 #ifndef BRIG_DATABASE_DETAIL_SQL_MBR_HPP
 #define BRIG_DATABASE_DETAIL_SQL_MBR_HPP
 
-#include <brig/database/column_detail.hpp>
+#include <brig/database/column_definition.hpp>
 #include <brig/database/detail/is_geodetic_type.hpp>
-#include <brig/database/detail/is_geometry_type.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/identifier.hpp>
 #include <brig/database/global.hpp>
@@ -14,7 +13,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline std::string sql_mbr(const DBMS sys, const identifier& tbl, const column_detail& col)
+inline std::string sql_mbr(const DBMS sys, const identifier& tbl, const column_definition& col)
 {
   // 1. metadata
   // 2. geodetic (no sql)
@@ -29,7 +28,7 @@ inline std::string sql_mbr(const DBMS sys, const identifier& tbl, const column_d
     else throw std::runtime_error("sql error");
   }
 
-  if (!is_geometry_type(sys, col))
+  if (Geometry != col.type)
     throw std::runtime_error("sql error");
 
   switch (sys)
