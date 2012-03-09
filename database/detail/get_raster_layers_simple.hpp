@@ -23,6 +23,7 @@ inline std::vector<raster_definition> get_raster_layers_simple(std::shared_ptr<c
 {
   using namespace brig::database::detail;
   using namespace brig::detail;
+
   const DBMS sys(cmd->system());
   cmd->exec(sql_tables(sys, "simple_rasters"));
   std::vector<variant> row;
@@ -44,6 +45,7 @@ inline std::vector<raster_definition> get_raster_layers_simple(std::shared_ptr<c
     cmd->exec(sql);
     return get_raster_layers(cmd);
   }
+
   return std::vector<raster_definition>();
 }
 

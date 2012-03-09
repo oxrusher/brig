@@ -18,6 +18,7 @@
 #include <brig/database/index_definition.hpp>
 #include <brig/database/select_options.hpp>
 #include <brig/database/table_definition.hpp>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -25,7 +26,7 @@
 namespace brig { namespace database { namespace detail {
 
 template <typename Dialect>
-std::string sql_table(Dialect* dct, const table_definition& tbl, const select_options& opts)
+std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl, const select_options& opts)
 {
   const DBMS sys(dct->system());
   std::vector<column_definition> cols(tbl.columns);

@@ -18,8 +18,9 @@ struct column_definition {
   column_type type;
   int chars, precision, scale, srid, epsg;
   ::boost::variant<bool, brig::boost::box> mbr;
+  bool not_null;
 
-  column_definition() : type(VoidColumn), chars(-1), precision(-1), scale(-1), srid(-1), epsg(-1), mbr(false)  {}
+  column_definition() : type(VoidColumn), chars(-1), precision(-1), scale(-1), srid(-1), epsg(-1), mbr(false), not_null(false)  {}
 }; // column_definition
 
 } } // brig::database

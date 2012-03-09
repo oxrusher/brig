@@ -9,13 +9,14 @@
 #include <brig/database/identifier.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/table_definition.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace brig { namespace database { namespace detail {
 
 template <typename Dialect>
-std::string sql_insert(Dialect* dct, const table_definition& tbl, const std::vector<std::string>& cols)
+std::string sql_insert(std::shared_ptr<Dialect> dct, const table_definition& tbl, const std::vector<std::string>& cols)
 {
   const DBMS sys(dct->system());
   std::vector<column_definition> insert_cols = cols.empty()? tbl.columns: get_columns(tbl.columns, cols);

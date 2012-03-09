@@ -32,8 +32,6 @@ inline std::vector<std::string> sql_create(DBMS sys, table_definition& tbl)
     // The TABLE_NAME and COLUMN_NAME values are always converted to uppercase when you insert them into the USER_SDO_GEOM_METADATA view
     tbl.id.name = transform<std::string>(tbl.id.name, upper_case);
 
-  auto pri_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return Primary == idx.type; });
-
   std::ostringstream stream; stream.imbue(loc);
   stream << "CREATE TABLE " << sql_identifier(sys, tbl.id.name) << " (";
   bool first(true);
@@ -56,14 +54,7 @@ inline std::vector<std::string> sql_create(DBMS sys, table_definition& tbl)
       }
 
     if (first)  { stream << ", "; first = false; }
-
     stream << sql_identifier(sys, p_col->name) << " ";
-
-    bool not_null(false);
-    if (pri_idx != tbl.indexes.end())
-      for (auto p_col_name = pri_idx->columns.begin(); p_col_name != pri_idx->columns.end(); ++p_col_name)
-        if (*p_col_name == p_col->name)
-           not_null = true;
 
     switch (sys)
     {
@@ -82,12 +73,12 @@ inline std::vector<std::string> sql_create(DBMS sys, table_definition& tbl)
       case String: stream << "VARGRAPHIC(255)"; break;
       }
       // When UNIQUE is used, null values are treated as any other values. For example, if the key is a single column that may contain null values, that column may contain no more than one null value.
-      if (!not_null)
+      if (!p_col->not_null)
         for (auto p_idx = tbl.indexes.begin(); p_idx != tbl.indexes.end(); ++p_idx)
-          if (Unique == p_idx->type)
+          if (Primary == p_idx->type || Unique == p_idx->type)
             for (auto p_col_name = p_idx->columns.begin(); p_col_name != p_idx->columns.end(); ++p_col_name)
               if (*p_col_name == p_col->name)
-                not_null = true;
+                p_col->not_null = true;
       break;
 
     case MS_SQL:
@@ -115,12 +106,13 @@ inline std::vector<std::string> sql_create(DBMS sys, table_definition& tbl)
       case Geometry:
         stream << "GEOMETRY";
         // columns in spatial indexes must be declared NOT NULL
-        for (auto p_idx = tbl.indexes.begin(); p_idx != tbl.indexes.end(); ++p_idx)
-          if (Spatial == p_idx->type)
-          {
-            if (1 != p_idx->columns.size()) throw std::runtime_error("sql error");
-            if (p_idx->columns.front() == p_col->name) not_null = true;
-          }
+        if (!p_col->not_null)
+          for (auto p_idx = tbl.indexes.begin(); p_idx != tbl.indexes.end(); ++p_idx)
+            if (Spatial == p_idx->type)
+            {
+              if (1 != p_idx->columns.size()) throw std::runtime_error("sql error");
+              if (p_idx->columns.front() == p_col->name) p_col->not_null = true;
+            }
         break;
       case Integer: stream << "BIGINT"; break;
       case String: stream << "NVARCHAR(255)"; break;
@@ -170,16 +162,17 @@ inline std::vector<std::string> sql_create(DBMS sys, table_definition& tbl)
       break;
     }
 
-    if (not_null) stream << " NOT NULL";
+    if (p_col->not_null) stream << " NOT NULL";
   }
 
   // primary key
-  if (pri_idx != tbl.indexes.end())
+  auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return Primary == idx.type; });
+  if (p_idx != tbl.indexes.end())
   {
-    pri_idx->id = identifier();
+    p_idx->id = identifier();
     stream << ", PRIMARY KEY (";
     first = true;
-    for (auto p_col_name = pri_idx->columns.begin(); p_col_name != pri_idx->columns.end(); ++p_col_name)
+    for (auto p_col_name = p_idx->columns.begin(); p_col_name != p_idx->columns.end(); ++p_col_name)
     {
       if (first)  { stream << ", "; first = false; }
       stream << sql_identifier(sys, *p_col_name);

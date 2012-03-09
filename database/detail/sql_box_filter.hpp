@@ -7,8 +7,8 @@
 #include <brig/database/column_definition.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
-#include <locale>
 #include <ios>
+#include <locale>
 #include <stdexcept>
 #include <sstream>
 #include <string>
