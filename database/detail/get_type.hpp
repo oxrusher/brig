@@ -26,15 +26,11 @@ inline column_type get_type(DBMS sys, const column_definition& col)
 
     case MS_SQL:
       if ("bit" == col.lower_case_type.name) return Integer;
-      else if ("datetime" == col.lower_case_type.name
-            || "datetime2" == col.lower_case_type.name
-            || "smalldatetime" == col.lower_case_type.name) return DateTime;
       else if ("image" == col.lower_case_type.name) return Blob;
       break;
 
     case MySQL:
       if ("fixed" == col.lower_case_type.name) return col.scale == 0? Integer: Double;
-      else if ("datetime" == col.lower_case_type.name) return DateTime;
       break;
 
     case Oracle:
@@ -53,11 +49,11 @@ inline column_type get_type(DBMS sys, const column_definition& col)
       break;
     }
 
-  if ("date" == col.lower_case_type.name) return Date;
-  else if (col.lower_case_type.name.find("timestamp") == 0) return DateTime;
-  else if (col.lower_case_type.name.find("int") != std::string::npos
-        || col.lower_case_type.name.find("bool") == 0) return Integer;
-  else if (col.lower_case_type.name.find("char") != std::string::npos
+  if (col.lower_case_type.name.find("int") != std::string::npos
+   || col.lower_case_type.name.find("bool") == 0) return Integer;
+  else if (col.lower_case_type.name.find("date") != std::string::npos
+        || col.lower_case_type.name.find("time") != std::string::npos
+        || col.lower_case_type.name.find("char") != std::string::npos
         || col.lower_case_type.name.find("clob") != std::string::npos
         || col.lower_case_type.name.find("text") != std::string::npos) return String;
   else if (col.lower_case_type.name.find("real") != std::string::npos

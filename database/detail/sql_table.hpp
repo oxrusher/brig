@@ -41,9 +41,9 @@ std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl,
   sql_limit(sys, opts.rows, sql_infix, sql_condition, sql_suffix);
 
   //
-  auto geom_col = std::find_if(cols.begin(), cols.end(), [&](const column_definition& col){ return col.name == opts.geometry_column; });
-  if ( opts.geometry_column.empty() ||
-       geom_col != cols.end() && geom_col->mbr.type() == typeid(brig::boost::box) && ::boost::geometry::covered_by(::boost::get<brig::boost::box>(geom_col->mbr), opts.box)
+  auto geom_col = std::find_if(cols.begin(), cols.end(), [&](const column_definition& col){ return col.name == opts.box_filter_column; });
+  if ( opts.box_filter_column.empty() ||
+       geom_col != cols.end() && geom_col->mbr.type() == typeid(brig::boost::box) && ::boost::geometry::covered_by(::boost::get<brig::boost::box>(geom_col->mbr), opts.box_filter)
      )
   {
     std::string res;
@@ -57,13 +57,13 @@ std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl,
 
   //
   if (geom_col == cols.end()) throw std::runtime_error("sql error");
-  std::vector<brig::boost::box> boxes(1, opts.box);
+  std::vector<brig::boost::box> boxes(1, opts.box_filter);
   normalize_hemisphere(boxes, sys, is_geodetic_type(sys, *geom_col));
 
   std::string sql_hint;
   if (MS_SQL == sys)
   {
-    auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return idx.type == Spatial && idx.columns.front() == opts.geometry_column; });
+    auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return idx.type == Spatial && idx.columns.front() == opts.box_filter_column; });
     if (p_idx == tbl.indexes.end()) throw std::runtime_error("sql error");
     sql_hint = "WITH(INDEX(" + sql_identifier(sys, p_idx->id) + "))";
   }
@@ -100,7 +100,7 @@ std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl,
   else if (SQLite == sys)
   {
     if (unique_cols.size() != 1) throw std::runtime_error("sql error");
-    sql_key_tbl += "SELECT pkid " + sql_identifier(sys, unique_cols[0].name) + " FROM " + sql_identifier(sys, "idx_" + tbl.id.name + "_" + opts.geometry_column) + " WHERE ";
+    sql_key_tbl += "SELECT pkid " + sql_identifier(sys, unique_cols[0].name) + " FROM " + sql_identifier(sys, "idx_" + tbl.id.name + "_" + opts.box_filter_column) + " WHERE ";
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql_key_tbl += " OR ";

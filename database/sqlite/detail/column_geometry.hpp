@@ -5,6 +5,7 @@
 #ifndef BRIG_DATABASE_SQLITE_DETAIL_COLUMN_GEOMETRY_HPP
 #define BRIG_DATABASE_SQLITE_DETAIL_COLUMN_GEOMETRY_HPP
 
+#include <brig/blob_t.hpp>
 #include <brig/database/sqlite/detail/lib.hpp>
 #include <brig/detail/ogc.hpp>
 #include <cstdint>
@@ -15,13 +16,13 @@ namespace brig { namespace database { namespace sqlite { namespace detail {
 
 inline void skip_point(uint8_t*& ptr)
 {
-  ptr += 2 * sizeof(double);
+  ptr += (2 * sizeof(double));
 }
 
 inline void skip_line(uint8_t byte_order, uint8_t*& ptr)
 {
   const uint32_t count(brig::detail::ogc::read<uint32_t>(byte_order, ptr));
-  ptr += count * 2 * sizeof(double);
+  ptr += (count * 2 * sizeof(double));
 }
 
 inline void skip_polygon(uint8_t byte_order, uint8_t*& ptr)

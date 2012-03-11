@@ -21,7 +21,6 @@ public:
   void check(int r)  { if (SQLITE_OK != r) error(); }
   void error();
   sqlite3_stmt* prepare_stmt(const std::string& sql);
-  void load_backup(db_handle& from);
 }; // db_handle
 
 inline void db_handle::error()
@@ -45,15 +44,6 @@ inline sqlite3_stmt* db_handle::prepare_stmt(const std::string& sql)
   sqlite3_stmt* stmt(0);
   check(lib::singleton().p_sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, 0));
   return stmt;
-}
-
-inline void db_handle::load_backup(db_handle& from)
-{
-  sqlite3_backup* backup(lib::singleton().p_sqlite3_backup_init(m_db, "main", from.m_db, "main"));
-  if (!backup) error();
-  lib::singleton().p_sqlite3_backup_step(backup, -1);
-  const int r(lib::singleton().p_sqlite3_backup_finish(backup));
-  if (SQLITE_DONE != r && SQLITE_OK != r) error();
 } // db_handle::
 
 } } } } // brig::database::sqlite::detail

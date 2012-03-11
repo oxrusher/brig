@@ -3,8 +3,6 @@
 #ifndef BRIG_DATABASE_ORACLE_DETAIL_BINDING_FACTORY_HPP
 #define BRIG_DATABASE_ORACLE_DETAIL_BINDING_FACTORY_HPP
 
-#include <boost/date_time/gregorian/gregorian_types.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/variant/apply_visitor.hpp>
 #include <boost/variant/static_visitor.hpp>
 #include <brig/blob_t.hpp>
@@ -12,7 +10,6 @@
 #include <brig/database/global.hpp>
 #include <brig/database/oracle/detail/binding.hpp>
 #include <brig/database/oracle/detail/binding_blob.hpp>
-#include <brig/database/oracle/detail/binding_datetime.hpp>
 #include <brig/database/oracle/detail/binding_geometry.hpp>
 #include <brig/database/oracle/detail/binding_impl.hpp>
 #include <brig/database/oracle/detail/binding_string.hpp>
@@ -36,8 +33,6 @@ struct binding_visitor : ::boost::static_visitor<binding*> {
   binding* operator()(int64_t v) const  { return new binding_impl<int64_t, SQLT_INT>(hnd, i, v); }
   binding* operator()(float v) const  { return new binding_impl<float, SQLT_FLT>(hnd, i, v); }
   binding* operator()(double v) const  { return new binding_impl<double, SQLT_FLT>(hnd, i, v); }
-  binding* operator()(const ::boost::gregorian::date& r) const  { return new binding_datetime(hnd, i, r); }
-  binding* operator()(const ::boost::posix_time::ptime& r) const  { return new binding_datetime(hnd, i, r); }
   binding* operator()(const std::string& r) const  { return new binding_string(hnd, i, r, col? get_charset_form(col->lower_case_type): SQLCS_NCHAR); }
   binding* operator()(const blob_t&) const;
 }; // binding_visitor
@@ -48,8 +43,6 @@ inline binding* binding_visitor::operator()(const null_t&) const
   {
     default: throw std::runtime_error("unsupported OCI parameter");
     case Blob: return new binding_blob(hnd, i, 0, 0);
-    case Date:
-    case DateTime: return new binding_datetime(hnd, i);
     case Double: return new binding_impl<double, SQLT_FLT>(hnd, i);
     case Geometry: return new binding_geometry(hnd, i, blob_t(), col->srid);
     case Integer: return new binding_impl<int64_t, SQLT_INT>(hnd, i);

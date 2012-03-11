@@ -35,15 +35,14 @@ inline get_data* get_data_factory(SQLSMALLINT sql_type)
   case SQL_FLOAT:
   case SQL_NUMERIC: return new get_data_impl<double, SQL_C_DOUBLE>();
 
-  // date
-  case SQL_DATE:
-  case SQL_TYPE_DATE: return new get_data_impl<DATE_STRUCT, SQL_C_TYPE_DATE>();
-
-  // timestamp
-  case SQL_TIMESTAMP:
-  case SQL_TYPE_TIMESTAMP: return new get_data_impl<TIMESTAMP_STRUCT, SQL_C_TYPE_TIMESTAMP>();
-
   // string
+  case SQL_DATE:
+  case SQL_TIME:
+  case SQL_TIMESTAMP:
+  case SQL_TYPE_DATE:
+  case SQL_TYPE_TIME:
+  case SQL_TYPE_TIMESTAMP:
+  
   case SQL_CHAR:
   case SQL_VARCHAR:
   case SQL_LONGVARCHAR:

@@ -3,8 +3,6 @@
 #ifndef BRIG_DATABASE_DETAIL_NUMERIC_VISITOR_HPP
 #define BRIG_DATABASE_DETAIL_NUMERIC_VISITOR_HPP
 
-#include <boost/date_time/gregorian/gregorian.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/numeric/conversion/converter.hpp>
 #include <boost/variant/static_visitor.hpp>
@@ -20,8 +18,6 @@ struct numeric_visitor : ::boost::static_visitor<bool> {
   bool operator()(const null_t&) const  { return false; }
   template <typename From>
   bool operator()(From) const;
-  bool operator()(const ::boost::gregorian::date&) const  { return false; }
-  bool operator()(const ::boost::posix_time::ptime&) const  { return false; }
   bool operator()(const std::string&) const;
   bool operator()(const blob_t&) const  { return false; }
 }; // numeric_visitor

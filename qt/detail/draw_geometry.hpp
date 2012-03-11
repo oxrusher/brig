@@ -18,7 +18,7 @@ template <typename InputIterator>
 void draw_geometry(InputIterator& iter, const frame& fr, QPainter& painter)
 {
   using namespace brig::detail::ogc;
-  uint8_t byte_order(read_byte_order(iter)), i(0), count(0);
+  uint8_t byte_order(read_byte_order(iter));
   switch (read<uint32_t>(byte_order, iter))
   {
   default: throw std::runtime_error("WKB error");
@@ -27,7 +27,7 @@ void draw_geometry(InputIterator& iter, const frame& fr, QPainter& painter)
   case Polygon: draw_polygon(byte_order, iter, fr, painter); break;
 
   case MultiPoint:
-    for (i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
+    for (uint32_t i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
     {
       byte_order = read_byte_order(iter);
       if (Point != read<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
@@ -36,7 +36,7 @@ void draw_geometry(InputIterator& iter, const frame& fr, QPainter& painter)
     break;
 
   case MultiLineString:
-    for (i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
+    for (uint32_t i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
     {
       byte_order = read_byte_order(iter);
       if (LineString != read<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
@@ -45,7 +45,7 @@ void draw_geometry(InputIterator& iter, const frame& fr, QPainter& painter)
     break;
 
   case MultiPolygon:
-    for (i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
+    for (uint32_t i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
     {
       byte_order = read_byte_order(iter);
       if (Polygon != read<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
@@ -54,7 +54,7 @@ void draw_geometry(InputIterator& iter, const frame& fr, QPainter& painter)
     break;
 
   case GeometryCollection:
-    for (i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
+    for (uint32_t i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
       draw_geometry(iter, fr, painter);
     break;
   }

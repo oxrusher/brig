@@ -6,7 +6,6 @@
 #include <brig/database/identifier.hpp>
 #include <brig/database/oracle/detail/define.hpp>
 #include <brig/database/oracle/detail/define_blob.hpp>
-#include <brig/database/oracle/detail/define_datetime.hpp>
 #include <brig/database/oracle/detail/define_geometry.hpp>
 #include <brig/database/oracle/detail/define_impl.hpp>
 #include <brig/database/oracle/detail/define_string.hpp>
@@ -32,6 +31,13 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 siz
     return new define_blob(hnd, order);
 
   // string
+  case SQLT_DAT:
+  case SQLT_DATE:
+  case SQLT_ODT:
+  case SQLT_TIMESTAMP:
+  case SQLT_TIMESTAMP_TZ:
+  case SQLT_TIMESTAMP_LTZ:
+
   case SQLT_AFC:
   case SQLT_AVC:
   case SQLT_CHR:
@@ -73,16 +79,6 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 siz
   case SQLT_PDN:
   case SQLT_VNU:
     return new define_impl<double, SQLT_FLT>(hnd, order);
-
-  // time
-  case SQLT_DAT:
-  case SQLT_DATE:
-  case SQLT_ODT:
-    return new define_datetime(hnd, order, false);
-  case SQLT_TIMESTAMP:
-  case SQLT_TIMESTAMP_TZ:
-  case SQLT_TIMESTAMP_LTZ:
-    return new define_datetime(hnd, order, true);
 
   // named data lower_case_type
   case SQLT_NTY:

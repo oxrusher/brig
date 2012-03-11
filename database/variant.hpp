@@ -3,8 +3,6 @@
 #ifndef BRIG_DATABASE_VARIANT_HPP
 #define BRIG_DATABASE_VARIANT_HPP
 
-#include <boost/date_time/gregorian/gregorian.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/variant/get.hpp>
 #include <boost/variant/variant.hpp>
 #include <brig/blob_t.hpp>
@@ -21,8 +19,6 @@ typedef ::boost::variant<
   int64_t,
   float,
   double,
-  ::boost::gregorian::date,
-  ::boost::posix_time::ptime,
   std::string,
   blob_t
 > variant;

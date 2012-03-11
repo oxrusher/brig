@@ -13,13 +13,12 @@ namespace brig { namespace database {
 
 struct select_options {
   std::vector<column_definition> expression_columns;
-  std::string sql_filter;
-  std::string geometry_column;
-  brig::boost::box box;
+  std::string sql_filter, box_filter_column;
+  brig::boost::box box_filter;
   std::vector<std::string> select_columns;
   int rows;
 
-  select_options() : box(brig::boost::point(0, 0), brig::boost::point(0, 0)), rows(-1)  {}
+  select_options() : box_filter(brig::boost::point(0, 0), brig::boost::point(0, 0)), rows(-1)  {}
 }; // select_options
 
 } } // brig::database

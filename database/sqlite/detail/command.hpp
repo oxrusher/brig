@@ -25,7 +25,7 @@ class command : public brig::database::command
 {
   struct column  { std::string name; bool geometry; };
 
-  std::shared_ptr<db_handle> m_db;
+  db_handle m_db;
   sqlite3_stmt* m_stmt;
   std::string m_sql;
   std::vector<column> m_cols;
@@ -34,7 +34,7 @@ class command : public brig::database::command
   void close_stmt();
 
 public:
-  command(std::shared_ptr<db_handle> db) : m_db(db), m_stmt(0), m_done(false), m_autocommit(true)  {}
+  command(const std::string& file) : m_db(file), m_stmt(0), m_done(false), m_autocommit(true)  {}
   virtual ~command();
   virtual DBMS system()  { return SQLite; }
   virtual std::string sql_column(const column_definition& col);
@@ -43,7 +43,7 @@ public:
     , const std::vector<variant>& params = std::vector<variant>()
     , const std::vector<column_definition>& param_cols = std::vector<column_definition>()
     );
-  virtual size_t affected()  { return m_db->affected(); }
+  virtual size_t affected()  { return m_db.affected(); }
   virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
   virtual void set_autocommit(bool autocommit);
@@ -72,22 +72,22 @@ inline void command::exec(const std::string& sql, const std::vector<variant>& pa
   if (!m_stmt || sql != m_sql || !m_done)
   {
     close_stmt();
-    m_stmt = m_db->prepare_stmt(sql);
+    m_stmt = m_db.prepare_stmt(sql);
     m_sql = sql;
   }
   else
   {
-    m_db->check(lib::singleton().p_sqlite3_reset(m_stmt));
+    m_db.check(lib::singleton().p_sqlite3_reset(m_stmt));
     m_cols.clear();
     m_done = false;
   }
 
   for (size_t i(0); i < params.size(); ++i)
-    m_db->check(bind(m_stmt, i, params[i]));
+    m_db.check(bind(m_stmt, i, params[i]));
 
   switch (lib::singleton().p_sqlite3_step(m_stmt))
   {
-  default: m_db->error(); break;
+  default: m_db.error(); break;
   case SQLITE_ROW: break;
   case SQLITE_DONE: m_done = true; break;
   }
@@ -155,7 +155,7 @@ inline bool command::fetch(std::vector<variant>& row)
 
   switch (lib::singleton().p_sqlite3_step(m_stmt))
   {
-  default: m_db->error(); return false;
+  default: m_db.error(); return false;
   case SQLITE_ROW: return true;
   case SQLITE_DONE: m_done = true; return true;
   }

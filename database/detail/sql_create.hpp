@@ -65,8 +65,6 @@ inline std::vector<std::string> sql_create(DBMS sys, table_definition& tbl)
       {
       case VoidColumn: throw std::runtime_error("sql error");
       case Blob: stream << "BLOB"; break;
-      case Date: stream << "DATE"; break;
-      case DateTime: stream << "TIMESTAMP"; break;
       case Double: stream << "DOUBLE"; break;
       case Geometry: stream << "DB2GSE.ST_GEOMETRY"; break;
       case Integer: stream << "BIGINT"; break;
@@ -86,8 +84,6 @@ inline std::vector<std::string> sql_create(DBMS sys, table_definition& tbl)
       {
       case VoidColumn: throw std::runtime_error("sql error");
       case Blob: stream << "VARBINARY(MAX)"; break;
-      case Date: stream << "DATE"; break;
-      case DateTime: stream << "DATETIME"; break;
       case Double: stream << "FLOAT"; break;
       case Geometry: stream << "GEOMETRY"; break;
       case Integer: stream << "BIGINT"; break;
@@ -100,8 +96,6 @@ inline std::vector<std::string> sql_create(DBMS sys, table_definition& tbl)
       {
       case VoidColumn: throw std::runtime_error("sql error");
       case Blob: stream << "BLOB"; break;
-      case Date: stream << "DATE"; break;
-      case DateTime: stream << "DATETIME"; break;
       case Double: stream << "DOUBLE"; break;
       case Geometry:
         stream << "GEOMETRY";
@@ -124,8 +118,6 @@ inline std::vector<std::string> sql_create(DBMS sys, table_definition& tbl)
       {
       case VoidColumn: throw std::runtime_error("sql error");
       case Blob: stream << "BLOB"; break;
-      case Date: stream << "DATE"; break;
-      case DateTime: stream << "TIMESTAMP"; break;
       case Double: stream << "BINARY_DOUBLE"; break;
       case Geometry: stream << "MDSYS.SDO_GEOMETRY"; break;
       case Integer: stream << "NUMBER(19)"; break;
@@ -139,8 +131,6 @@ inline std::vector<std::string> sql_create(DBMS sys, table_definition& tbl)
       case VoidColumn:
       case Geometry: throw std::runtime_error("sql error");
       case Blob: stream << "BYTEA"; break;
-      case Date: stream << "DATE"; break;
-      case DateTime: stream << "TIMESTAMP"; break;
       case Double: stream << "DOUBLE PRECISION"; break;
       case Integer: stream << "BIGINT"; break;
       case String: stream << "VARCHAR(255)"; break;
@@ -153,8 +143,6 @@ inline std::vector<std::string> sql_create(DBMS sys, table_definition& tbl)
       case VoidColumn:
       case Geometry: throw std::runtime_error("sql error");
       case Blob: stream << "BLOB"; break;
-      case Date: stream << "DATE"; break; // numeric affinity
-      case DateTime: stream << "DATETIME"; break; // numeric affinity
       case Double: stream << "REAL"; break; // real affinity
       case Integer: stream << "INTEGER"; break; // integer affinity
       case String: stream << "TEXT"; break; // text affinity

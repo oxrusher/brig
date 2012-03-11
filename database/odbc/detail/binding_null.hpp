@@ -30,8 +30,6 @@ inline SQLSMALLINT binding_null::c_type()
   {
     default: throw std::runtime_error("unsupported ODBC parameter");
     case Blob: return SQL_C_BINARY;
-    case Date: return SQL_C_TYPE_DATE;
-    case DateTime: return SQL_C_TYPE_TIMESTAMP;
     case Double: return SQL_C_DOUBLE;
     case Geometry: return SQL_C_BINARY;
     case Integer: return SQL_C_SBIGINT;
@@ -45,8 +43,6 @@ inline SQLSMALLINT binding_null::sql_type()
   {
     default: throw std::runtime_error("unsupported ODBC parameter");
     case Blob: return get_sql_type_blob(m_sys);
-    case Date: return SQL_DATE;
-    case DateTime: return SQL_TIMESTAMP;
     case Double: return SQL_DOUBLE;
     case Geometry: return SQL_VARBINARY;
     case Integer: return SQL_BIGINT;
