@@ -16,7 +16,6 @@
 #include <brig/database/detail/sql_select_list.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/index_definition.hpp>
-#include <brig/database/select_options.hpp>
 #include <brig/database/table_definition.hpp>
 #include <memory>
 #include <stdexcept>
@@ -26,45 +25,39 @@
 namespace brig { namespace database { namespace detail {
 
 template <typename Dialect>
-std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl, const select_options& opts)
+std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl)
 {
   const DBMS sys(dct->system());
   std::vector<column_definition> cols(tbl.columns);
-  for (size_t i(0); i < opts.expression_columns.size(); ++i)
-    if ( !opts.expression_columns[i].sql_expression.empty()
-      && std::find_if(cols.begin(), cols.end(), [&](const column_definition& col){ return col.name == opts.expression_columns[i].name; }) == cols.end()
-       )
-      cols.push_back(opts.expression_columns[i]);
-  
-  std::vector<column_definition> select_cols = opts.select_columns.empty()? cols: get_columns(cols, opts.select_columns);
+  std::vector<column_definition> select_cols = tbl.select_columns.empty()? cols: get_columns(cols, tbl.select_columns);
   std::string sql_infix, sql_condition, sql_suffix;
-  sql_limit(sys, opts.rows, sql_infix, sql_condition, sql_suffix);
+  sql_limit(sys, tbl.rows, sql_infix, sql_condition, sql_suffix);
 
   //
-  auto geom_col = std::find_if(cols.begin(), cols.end(), [&](const column_definition& col){ return col.name == opts.box_filter_column; });
-  if ( opts.box_filter_column.empty() ||
-       geom_col != cols.end() && geom_col->mbr.type() == typeid(brig::boost::box) && ::boost::geometry::covered_by(::boost::get<brig::boost::box>(geom_col->mbr), opts.box_filter)
+  auto geom_col = std::find_if(cols.begin(), cols.end(), [&](const column_definition& col){ return col.name == tbl.box_filter_column; });
+  if ( tbl.box_filter_column.empty() ||
+       geom_col != cols.end() && geom_col->mbr.type() == typeid(brig::boost::box) && ::boost::geometry::covered_by(::boost::get<brig::boost::box>(geom_col->mbr), tbl.box_filter)
      )
   {
     std::string res;
     if (!sql_condition.empty()) res += "SELECT * FROM (";
     res += "SELECT " + sql_infix + " " + sql_select_list(dct, select_cols) + " FROM " + sql_identifier(sys, tbl.id);
-    if (!opts.sql_filter.empty()) res += " WHERE " + opts.sql_filter;
+    if (!tbl.sql_filter.empty()) res += " WHERE " + tbl.sql_filter;
     if (!sql_condition.empty()) res += ") WHERE " + sql_condition;
     res += " " + sql_suffix;
     return res;
   }
 
   //
-  if (geom_col == cols.end()) throw std::runtime_error("sql error");
-  std::vector<brig::boost::box> boxes(1, opts.box_filter);
+  if (geom_col == cols.end()) throw std::runtime_error("SQL error");
+  std::vector<brig::boost::box> boxes(1, tbl.box_filter);
   normalize_hemisphere(boxes, sys, is_geodetic_type(sys, *geom_col));
 
   std::string sql_hint;
   if (MS_SQL == sys)
   {
-    auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return idx.type == Spatial && idx.columns.front() == opts.box_filter_column; });
-    if (p_idx == tbl.indexes.end()) throw std::runtime_error("sql error");
+    auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return idx.type == Spatial && idx.columns.front() == tbl.box_filter_column; });
+    if (p_idx == tbl.indexes.end()) throw std::runtime_error("SQL error");
     sql_hint = "WITH(INDEX(" + sql_identifier(sys, p_idx->id) + "))";
   }
 
@@ -77,7 +70,7 @@ std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl,
   std::string sql_key_tbl, sql_tbl(sql_identifier(sys, tbl.id));
   if (MS_SQL == sys && boxes.size() > 1)
   {
-    if (unique_cols.empty()) throw std::runtime_error("sql error");
+    if (unique_cols.empty()) throw std::runtime_error("SQL error");
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql_key_tbl += " UNION ";
@@ -86,7 +79,7 @@ std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl,
   }
   else if (Oracle == sys && boxes.size() > 1)
   {
-    if (unique_cols.empty()) throw std::runtime_error("sql error");
+    if (unique_cols.empty()) throw std::runtime_error("SQL error");
     sql_key_tbl += "SELECT " + sql_infix + " DISTINCT * FROM (";
     for (size_t i(0); i < boxes.size(); ++i)
     {
@@ -99,8 +92,8 @@ std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl,
   }
   else if (SQLite == sys)
   {
-    if (unique_cols.size() != 1) throw std::runtime_error("sql error");
-    sql_key_tbl += "SELECT pkid " + sql_identifier(sys, unique_cols[0].name) + " FROM " + sql_identifier(sys, "idx_" + tbl.id.name + "_" + opts.box_filter_column) + " WHERE ";
+    if (unique_cols.size() != 1) throw std::runtime_error("SQL error");
+    sql_key_tbl += "SELECT pkid " + sql_identifier(sys, unique_cols[0].name) + " FROM " + sql_identifier(sys, "idx_" + tbl.id.name + "_" + tbl.box_filter_column) + " WHERE ";
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql_key_tbl += " OR ";
@@ -121,7 +114,7 @@ std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl,
       res += sql_box_filter(sys, *geom_col, boxes[i]);
     }
     res += ")";
-    if (!opts.sql_filter.empty()) res += " AND " + opts.sql_filter;
+    if (!tbl.sql_filter.empty()) res += " AND " + tbl.sql_filter;
   }
   else
   {
@@ -136,7 +129,7 @@ std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl,
       if (std::find_if(select_cols.begin(), select_cols.end(), [&](const column_definition& col){ return col.name == unique_cols[i].name; }) == select_cols.end())
         res += ", " + dct->sql_column(unique_cols[i]);
     res += " FROM " + sql_tbl;
-    if (!opts.sql_filter.empty()) res += " WHERE " + opts.sql_filter;
+    if (!tbl.sql_filter.empty()) res += " WHERE " + tbl.sql_filter;
     res += ") v ON ";
     for (size_t i(0); i < unique_cols.size(); ++i)
     {

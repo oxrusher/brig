@@ -41,7 +41,7 @@ inline binding* binding_visitor::operator()(const null_t&) const
 {
   switch (col? col->type: VoidColumn)
   {
-    default: throw std::runtime_error("unsupported OCI parameter");
+    default: throw std::runtime_error("OCI type error");
     case Blob: return new binding_blob(hnd, i, 0, 0);
     case Double: return new binding_impl<double, SQLT_FLT>(hnd, i);
     case Geometry: return new binding_geometry(hnd, i, blob_t(), col->srid);

@@ -86,7 +86,7 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 siz
     break;
   }
 
-  throw std::runtime_error("unsupported OCI column");
+  throw std::runtime_error("OCI type error");
 } // define_factory
 
 } } } } // brig::database::oracle::detail

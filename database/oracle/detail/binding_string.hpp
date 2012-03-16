@@ -22,7 +22,7 @@ public:
 inline binding_string::binding_string(handles* hnd, size_t order, const std::string& str, ub1 cs_form) : m_str(brig::unicode::transform<std::u16string>(str))
 {
   const size_t size((m_str.size() + 1) * sizeof(char16_t));
-  if (size > SHRT_MAX) throw std::runtime_error("unsupported OCI parameter");
+  if (size > SHRT_MAX) throw std::runtime_error("OCI type error");
   m_ind = OCIInd(m_str.empty()? OCI_IND_NULL: size);
   OCIBind* bnd(0);
   hnd->check(lib::singleton().p_OCIBindByPos(hnd->stmt, &bnd, hnd->err, ub4(order), (void*)m_str.c_str(), m_ind, SQLT_STR, &m_ind, 0, 0, 0, 0, OCI_DEFAULT));

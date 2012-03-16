@@ -14,7 +14,7 @@ inline std::string sql_geometry_layers(DBMS sys) // TABLE_SCHEMA, TABLE_NAME, CO
 {
   switch (sys)
   {
-  default: throw std::runtime_error("sql error");
+  default: throw std::runtime_error("SQL error");
   case DB2: return "SELECT DISTINCT i.TABSCHEMA scm, i.TABNAME tbl, c.COLNAME col FROM SYSCAT.INDEXES i, SYSCAT.INDEXCOLUSE c WHERE " + sql_schema_filter(sys, "i.TABSCHEMA") + " AND RTRIM(i.IESCHEMA) = 'DB2GSE' AND i.IENAME = 'SPATIAL_INDEX' AND i.INDSCHEMA = c.INDSCHEMA AND i.INDNAME = c.INDNAME ORDER BY scm, tbl, col";
   case MS_SQL: return "SELECT DISTINCT OBJECT_SCHEMA_NAME(i.object_id) scm, OBJECT_NAME(i.object_id) tbl, COL_NAME(c.object_id, c.column_id) col FROM sys.indexes i, sys.index_columns c WHERE " + sql_schema_filter(sys, "OBJECT_SCHEMA_NAME(i.object_id)") + " AND i.type = 4 AND i.object_id = c.object_id AND i.index_id = c.index_id ORDER BY scm, tbl, col";
   case MySQL: return "SELECT DISTINCT TABLE_SCHEMA scm, TABLE_NAME tbl, COLUMN_NAME col FROM INFORMATION_SCHEMA.STATISTICS WHERE " + sql_schema_filter(sys, "TABLE_SCHEMA") + " AND INDEX_TYPE = 'SPATIAL' ORDER BY scm, tbl, col";

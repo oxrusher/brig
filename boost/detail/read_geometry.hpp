@@ -9,6 +9,7 @@
 #include <brig/boost/detail/read_polygon.hpp>
 #include <brig/boost/geometry.hpp>
 #include <cstdint>
+#include <stdexcept>
 
 namespace brig { namespace boost { namespace detail {
 
@@ -47,8 +48,8 @@ void read_geometry(InputIterator& iter, geometry& geom)
 
   case MultiPoint:
     {
-    geom = multipoint();
-    multipoint& mpt = get<multipoint>(geom);
+    geom = multi_point();
+    multi_point& mpt = get<multi_point>(geom);
     const uint32_t count(read<uint32_t>(byte_order, iter));
     mpt.resize(count);
     for (uint32_t i = 0; i < count; ++i)
@@ -62,8 +63,8 @@ void read_geometry(InputIterator& iter, geometry& geom)
 
   case MultiLineString:
     {
-    geom = multilinestring();
-    multilinestring& mline = get<multilinestring>(geom);
+    geom = multi_linestring();
+    multi_linestring& mline = get<multi_linestring>(geom);
     const uint32_t count(read<uint32_t>(byte_order, iter));
     mline.resize(count);
     for (uint32_t i = 0; i < count; ++i)
@@ -77,8 +78,8 @@ void read_geometry(InputIterator& iter, geometry& geom)
 
   case MultiPolygon:
     {
-    geom = multipolygon();
-    multipolygon& mpoly = get<multipolygon>(geom);
+    geom = multi_polygon();
+    multi_polygon& mpoly = get<multi_polygon>(geom);
     const uint32_t count(read<uint32_t>(byte_order, iter));
     mpoly.resize(count);
     for (uint32_t i = 0; i < count; ++i)
@@ -92,8 +93,8 @@ void read_geometry(InputIterator& iter, geometry& geom)
 
   case GeometryCollection:
     {
-    geom = geometrycollection();
-    geometrycollection& coll = get<geometrycollection>(geom);
+    geom = geometry_collection();
+    geometry_collection& coll = get<geometry_collection>(geom);
     const uint32_t count(read<uint32_t>(byte_order, iter));
     coll.resize(count);
     for (uint32_t i = 0; i < count; ++i)

@@ -67,7 +67,7 @@ inline std::string command::sql_parameter(size_t, const column_definition& param
     case Postgres:
       if ("geography" == param_col.lower_case_type.name)
       {
-        if (param_col.srid != 4326) throw std::runtime_error("it only supports wgs 84 long lat (srid:4326)");
+        if (param_col.srid != 4326) throw std::runtime_error("SRID error");
         stream << "ST_GeogFromWKB(?)";
       }
       else

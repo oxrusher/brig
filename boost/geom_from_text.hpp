@@ -17,7 +17,7 @@ inline geometry geom_from_text(const char* wkt)
   detail::grammar<const char*> gr;
   geometry geom;
   if (!phrase_parse(wkt, (const char*)0, gr, blank, geom) || *wkt != 0)
-    throw std::runtime_error("wkt error");
+    throw std::runtime_error("WKT error");
   return geom;
 }
 

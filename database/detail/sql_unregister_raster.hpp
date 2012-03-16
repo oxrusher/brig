@@ -10,7 +10,7 @@
 #include <brig/database/identifier.hpp>
 #include <brig/database/raster_definition.hpp>
 #include <brig/database/variant.hpp>
-#include <brig/detail/string_cast.hpp>
+#include <brig/string_cast.hpp>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -19,12 +19,10 @@ namespace brig { namespace database { namespace detail {
 
 inline std::string sql_unregister_raster(std::shared_ptr<command> cmd, const raster_definition& raster)
 {
-  using namespace brig::detail;
-
   const DBMS sys(cmd->system());
   cmd->exec(sql_tables(sys, "simple_rasters"));
   std::vector<variant> row;
-  if (!cmd->fetch(row)) throw std::runtime_error("sql error");
+  if (!cmd->fetch(row)) throw std::runtime_error("SQL error");
 
   identifier id;
   id.schema = string_cast<char>(row[0]);

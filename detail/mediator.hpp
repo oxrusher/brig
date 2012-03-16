@@ -87,7 +87,7 @@ void mediator<ThreadedArgument>::call(functor* func)
   m_cond.wait(lock, [&](){ return Idle == this->m_st || AfterFinish == this->m_st; });
   m_func = 0;
   if (!(m_exc == 0)) std::rethrow_exception(std::move(m_exc));
-  if (AfterFinish == m_st) throw std::runtime_error("thread is over");
+  if (AfterFinish == m_st) throw std::runtime_error("thread error");
 }
 
 template <typename ThreadedArgument>

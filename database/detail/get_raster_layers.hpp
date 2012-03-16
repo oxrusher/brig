@@ -9,7 +9,7 @@
 #include <brig/database/raster_definition.hpp>
 #include <brig/database/rowset.hpp>
 #include <brig/database/variant.hpp>
-#include <brig/detail/string_cast.hpp>
+#include <brig/string_cast.hpp>
 #include <memory>
 #include <vector>
 
@@ -17,7 +17,6 @@ namespace brig { namespace database { namespace detail {
 
 inline std::vector<raster_definition> get_raster_layers(std::shared_ptr<rowset> rs)
 {
-  using namespace brig::detail;
   std::vector<raster_definition> res;
   std::vector<variant> row;
   identifier prev_id;

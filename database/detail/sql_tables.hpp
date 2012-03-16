@@ -17,7 +17,7 @@ inline std::string sql_tables(DBMS sys, const std::string& tbl_filter = std::str
   std::ostringstream stream; stream.imbue(std::locale::classic());
   switch (sys)
   {
-  default: throw std::runtime_error("sql error");
+  default: throw std::runtime_error("SQL error");
 
   case DB2:
     stream << "SELECT RTRIM(TABSCHEMA), TABNAME FROM SYSCAT.TABLES WHERE TYPE = 'T' AND ";

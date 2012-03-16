@@ -34,7 +34,7 @@ inline define_blob::define_blob(handles* hnd, size_t order) : m_len(0), m_ind(OC
   hnd->check(lib::singleton().p_OCIDefineDynamic(def, hnd->err, this, callback));
 }
 
-inline sb4 define_blob::callback(void *octxp, OCIDefine *defnp, ub4 iter, void **bufpp, ub4 **alenpp, ub1 *piecep, void **indpp, ub2 **rcodep)
+inline sb4 define_blob::callback(void *octxp, OCIDefine*, ub4, void **bufpp, ub4 **alenpp, ub1 *piecep, void **indpp, ub2 **rcodep)
 {
   define_blob* p_def(static_cast<define_blob*>(octxp));
 

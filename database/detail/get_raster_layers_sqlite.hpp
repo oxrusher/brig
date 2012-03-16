@@ -39,7 +39,7 @@ inline std::vector<raster_definition> get_raster_layers_sqlite(std::shared_ptr<c
 
         column_definition col;
         col.name = ::boost::get<std::string>(res[r].levels[l].raster_column);
-        col.sql_expression = "(SELECT raster FROM " + tbl + " WHERE " + tbl + ".id = id)";
+        col.sql_expression = "(SELECT r FROM (SELECT id i, raster r FROM " + tbl + ") t WHERE t.i = " + "id)";
         col.dbms_type.name = "BLOB";
         col.lower_case_type.name = transform<std::string>(col.dbms_type.name, lower_case);
         col.type = Blob;

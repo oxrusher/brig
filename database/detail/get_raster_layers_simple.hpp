@@ -12,7 +12,7 @@
 #include <brig/database/identifier.hpp>
 #include <brig/database/raster_definition.hpp>
 #include <brig/database/variant.hpp>
-#include <brig/detail/string_cast.hpp>
+#include <brig/string_cast.hpp>
 #include <memory>
 #include <string>
 #include <vector>
@@ -21,9 +21,6 @@ namespace brig { namespace database { namespace detail {
 
 inline std::vector<raster_definition> get_raster_layers_simple(std::shared_ptr<command> cmd)
 {
-  using namespace brig::database::detail;
-  using namespace brig::detail;
-
   const DBMS sys(cmd->system());
   cmd->exec(sql_tables(sys, "simple_rasters"));
   std::vector<variant> row;

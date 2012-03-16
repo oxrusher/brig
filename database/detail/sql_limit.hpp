@@ -4,7 +4,7 @@
 #define BRIG_DATABASE_DETAIL_SQL_LIMIT_HPP
 
 #include <brig/database/global.hpp>
-#include <brig/detail/string_cast.hpp>
+#include <brig/string_cast.hpp>
 #include <string>
 
 namespace brig { namespace database { namespace detail {
@@ -12,7 +12,7 @@ namespace brig { namespace database { namespace detail {
 inline void sql_limit(DBMS sys, int rows, std::string& sql_infix, std::string& sql_condition, std::string& sql_suffix)
 {
   if (rows < 0) return;
-  const std::string sql_rows(brig::detail::string_cast<char>(rows));
+  const std::string sql_rows(string_cast<char>(rows));
   switch (sys)
   {
   default: break;

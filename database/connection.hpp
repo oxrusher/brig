@@ -33,7 +33,7 @@
 #include <brig/database/rowset.hpp>
 #include <brig/database/table_definition.hpp>
 #include <brig/database/variant.hpp>
-#include <brig/detail/string_cast.hpp>
+#include <brig/string_cast.hpp>
 #include <iterator>
 #include <memory>
 #include <stdexcept>
@@ -57,7 +57,7 @@ public:
   table_definition get_table_definition(const identifier& tbl)  { return detail::get_table_definition(get_command(), tbl); }
   brig::boost::box get_mbr(const identifier& tbl, column_definition& col);
 
-  std::shared_ptr<rowset> get_table(const table_definition& tbl, const select_options& opts = select_options());
+  std::shared_ptr<rowset> get_table(const table_definition& tbl);
 
   std::shared_ptr<command> get_command()  { return std::shared_ptr<command>(m_pool->allocate(), detail::deleter<pool_type>(m_pool)); }
   void before_create(table_definition& tbl);
@@ -76,15 +76,14 @@ std::string connection<Threading>::get_schema()
   if (sql.empty()) return "";
   cmd->exec(sql);
   std::vector<variant> row;
-  if (!cmd->fetch(row)) throw std::runtime_error("sql error");
-  return brig::detail::string_cast<char>(row[0]);
+  if (!cmd->fetch(row)) throw std::runtime_error("SQL error");
+  return string_cast<char>(row[0]);
 }
 
 template <bool Threading>
 std::vector<identifier> connection<Threading>::get_tables()
 {
   using namespace brig::database::detail;
-  using namespace brig::detail;
 
   std::vector<identifier> res;
   auto cmd = get_command();
@@ -104,7 +103,6 @@ template <bool Threading>
 std::vector<identifier> connection<Threading>::get_geometry_layers()
 {
   using namespace brig::database::detail;
-  using namespace brig::detail;
 
   auto cmd = get_command();
   const DBMS sys(cmd->system());
@@ -178,14 +176,14 @@ brig::boost::box connection<Threading>::get_mbr(const identifier& tbl, column_de
     return res;
   }
 
-  throw std::runtime_error("mbr error");
+  throw std::runtime_error("MBR error");
 }
 
 template <bool Threading>
-std::shared_ptr<rowset> connection<Threading>::get_table(const table_definition& tbl, const select_options& opts)
+std::shared_ptr<rowset> connection<Threading>::get_table(const table_definition& tbl)
 {
   auto cmd = get_command();
-  cmd->exec(detail::sql_table(cmd, tbl, opts));
+  cmd->exec(detail::sql_table(cmd, tbl));
   return cmd;
 }
 

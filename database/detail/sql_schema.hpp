@@ -13,7 +13,7 @@ inline std::string sql_schema(DBMS sys)
 {
   switch (sys)
   {
-  default: throw std::runtime_error("sql error");
+  default: throw std::runtime_error("SQL error");
   case DB2: return "VALUES CURRENT_SCHEMA";
   case MS_SQL: return "SELECT SCHEMA_NAME()";
   case MySQL: return "select schema()";

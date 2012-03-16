@@ -24,6 +24,9 @@ public:
   frame(): m_scale(1)  {}
   frame(const QPointF& center, qreal scale, const QSize& size);
   bool operator==(const frame& r) const;
+  QPointF center() const  { return m_center; }
+  qreal scale() const  { return m_scale; }
+  QSize size() const  { return m_size; }
   QPointF proj_to_pixel(const QPointF& point) const;
   QPointF pixel_to_proj(const QPointF& point) const;
 }; // frame
@@ -44,13 +47,13 @@ inline bool frame::operator==(const frame& r) const
 
 inline QPointF frame::proj_to_pixel(const QPointF& point) const
 {
-  if (huge(point.x()) || huge(point.y())) throw std::runtime_error("huge val error");
+  if (huge(point.x()) || huge(point.y())) throw std::runtime_error("projection error");
   return QPointF(m_half_size.width() + (point.x() - m_center.x()) / m_scale, m_half_size.height() + (m_center.y() - point.y()) / m_scale);
 }
 
 inline QPointF frame::pixel_to_proj(const QPointF& point) const
 {
-  if (huge(point.x()) || huge(point.y())) throw std::runtime_error("huge val error");
+  if (huge(point.x()) || huge(point.y())) throw std::runtime_error("projection error");
   return QPointF((point.x() - m_half_size.width()) * m_scale + m_center.x(), (m_half_size.height() - point.y()) * m_scale + m_center.y());
 }
 

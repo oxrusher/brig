@@ -31,7 +31,7 @@ class epsg
 public:
   epsg() : m_code(-1)  {}
   explicit epsg(int code);
-  bool operator ==(const epsg& r) const  { return m_code == r.m_code; }
+  operator int() const  { return m_code; }
   operator projPJ() const  { return m_res? m_res->pj: 0; }
 }; // epsg
 
@@ -47,11 +47,11 @@ inline std::string epsg::definition(bool cur_dir, int code)
 
 inline epsg::epsg(int code)
 {
-  if (detail::lib::singleton().empty()) throw std::runtime_error("projection error");
+  if (detail::lib::singleton().empty()) throw std::runtime_error("EPSG error");
   projPJ pj(0);
   if (!pj) pj = detail::lib::singleton().p_pj_init_plus( definition(true, code).c_str() );
   if (!pj) pj = detail::lib::singleton().p_pj_init_plus( definition(false, code).c_str() );
-  if (!pj) throw std::runtime_error("projection error");
+  if (!pj) throw std::runtime_error("EPSG error");
   m_res = std::shared_ptr<resource>(new resource(pj));
   m_code = code;
 } // epsg::

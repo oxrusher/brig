@@ -15,7 +15,7 @@
 #include <brig/database/raster_definition.hpp>
 #include <brig/database/table_definition.hpp>
 #include <brig/database/variant.hpp>
-#include <brig/detail/string_cast.hpp>
+#include <brig/string_cast.hpp>
 #include <ios>
 #include <locale>
 #include <memory>
@@ -59,8 +59,6 @@ inline table_definition get_simple_rasters_definition(DBMS sys)
 
 inline std::vector<std::string> sql_register_raster(std::shared_ptr<command> cmd, const raster_definition& raster)
 {
-  using namespace brig::detail;
-
   const DBMS sys(cmd->system());
   cmd->exec(sql_tables(sys, "simple_rasters"));
   std::vector<variant> row;
@@ -71,7 +69,7 @@ inline std::vector<std::string> sql_register_raster(std::shared_ptr<command> cmd
       cmd->exec(*sql);
 
     cmd->exec(sql_tables(sys, "simple_rasters"));
-    if (!cmd->fetch(row)) throw std::runtime_error("sql error");
+    if (!cmd->fetch(row)) throw std::runtime_error("SQL error");
   }
 
   identifier id;

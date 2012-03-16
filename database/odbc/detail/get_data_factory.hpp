@@ -61,7 +61,7 @@ inline get_data* get_data_factory(SQLSMALLINT sql_type)
   case SQL_DB2_BLOB: return new get_data_blob();
 
   // SQL_UNKNOWN_TYPE
-  default: throw std::runtime_error("unsupported ODBC column");
+  default: throw std::runtime_error("ODBC type error");
   }
 } // get_data_factory
 

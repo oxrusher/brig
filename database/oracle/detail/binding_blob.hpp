@@ -26,7 +26,7 @@ inline binding_blob::binding_blob(handles* hnd, size_t order, void* data, ub4 le
   hnd->check(lib::singleton().p_OCIBindDynamic(bnd, hnd->err, this, callback, 0, 0));
 }
 
-inline sb4 binding_blob::callback(void *ictxp, OCIBind *bindp, ub4 iter, ub4 index, void **bufpp, ub4 *alenp, ub1 *piecep, void **indpp)
+inline sb4 binding_blob::callback(void *ictxp, OCIBind*, ub4, ub4, void **bufpp, ub4 *alenp, ub1 *piecep, void **indpp)
 {
   binding_blob* p_bnd(static_cast<binding_blob*>(ictxp));
 

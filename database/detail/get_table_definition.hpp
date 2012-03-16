@@ -17,7 +17,7 @@
 #include <brig/database/numeric_cast.hpp>
 #include <brig/database/table_definition.hpp>
 #include <brig/database/variant.hpp>
-#include <brig/detail/string_cast.hpp>
+#include <brig/string_cast.hpp>
 #include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
 #include <memory>
@@ -29,8 +29,6 @@ namespace brig { namespace database { namespace detail {
 
 inline table_definition get_table_definition(std::shared_ptr<command> cmd, const identifier& tbl)
 {
-  using namespace brig::database::detail;
-  using namespace brig::detail;
   using namespace brig::unicode;
 
   const DBMS sys(cmd->system());
