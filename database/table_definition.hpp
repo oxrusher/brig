@@ -5,8 +5,9 @@
 
 #include <brig/boost/geometry.hpp>
 #include <brig/database/column_definition.hpp>
-#include <brig/database/index_definition.hpp>
 #include <brig/database/identifier.hpp>
+#include <brig/database/index_definition.hpp>
+#include <brig/database/variant.hpp>
 #include <string>
 #include <vector>
 
@@ -17,12 +18,16 @@ struct table_definition {
   std::vector<column_definition> columns;
   std::vector<index_definition> indexes;
 
-  std::string sql_filter, box_filter_column;
-  brig::boost::box box_filter;
+  std::string box_column;
+  brig::boost::box box;
+
+  std::string sql_filter;
+  std::vector<variant> parameters;
+
   std::vector<std::string> select_columns;
   int rows;
 
-  table_definition() : box_filter(brig::boost::point(0, 0), brig::boost::point(0, 0)), rows(-1)  {}
+  table_definition() : box(brig::boost::point(0, 0), brig::boost::point(0, 0)), rows(-1)  {}
 }; // table_definition
 
 } } // brig::database

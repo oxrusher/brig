@@ -8,7 +8,7 @@
 #include <brig/database/detail/sql_tables.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/identifier.hpp>
-#include <brig/database/raster_definition.hpp>
+#include <brig/database/raster_pyramid.hpp>
 #include <brig/database/variant.hpp>
 #include <brig/string_cast.hpp>
 #include <memory>
@@ -17,7 +17,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline std::string sql_unregister_raster(std::shared_ptr<command> cmd, const raster_definition& raster)
+inline std::string sql_unregister_raster(std::shared_ptr<command> cmd, const raster_pyramid& raster)
 {
   const DBMS sys(cmd->system());
   cmd->exec(sql_tables(sys, "simple_rasters"));

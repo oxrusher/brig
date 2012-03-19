@@ -12,7 +12,7 @@
 #include <brig/database/global.hpp>
 #include <brig/database/identifier.hpp>
 #include <brig/database/index_definition.hpp>
-#include <brig/database/raster_definition.hpp>
+#include <brig/database/raster_pyramid.hpp>
 #include <brig/database/table_definition.hpp>
 #include <brig/database/variant.hpp>
 #include <brig/string_cast.hpp>
@@ -57,7 +57,7 @@ inline table_definition get_simple_rasters_definition(DBMS sys)
   return tbl;
 }
 
-inline std::vector<std::string> sql_register_raster(std::shared_ptr<command> cmd, const raster_definition& raster)
+inline std::vector<std::string> sql_register_raster(std::shared_ptr<command> cmd, const raster_pyramid& raster)
 {
   const DBMS sys(cmd->system());
   cmd->exec(sql_tables(sys, "simple_rasters"));
@@ -80,7 +80,7 @@ inline std::vector<std::string> sql_register_raster(std::shared_ptr<command> cmd
 
   for (size_t lvl(0); lvl < raster.levels.size(); ++lvl)
   {
-    std::ostringstream stream; stream.imbue(std::locale::classic()); stream << std::scientific; stream.precision(16);
+    std::ostringstream stream; stream.imbue(std::locale::classic()); stream << std::scientific; stream.precision(17);
     stream << "INSERT INTO " << sql_identifier(sys, tbl.id) << "(";
     for (size_t col(0); col < tbl.columns.size(); ++col)
     {

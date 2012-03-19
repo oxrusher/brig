@@ -10,7 +10,7 @@
 #include <brig/database/detail/sql_tables.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/identifier.hpp>
-#include <brig/database/raster_definition.hpp>
+#include <brig/database/raster_pyramid.hpp>
 #include <brig/database/variant.hpp>
 #include <brig/string_cast.hpp>
 #include <memory>
@@ -19,7 +19,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline std::vector<raster_definition> get_raster_layers_simple(std::shared_ptr<command> cmd)
+inline std::vector<raster_pyramid> get_raster_layers_simple(std::shared_ptr<command> cmd)
 {
   const DBMS sys(cmd->system());
   cmd->exec(sql_tables(sys, "simple_rasters"));
@@ -43,7 +43,7 @@ inline std::vector<raster_definition> get_raster_layers_simple(std::shared_ptr<c
     return get_raster_layers(cmd);
   }
 
-  return std::vector<raster_definition>();
+  return std::vector<raster_pyramid>();
 }
 
 } } } // brig::database::detail

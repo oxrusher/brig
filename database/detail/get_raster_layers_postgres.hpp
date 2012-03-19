@@ -9,7 +9,7 @@
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/detail/sql_tables.hpp>
 #include <brig/database/global.hpp>
-#include <brig/database/raster_definition.hpp>
+#include <brig/database/raster_pyramid.hpp>
 #include <brig/database/variant.hpp>
 #include <brig/string_cast.hpp>
 #include <brig/unicode/lower_case.hpp>
@@ -19,7 +19,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline std::vector<raster_definition> get_raster_layers_postgres(std::shared_ptr<command> cmd)
+inline std::vector<raster_pyramid> get_raster_layers_postgres(std::shared_ptr<command> cmd)
 {
   using namespace brig::database::detail;
   using namespace brig::unicode;
@@ -44,7 +44,7 @@ inline std::vector<raster_definition> get_raster_layers_postgres(std::shared_ptr
         }
       return res;
     }
-  return std::vector<raster_definition>();
+  return std::vector<raster_pyramid>();
 }
 
 } } } // brig::database::detail

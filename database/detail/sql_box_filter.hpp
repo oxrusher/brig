@@ -19,7 +19,7 @@ inline std::string sql_box_filter(DBMS sys, const column_definition& col, const 
 {
   const std::string id(sql_identifier(sys, col.name));
   const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>());
-  std::ostringstream stream; stream.imbue(std::locale::classic()); stream << std::scientific; stream.precision(16);
+  std::ostringstream stream; stream.imbue(std::locale::classic()); stream << std::scientific; stream.precision(17);
 
   if (Postgres == sys)
   {

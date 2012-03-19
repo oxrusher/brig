@@ -17,6 +17,7 @@
 #include <brig/database/global.hpp>
 #include <brig/database/index_definition.hpp>
 #include <brig/database/table_definition.hpp>
+#include <brig/database/variant.hpp>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -25,8 +26,12 @@
 namespace brig { namespace database { namespace detail {
 
 template <typename Dialect>
-std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl)
+void sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::string& sql, std::vector<variant>& params)
 {
+  sql = "";
+  params.clear();
+  if (!tbl.sql_filter.empty()) params = tbl.parameters;
+
   const DBMS sys(dct->system());
   std::vector<column_definition> cols(tbl.columns);
   std::vector<column_definition> select_cols = tbl.select_columns.empty()? cols: get_columns(cols, tbl.select_columns);
@@ -34,29 +39,28 @@ std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl)
   sql_limit(sys, tbl.rows, sql_infix, sql_condition, sql_suffix);
 
   //
-  auto geom_col = std::find_if(cols.begin(), cols.end(), [&](const column_definition& col){ return col.name == tbl.box_filter_column; });
-  if ( tbl.box_filter_column.empty() ||
-       geom_col != cols.end() && geom_col->mbr.type() == typeid(brig::boost::box) && ::boost::geometry::covered_by(::boost::get<brig::boost::box>(geom_col->mbr), tbl.box_filter)
+  auto geom_col = std::find_if(cols.begin(), cols.end(), [&](const column_definition& col){ return col.name == tbl.box_column; });
+  if ( tbl.box_column.empty() ||
+       geom_col != cols.end() && geom_col->mbr.type() == typeid(brig::boost::box) && ::boost::geometry::covered_by(::boost::get<brig::boost::box>(geom_col->mbr), tbl.box)
      )
   {
-    std::string res;
-    if (!sql_condition.empty()) res += "SELECT * FROM (";
-    res += "SELECT " + sql_infix + " " + sql_select_list(dct, select_cols) + " FROM " + sql_identifier(sys, tbl.id);
-    if (!tbl.sql_filter.empty()) res += " WHERE " + tbl.sql_filter;
-    if (!sql_condition.empty()) res += ") WHERE " + sql_condition;
-    res += " " + sql_suffix;
-    return res;
+    if (!sql_condition.empty()) sql += "SELECT * FROM (";
+    sql += "SELECT " + sql_infix + " " + sql_select_list(dct, select_cols) + " FROM " + sql_identifier(sys, tbl.id);
+    if (!tbl.sql_filter.empty()) sql += " WHERE " + tbl.sql_filter;
+    if (!sql_condition.empty()) sql += ") WHERE " + sql_condition;
+    sql += " " + sql_suffix;
+    return;
   }
 
   //
   if (geom_col == cols.end()) throw std::runtime_error("SQL error");
-  std::vector<brig::boost::box> boxes(1, tbl.box_filter);
+  std::vector<brig::boost::box> boxes(1, tbl.box);
   normalize_hemisphere(boxes, sys, is_geodetic_type(sys, *geom_col));
 
   std::string sql_hint;
   if (MS_SQL == sys)
   {
-    auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return idx.type == Spatial && idx.columns.front() == tbl.box_filter_column; });
+    auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return idx.type == Spatial && idx.columns.front() == tbl.box_column; });
     if (p_idx == tbl.indexes.end()) throw std::runtime_error("SQL error");
     sql_hint = "WITH(INDEX(" + sql_identifier(sys, p_idx->id) + "))";
   }
@@ -93,7 +97,7 @@ std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl)
   else if (SQLite == sys)
   {
     if (unique_cols.size() != 1) throw std::runtime_error("SQL error");
-    sql_key_tbl += "SELECT pkid " + sql_identifier(sys, unique_cols[0].name) + " FROM " + sql_identifier(sys, "idx_" + tbl.id.name + "_" + tbl.box_filter_column) + " WHERE ";
+    sql_key_tbl += "SELECT pkid " + sql_identifier(sys, unique_cols[0].name) + " FROM " + sql_identifier(sys, "idx_" + tbl.id.name + "_" + tbl.box_column) + " WHERE ";
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql_key_tbl += " OR ";
@@ -102,44 +106,42 @@ std::string sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl)
   }
 
   // result
-  std::string res;
-  if (!sql_condition.empty()) res += "SELECT * FROM (";
-  res += "SELECT " + sql_infix + " ";
+  if (!sql_condition.empty()) sql += "SELECT * FROM (";
+  sql += "SELECT " + sql_infix + " ";
   if (sql_key_tbl.empty())
   {
-    res += sql_select_list(dct, select_cols) + " FROM " + sql_tbl + " " + sql_hint + " WHERE (";
+    sql += sql_select_list(dct, select_cols) + " FROM " + sql_tbl + " " + sql_hint + " WHERE (";
     for (size_t i(0); i < boxes.size(); ++i)
     {
-      if (i > 0) res += " OR ";
-      res += sql_box_filter(sys, *geom_col, boxes[i]);
+      if (i > 0) sql += " OR ";
+      sql += sql_box_filter(sys, *geom_col, boxes[i]);
     }
-    res += ")";
-    if (!tbl.sql_filter.empty()) res += " AND " + tbl.sql_filter;
+    sql += ")";
+    if (!tbl.sql_filter.empty()) sql += " AND " + tbl.sql_filter;
   }
   else
   {
     for (size_t i(0); i < select_cols.size(); ++i)
     {
-      if (i > 0) res += ", ";
+      if (i > 0) sql += ", ";
       const std::string id(sql_identifier(sys, select_cols[i].name));
-      res += "v." + id + " " + id;
+      sql += "v." + id + " " + id;
     }
-    res += " FROM (" + sql_key_tbl + ") k JOIN (SELECT " + sql_select_list(dct, select_cols);
+    sql += " FROM (" + sql_key_tbl + ") k JOIN (SELECT " + sql_select_list(dct, select_cols);
     for (size_t i(0); i < unique_cols.size(); ++i)
       if (std::find_if(select_cols.begin(), select_cols.end(), [&](const column_definition& col){ return col.name == unique_cols[i].name; }) == select_cols.end())
-        res += ", " + dct->sql_column(unique_cols[i]);
-    res += " FROM " + sql_tbl;
-    if (!tbl.sql_filter.empty()) res += " WHERE " + tbl.sql_filter;
-    res += ") v ON ";
+        sql += ", " + dct->sql_column(unique_cols[i]);
+    sql += " FROM " + sql_tbl;
+    if (!tbl.sql_filter.empty()) sql += " WHERE " + tbl.sql_filter;
+    sql += ") v ON ";
     for (size_t i(0); i < unique_cols.size(); ++i)
     {
-      if (i > 0) res += " AND ";
-      res += "k." + sql_identifier(sys, unique_cols[i].name) + " = v." + sql_identifier(sys, unique_cols[i].name);
+      if (i > 0) sql += " AND ";
+      sql += "k." + sql_identifier(sys, unique_cols[i].name) + " = v." + sql_identifier(sys, unique_cols[i].name);
     }
   }
-  res += " " + sql_suffix;
-  if (!sql_condition.empty()) res += ") WHERE " + sql_condition;
-  return res;
+  sql += " " + sql_suffix;
+  if (!sql_condition.empty()) sql += ") WHERE " + sql_condition;
 }
 
 } } } // brig::database::detail

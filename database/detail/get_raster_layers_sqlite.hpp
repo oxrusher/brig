@@ -9,19 +9,17 @@
 #include <brig/database/detail/sql_geometry_layers.hpp>
 #include <brig/database/detail/sql_tables.hpp>
 #include <brig/database/global.hpp>
-#include <brig/database/raster_definition.hpp>
+#include <brig/database/raster_pyramid.hpp>
 #include <brig/database/variant.hpp>
 #include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
 #include <ios>
-#include <locale>
 #include <memory>
-#include <sstream>
 #include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-inline std::vector<raster_definition> get_raster_layers_sqlite(std::shared_ptr<command> cmd)
+inline std::vector<raster_pyramid> get_raster_layers_sqlite(std::shared_ptr<command> cmd)
 {
   using namespace brig::database::detail;
   using namespace brig::unicode;
@@ -44,14 +42,13 @@ inline std::vector<raster_definition> get_raster_layers_sqlite(std::shared_ptr<c
         col.lower_case_type.name = transform<std::string>(col.dbms_type.name, lower_case);
         col.type = Blob;
         res[r].levels[l].raster_column = col;
-
-        std::ostringstream stream; stream.imbue(std::locale::classic()); stream << std::scientific; stream.precision(16);
-        stream << "pixel_x_size = " << res[r].levels[l].resolution.get<0>() << " AND " + hint + "pixel_y_size = " << res[r].levels[l].resolution.get<1>();
-        res[r].levels[l].sql_filter = stream.str();
+        res[r].levels[l].sql_filter = hint + "pixel_x_size = " + cmd->sql_parameter(0, column_definition()) + " AND " + hint + "pixel_y_size = " + cmd->sql_parameter(1, column_definition());
+        res[r].levels[l].parameters.push_back( res[r].levels[l].resolution.get<0>() );
+        res[r].levels[l].parameters.push_back( res[r].levels[l].resolution.get<1>() );
       }
     return res;
   }
-  return std::vector<raster_definition>();
+  return std::vector<raster_pyramid>();
 }
 
 } } } // brig::database::detail
