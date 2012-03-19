@@ -206,13 +206,13 @@ inline std::string command::sql_parameter(size_t order, const column_definition&
 inline std::string command::sql_column(const column_definition& col)
 {
   using namespace brig::database::detail;
-  if (col.sql_expression.empty() && "mdsys" == col.lower_case_type.schema && is_ogc_type(col.lower_case_type.name))
+  if (col.sql_expression.empty() && "mdsys" == col.lower_case_type.schema)
   {
     const std::string id(sql_identifier(Oracle, col.name));
-    return sql_identifier(Oracle, col.dbms_type) + ".GET_SDO_GEOM(" + id + ") " + id;
+    if (is_ogc_type(col.lower_case_type.name)) return sql_identifier(Oracle, col.dbms_type) + ".GET_SDO_GEOM(" + id + ") as " + id;
+    else if ("sdo_geometry" == col.lower_case_type.name) return id;
   }
-  else
-    return brig::database::command::sql_column(col);
+  return brig::database::command::sql_column(col);
 }
 
 inline void command::set_autocommit(bool autocommit)

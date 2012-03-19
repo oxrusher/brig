@@ -85,23 +85,43 @@ inline std::string command::sql_column(const column_definition& col)
 
   if (!col.sql_expression.empty()) return col.sql_expression + " " + id;
 
+  // ISO 8601
+  if (col.lower_case_type.name.find("time") != std::string::npos)
+    switch (sys)
+    {
+    case DB2:
+    case Oracle:
+    case Postgres: return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) as " + id;
+    case MS_SQL: return "CONVERT(CHAR(19), " + id + ", 126) as " + id;
+    case MySQL: return "DATE_FORMAT(" + id + ", '%Y-%m-%dT%T') as " + id;
+    }
+  else if (col.lower_case_type.name.find("date") != std::string::npos)
+    switch (sys)
+    {
+    case DB2:
+    case Oracle:
+    case Postgres: return "TO_CHAR(" + id + ", 'YYYY-MM-DD') as " + id;
+    case MS_SQL: return "CONVERT(CHAR(10), " + id + ", 126) as " + id;
+    case MySQL: return "DATE_FORMAT(" + id + ", '%Y-%m-%d') as " + id;
+    }
+
   if (Postgres == sys)
   {
     if ("user-defined" != col.lower_case_type.schema) return id;
-    else if ("raster" == col.lower_case_type.name) return "ST_AsBinary(ST_Envelope(" + id + ")) " + id;
+    else if ("raster" == col.lower_case_type.name) return "ST_AsBinary(ST_Envelope(" + id + ")) as " + id;
     else if ("geography" == col.lower_case_type.name
-          || "geometry" == col.lower_case_type.name) return "ST_AsBinary(" + id + ") " + id;
+          || "geometry" == col.lower_case_type.name) return "ST_AsBinary(" + id + ") as " + id;
     else return id;
   }
 
   if (Geometry == col.type)
     switch (sys)
     {
-    case DB2: return "DB2GSE.ST_AsBinary(" + id + ") " + id;
-    case MS_SQL: return id + ".STAsBinary() " + id;
+    case DB2: return "DB2GSE.ST_AsBinary(" + id + ") as " + id;
+    case MS_SQL: return id + ".STAsBinary() as " + id;
     case MySQL:
-    case SQLite: return "AsBinary(" + id + ") " + id;
-    case Oracle: return sql_identifier(sys, col.dbms_type) + ".GET_WKB(" + id + ") " + id;
+    case SQLite: return "AsBinary(" + id + ") as " + id;
+    case Oracle: return sql_identifier(sys, col.dbms_type) + ".GET_WKB(" + id + ") as " + id;
     }
 
   return id;
