@@ -164,7 +164,7 @@ inline bool command::fetch(std::vector<variant>& row)
 inline std::string command::sql_column(const column_definition& col)
 {
   using namespace brig::database::detail;
-  if (col.sql_expression.empty() && is_ogc_type(col.lower_case_type.name))
+  if (col.sql_expression.empty() && Geometry == col.type)
     return sql_identifier(SQLite, col.name);
   else
     return brig::database::command::sql_column(col);

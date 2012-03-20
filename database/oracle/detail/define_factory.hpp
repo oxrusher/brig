@@ -80,7 +80,7 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 siz
   case SQLT_VNU:
     return new define_impl<double, SQLT_FLT>(hnd, order);
 
-  // named data lower_case_type
+  // named data type
   case SQLT_NTY:
     if ("mdsys" == lower_case_type.schema && "sdo_geometry" == lower_case_type.name) return new define_geometry(hnd, order);
     break;

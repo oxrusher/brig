@@ -30,23 +30,23 @@ void sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::s
 {
   sql = "";
   params.clear();
-  if (!tbl.sql_filter.empty()) params = tbl.parameters;
+  if (!tbl.select_sql_condition.empty()) params = tbl.select_parameters;
 
   const DBMS sys(dct->system());
   std::vector<column_definition> cols(tbl.columns);
   std::vector<column_definition> select_cols = tbl.select_columns.empty()? cols: get_columns(cols, tbl.select_columns);
   std::string sql_infix, sql_condition, sql_suffix;
-  sql_limit(sys, tbl.rows, sql_infix, sql_condition, sql_suffix);
+  sql_limit(sys, tbl.select_rows, sql_infix, sql_condition, sql_suffix);
 
   //
-  auto geom_col = std::find_if(cols.begin(), cols.end(), [&](const column_definition& col){ return col.name == tbl.box_column; });
-  if ( tbl.box_column.empty() ||
-       geom_col != cols.end() && geom_col->mbr.type() == typeid(brig::boost::box) && ::boost::geometry::covered_by(::boost::get<brig::boost::box>(geom_col->mbr), tbl.box)
+  auto geom_col = std::find_if(cols.begin(), cols.end(), [&](const column_definition& col){ return col.name == tbl.select_box_column; });
+  if ( tbl.select_box_column.empty() ||
+       geom_col != cols.end() && geom_col->mbr.type() == typeid(brig::boost::box) && ::boost::geometry::covered_by(::boost::get<brig::boost::box>(geom_col->mbr), tbl.select_box)
      )
   {
     if (!sql_condition.empty()) sql += "SELECT * FROM (";
     sql += "SELECT " + sql_infix + " " + sql_select_list(dct, select_cols) + " FROM " + sql_identifier(sys, tbl.id);
-    if (!tbl.sql_filter.empty()) sql += " WHERE " + tbl.sql_filter;
+    if (!tbl.select_sql_condition.empty()) sql += " WHERE " + tbl.select_sql_condition;
     if (!sql_condition.empty()) sql += ") WHERE " + sql_condition;
     sql += " " + sql_suffix;
     return;
@@ -54,13 +54,13 @@ void sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::s
 
   //
   if (geom_col == cols.end()) throw std::runtime_error("SQL error");
-  std::vector<brig::boost::box> boxes(1, tbl.box);
+  std::vector<brig::boost::box> boxes(1, tbl.select_box);
   normalize_hemisphere(boxes, sys, is_geodetic_type(sys, *geom_col));
 
   std::string sql_hint;
   if (MS_SQL == sys)
   {
-    auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return idx.type == Spatial && idx.columns.front() == tbl.box_column; });
+    auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return idx.type == Spatial && idx.columns.front() == tbl.select_box_column; });
     if (p_idx == tbl.indexes.end()) throw std::runtime_error("SQL error");
     sql_hint = "WITH(INDEX(" + sql_identifier(sys, p_idx->id) + "))";
   }
@@ -97,7 +97,7 @@ void sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::s
   else if (SQLite == sys)
   {
     if (unique_cols.size() != 1) throw std::runtime_error("SQL error");
-    sql_key_tbl += "SELECT pkid " + sql_identifier(sys, unique_cols[0].name) + " FROM " + sql_identifier(sys, "idx_" + tbl.id.name + "_" + tbl.box_column) + " WHERE ";
+    sql_key_tbl += "SELECT pkid " + sql_identifier(sys, unique_cols[0].name) + " FROM " + sql_identifier(sys, "idx_" + tbl.id.name + "_" + tbl.select_box_column) + " WHERE ";
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql_key_tbl += " OR ";
@@ -117,7 +117,7 @@ void sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::s
       sql += sql_box_filter(sys, *geom_col, boxes[i]);
     }
     sql += ")";
-    if (!tbl.sql_filter.empty()) sql += " AND " + tbl.sql_filter;
+    if (!tbl.select_sql_condition.empty()) sql += " AND " + tbl.select_sql_condition;
   }
   else
   {
@@ -132,7 +132,7 @@ void sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::s
       if (std::find_if(select_cols.begin(), select_cols.end(), [&](const column_definition& col){ return col.name == unique_cols[i].name; }) == select_cols.end())
         sql += ", " + dct->sql_column(unique_cols[i]);
     sql += " FROM " + sql_tbl;
-    if (!tbl.sql_filter.empty()) sql += " WHERE " + tbl.sql_filter;
+    if (!tbl.select_sql_condition.empty()) sql += " WHERE " + tbl.select_sql_condition;
     sql += ") v ON ";
     for (size_t i(0); i < unique_cols.size(); ++i)
     {

@@ -5,7 +5,6 @@
 
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <brig/database/command.hpp>
-#include <brig/database/detail/is_ogc_type.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/identifier.hpp>
@@ -196,7 +195,7 @@ inline std::string command::sql_parameter(size_t order, const column_definition&
 {
   using namespace brig::database::detail;
   std::ostringstream stream; stream.imbue(std::locale::classic());
-  if ("mdsys" == param_col.lower_case_type.schema && is_ogc_type(param_col.lower_case_type.name))
+  if (Geometry == param_col.type && "sdo_geometry" != param_col.lower_case_type.name)
     stream << sql_identifier(Oracle, param_col.dbms_type) << "(:" << (order + 1) << ")";
   else
     stream << ":" << (order + 1);
@@ -206,11 +205,11 @@ inline std::string command::sql_parameter(size_t order, const column_definition&
 inline std::string command::sql_column(const column_definition& col)
 {
   using namespace brig::database::detail;
-  if (col.sql_expression.empty() && "mdsys" == col.lower_case_type.schema)
+  if (col.sql_expression.empty() && Geometry == col.type)
   {
     const std::string id(sql_identifier(Oracle, col.name));
-    if (is_ogc_type(col.lower_case_type.name)) return sql_identifier(Oracle, col.dbms_type) + ".GET_SDO_GEOM(" + id + ") as " + id;
-    else if ("sdo_geometry" == col.lower_case_type.name) return id;
+    if ("sdo_geometry" == col.lower_case_type.name) return id;
+    else return sql_identifier(Oracle, col.dbms_type) + ".GET_SDO_GEOM(" + id + ") as " + id;
   }
   return brig::database::command::sql_column(col);
 }

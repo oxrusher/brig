@@ -83,31 +83,34 @@ inline std::string command::sql_column(const column_definition& col)
   const DBMS sys(system());
   const std::string id(sql_identifier(sys, col.name));
 
-  if (!col.sql_expression.empty()) return col.sql_expression + " " + id;
+  if (!col.sql_expression.empty()) return col.sql_expression + " as " + id;
 
-  // ISO 8601
-  if (col.lower_case_type.name.find("time") != std::string::npos)
-    switch (sys)
-    {
-    case DB2:
-    case Oracle:
-    case Postgres: return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) as " + id;
-    case MS_SQL: return "CONVERT(CHAR(19), " + id + ", 126) as " + id;
-    case MySQL: return "DATE_FORMAT(" + id + ", '%Y-%m-%dT%T') as " + id;
-    }
-  else if (col.lower_case_type.name.find("date") != std::string::npos)
-    switch (sys)
-    {
-    case DB2:
-    case Oracle:
-    case Postgres: return "TO_CHAR(" + id + ", 'YYYY-MM-DD') as " + id;
-    case MS_SQL: return "CONVERT(CHAR(10), " + id + ", 126) as " + id;
-    case MySQL: return "DATE_FORMAT(" + id + ", '%Y-%m-%d') as " + id;
-    }
+  // http://en.wikipedia.org/wiki/ISO_8601
+  if (String == col.type)
+  {
+    if (col.lower_case_type.name.find("time") != std::string::npos)
+      switch (sys)
+      {
+      case DB2:
+      case Oracle:
+      case Postgres: return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) as " + id;
+      case MS_SQL: return "CONVERT(CHAR(19), " + id + ", 126) as " + id;
+      case MySQL: return "DATE_FORMAT(" + id + ", '%Y-%m-%dT%T') as " + id;
+      }
+    else if (col.lower_case_type.name.find("date") != std::string::npos)
+      switch (sys)
+      {
+      case DB2:
+      case Oracle:
+      case Postgres: return "TO_CHAR(" + id + ", 'YYYY-MM-DD') as " + id;
+      case MS_SQL: return "CONVERT(CHAR(10), " + id + ", 126) as " + id;
+      case MySQL: return "DATE_FORMAT(" + id + ", '%Y-%m-%d') as " + id;
+      }
+  }
 
   if (Postgres == sys)
   {
-    if ("user-defined" != col.lower_case_type.schema) return id;
+    if (VoidColumn == col.type) return id;
     else if ("raster" == col.lower_case_type.name) return "ST_AsBinary(ST_Envelope(" + id + ")) as " + id;
     else if ("geography" == col.lower_case_type.name
           || "geometry" == col.lower_case_type.name) return "ST_AsBinary(" + id + ") as " + id;

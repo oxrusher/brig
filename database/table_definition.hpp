@@ -18,16 +18,17 @@ struct table_definition {
   std::vector<column_definition> columns;
   std::vector<index_definition> indexes;
 
-  std::string box_column;
-  brig::boost::box box;
+  // options for SELECT
+  std::string select_box_column;
+  brig::boost::box select_box;
 
-  std::string sql_filter;
-  std::vector<variant> parameters;
+  std::string select_sql_condition;
+  std::vector<variant> select_parameters;
 
   std::vector<std::string> select_columns;
-  int rows;
+  int select_rows;
 
-  table_definition() : box(brig::boost::point(0, 0), brig::boost::point(0, 0)), rows(-1)  {}
+  table_definition() : select_box(brig::boost::point(0, 0), brig::boost::point(0, 0)), select_rows(-1)  {}
 }; // table_definition
 
 } } // brig::database

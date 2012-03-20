@@ -25,7 +25,7 @@ inline std::string sql_box_filter(DBMS sys, const column_definition& col, const 
   {
     bool geography(false), raster(false);
 
-    if ("user-defined" != col.lower_case_type.schema) throw std::runtime_error("SQL error");
+    if (VoidColumn == col.type) throw std::runtime_error("SQL error");
     else if ("raster" == col.lower_case_type.name) raster = true;
     else if ("geography" == col.lower_case_type.name) geography = true;
     else if ("geometry" != col.lower_case_type.name) throw std::runtime_error("SQL error");

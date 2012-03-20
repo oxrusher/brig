@@ -7,7 +7,6 @@
 #include <brig/database/column_definition.hpp>
 #include <brig/database/command.hpp>
 #include <brig/database/detail/get_type.hpp>
-#include <brig/database/detail/is_ogc_type.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/identifier.hpp>
@@ -106,7 +105,7 @@ inline table_definition get_table_definition_sqlite(std::shared_ptr<command> cmd
   // srid, epsg, spatial index
   for (size_t i(0); i < res.columns.size(); ++i)
   {
-    if (is_ogc_type(res.columns[i].lower_case_type.name))
+    if (Geometry == res.columns[i].type)
     {
       cmd->exec("SELECT c.SRID, (CASE s.AUTH_NAME WHEN 'epsg' THEN s.AUTH_SRID ELSE NULL END) epsg, c.SPATIAL_INDEX_ENABLED FROM (SELECT SRID, SPATIAL_INDEX_ENABLED FROM GEOMETRY_COLUMNS WHERE F_TABLE_NAME = '" + tbl.name + "' AND F_GEOMETRY_COLUMN = '" + res.columns[i].name + "') c LEFT JOIN SPATIAL_REF_SYS s ON c.SRID = s.SRID");
       if (cmd->fetch(row))

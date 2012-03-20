@@ -12,42 +12,39 @@ namespace brig { namespace database { namespace detail {
 inline column_type get_type(DBMS sys, const column_definition& col)
 {
   if (is_geometry_type(sys, col)) return Geometry;
-  else
+
+  if (!col.lower_case_type.schema.empty())
     switch (sys)
     {
-    case VoidSystem:
-    case SQLite:
-      break;
-
-    case DB2:
-      if (!col.lower_case_type.schema.empty() && "sysibm" != col.lower_case_type.schema) return VoidColumn;
-      else if (col.lower_case_type.name.find("graphic") != std::string::npos) return String;
-      break;
-
-    case MS_SQL:
-      if ("bit" == col.lower_case_type.name) return Integer;
-      else if ("image" == col.lower_case_type.name) return Blob;
-      break;
-
-    case MySQL:
-      if ("fixed" == col.lower_case_type.name) return col.scale == 0? Integer: Double;
-      break;
-
-    case Oracle:
-      if (!col.lower_case_type.schema.empty()) return VoidColumn;
-      else if ("long" == col.lower_case_type.name) return String;
-      else if ("binary_float" == col.lower_case_type.name
-            || "binary_double" == col.lower_case_type.name) return Double;
-      else if ("bfile" == col.lower_case_type.name
-            || col.lower_case_type.name.find("raw") != std::string::npos) return Blob;
-      break;
-
-    case Postgres:
-      if ("user-defined" == col.lower_case_type.schema) return VoidColumn;
-      else if (col.lower_case_type.name.find("serial") != std::string::npos) return Integer;
-      else if ("bytea" == col.lower_case_type.name) return Blob;
-      break;
+    default: return VoidColumn;
+    case DB2: if ("sysibm" != col.lower_case_type.schema) return VoidColumn; break;
+    case Postgres: if ("user-defined" == col.lower_case_type.schema) return VoidColumn; break;
     }
+
+  switch (sys)
+  {
+  case DB2:
+    if (col.lower_case_type.name.find("graphic") != std::string::npos) return String;
+    break;
+  case MS_SQL:
+    if ("bit" == col.lower_case_type.name) return Integer;
+    else if ("image" == col.lower_case_type.name) return Blob;
+    break;
+  case MySQL:
+    if ("fixed" == col.lower_case_type.name) return col.scale == 0? Integer: Double;
+    break;
+  case Oracle:
+    if ("long" == col.lower_case_type.name) return String;
+    else if ("binary_float" == col.lower_case_type.name
+          || "binary_double" == col.lower_case_type.name) return Double;
+    else if ("bfile" == col.lower_case_type.name
+          || col.lower_case_type.name.find("raw") != std::string::npos) return Blob;
+    break;
+  case Postgres:
+    if (col.lower_case_type.name.find("serial") != std::string::npos) return Integer;
+    else if ("bytea" == col.lower_case_type.name) return Blob;
+    break;
+  }
 
   if (col.lower_case_type.name.find("int") != std::string::npos
    || col.lower_case_type.name.find("bool") == 0) return Integer;

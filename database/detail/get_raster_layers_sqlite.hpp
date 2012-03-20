@@ -42,7 +42,7 @@ inline std::vector<raster_pyramid> get_raster_layers_sqlite(std::shared_ptr<comm
         col.lower_case_type.name = transform<std::string>(col.dbms_type.name, lower_case);
         col.type = Blob;
         res[r].levels[l].raster_column = col;
-        res[r].levels[l].sql_filter = hint + "pixel_x_size = " + cmd->sql_parameter(0, column_definition()) + " AND " + hint + "pixel_y_size = " + cmd->sql_parameter(1, column_definition());
+        res[r].levels[l].sql_condition = hint + "pixel_x_size = " + cmd->sql_parameter(0, column_definition()) + " AND " + hint + "pixel_y_size = " + cmd->sql_parameter(1, column_definition());
         res[r].levels[l].parameters.push_back( res[r].levels[l].resolution.get<0>() );
         res[r].levels[l].parameters.push_back( res[r].levels[l].resolution.get<1>() );
       }

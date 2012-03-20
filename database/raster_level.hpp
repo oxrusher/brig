@@ -19,7 +19,7 @@ struct raster_level {
   identifier geometry_layer;
   ::boost::variant<std::string, column_definition> raster_column;
 
-  std::string sql_filter;
+  std::string sql_condition;
   std::vector<variant> parameters;
 
   raster_level() : resolution(0, 0)  {}
