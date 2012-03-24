@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_DETAIL_SQL_TABLE_HPP
-#define BRIG_DATABASE_DETAIL_SQL_TABLE_HPP
+#ifndef BRIG_DATABASE_DETAIL_SQL_ROWSET_HPP
+#define BRIG_DATABASE_DETAIL_SQL_ROWSET_HPP
 
 #include <algorithm>
 #include <boost/geometry/algorithms/covered_by.hpp>
@@ -26,7 +26,7 @@
 namespace brig { namespace database { namespace detail {
 
 template <typename Dialect>
-void sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::string& sql, std::vector<variant>& params)
+void sql_rowset(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::string& sql, std::vector<variant>& params)
 {
   sql = "";
   params.clear();
@@ -39,9 +39,9 @@ void sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::s
   sql_limit(sys, tbl.select_rows, sql_infix, sql_condition, sql_suffix);
 
   //
-  auto geom_col = std::find_if(cols.begin(), cols.end(), [&](const column_definition& col){ return col.name == tbl.select_box_column; });
+  auto geom_col(std::find_if(std::begin(cols), std::end(cols), [&](const column_definition& c){ return c.name == tbl.select_box_column; }));
   if ( tbl.select_box_column.empty() ||
-       geom_col != cols.end() && geom_col->mbr.type() == typeid(brig::boost::box) && ::boost::geometry::covered_by(::boost::get<brig::boost::box>(geom_col->mbr), tbl.select_box)
+       geom_col != std::end(cols) && geom_col->mbr.type() == typeid(brig::boost::box) && ::boost::geometry::covered_by(::boost::get<brig::boost::box>(geom_col->mbr), tbl.select_box)
      )
   {
     if (!sql_condition.empty()) sql += "SELECT * FROM (";
@@ -53,22 +53,22 @@ void sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::s
   }
 
   //
-  if (geom_col == cols.end()) throw std::runtime_error("SQL error");
+  if (geom_col == std::end(cols)) throw std::runtime_error("SQL error");
   std::vector<brig::boost::box> boxes(1, tbl.select_box);
   normalize_hemisphere(boxes, sys, is_geodetic_type(sys, *geom_col));
 
   std::string sql_hint;
   if (MS_SQL == sys)
   {
-    auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return idx.type == Spatial && idx.columns.front() == tbl.select_box_column; });
-    if (p_idx == tbl.indexes.end()) throw std::runtime_error("SQL error");
-    sql_hint = "WITH(INDEX(" + sql_identifier(sys, p_idx->id) + "))";
+    auto idx(std::find_if(std::begin(tbl.indexes), std::end(tbl.indexes), [&](const index_definition& i){ return Spatial == i.type && i.columns.front() == tbl.select_box_column; }));
+    if (idx == std::end(tbl.indexes)) throw std::runtime_error("SQL error");
+    sql_hint = "WITH(INDEX(" + sql_identifier(sys, idx->id) + "))";
   }
 
   std::vector<column_definition> unique_cols;
-  auto p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return idx.type == Primary; });
-  if (p_idx == tbl.indexes.end()) p_idx = std::find_if(tbl.indexes.begin(), tbl.indexes.end(), [&](const index_definition& idx){ return idx.type == Unique; });
-  if (p_idx != tbl.indexes.end()) unique_cols = get_columns(cols, p_idx->columns);
+  auto idx(std::find_if(std::begin(tbl.indexes), std::end(tbl.indexes), [&](const index_definition& i){ return Primary == i.type; }));
+  if (idx == std::end(tbl.indexes)) idx = std::find_if(std::begin(tbl.indexes), std::end(tbl.indexes), [&](const index_definition& i){ return Unique == i.type; });
+  if (idx != std::end(tbl.indexes)) unique_cols = get_columns(cols, idx->columns);
 
   // key table
   std::string sql_key_tbl, sql_tbl(sql_identifier(sys, tbl.id));
@@ -129,7 +129,7 @@ void sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::s
     }
     sql += " FROM (" + sql_key_tbl + ") k JOIN (SELECT " + sql_select_list(dct, select_cols);
     for (size_t i(0); i < unique_cols.size(); ++i)
-      if (std::find_if(select_cols.begin(), select_cols.end(), [&](const column_definition& col){ return col.name == unique_cols[i].name; }) == select_cols.end())
+      if (std::find_if(std::begin(select_cols), std::end(select_cols), [&](const column_definition& c){ return c.name == unique_cols[i].name; }) == std::end(select_cols))
         sql += ", " + dct->sql_column(unique_cols[i]);
     sql += " FROM " + sql_tbl;
     if (!tbl.select_sql_condition.empty()) sql += " WHERE " + tbl.select_sql_condition;
@@ -146,4 +146,4 @@ void sql_table(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::s
 
 } } } // brig::database::detail
 
-#endif // BRIG_DATABASE_DETAIL_SQL_TABLE_HPP
+#endif // BRIG_DATABASE_DETAIL_SQL_ROWSET_HPP

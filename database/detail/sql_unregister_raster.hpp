@@ -4,6 +4,7 @@
 #define BRIG_DATABASE_DETAIL_SQL_UNREGISTER_RASTER_HPP
 
 #include <brig/database/command.hpp>
+#include <brig/database/detail/normalize_identifier.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/detail/sql_tables.hpp>
 #include <brig/database/global.hpp>
@@ -17,22 +18,24 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline std::string sql_unregister_raster(std::shared_ptr<command> cmd, const raster_pyramid& raster)
+inline void sql_unregister_raster(std::shared_ptr<command> cmd, const raster_pyramid& raster, std::vector<std::string>& sql)
 {
   const DBMS sys(cmd->system());
-  cmd->exec(sql_tables(sys, "simple_rasters"));
+  identifier simple_rasters;
+  simple_rasters.name = "simple_rasters";
+  normalize_identifier(sys, simple_rasters);
+  cmd->exec(sql_tables(sys, simple_rasters.name));
   std::vector<variant> row;
-  if (!cmd->fetch(row)) throw std::runtime_error("SQL error");
+  if (!cmd->fetch(row)) throw std::runtime_error("simple_rasters error");
+  simple_rasters.schema = string_cast<char>(row[0]);
 
-  identifier id;
-  id.schema = string_cast<char>(row[0]);
-  id.name = string_cast<char>(row[1]);
+  if (cmd->fetch(row)) throw std::runtime_error("ambiguous simple_rasters error");
 
-  std::string sql;
-  sql += "DELETE FROM " + sql_identifier(sys, id) + " WHERE ";
-  if (SQLite != sys) sql += sql_identifier(sys, "base_schema") + " = '" + raster.id.schema + "' AND ";
-  sql += sql_identifier(sys, "base_table") + " = '" + raster.id.name + "' AND " + sql_identifier(sys, "base_raster") + " = '" + raster.id.qualifier + "'";
-  return sql;
+  std::string s;
+  s += "DELETE FROM " + sql_identifier(sys, simple_rasters) + " WHERE ";
+  if (SQLite != sys) s += sql_identifier(sys, "base_schema") + " = '" + raster.id.schema + "' AND ";
+  s += sql_identifier(sys, "base_table") + " = '" + raster.id.name + "' AND " + sql_identifier(sys, "base_raster") + " = '" + raster.id.qualifier + "'";
+  sql.push_back(s);
 }
 
 } } } // brig::database::detail

@@ -82,7 +82,7 @@ inline table_definition get_table_definition(std::shared_ptr<command> cmd, const
 
     const std::string col_name(string_cast<char>(row[5]));
     idx.columns.push_back(col_name);
-    if (std::find_if(res.columns.begin(), res.columns.end(), [&](const column_definition& col){ return col.name == col_name; }) == res.columns.end()) idx.type = VoidIndex; // expression
+    if (std::find_if(std::begin(res.columns), std::end(res.columns), [&](const column_definition& c){ return c.name == col_name; }) == std::end(res.columns)) idx.type = VoidIndex; // expression
 
     int desc(0);
     if (numeric_cast(row[6], desc) && desc) idx.type = VoidIndex; // descending
@@ -90,21 +90,21 @@ inline table_definition get_table_definition(std::shared_ptr<command> cmd, const
   if (VoidIndex != idx.type) res.indexes.push_back(std::move(idx));
 
   // srid, epsg, type qualifier
-  for (auto p_col = res.columns.begin(); p_col != res.columns.end(); ++p_col)
+  for (auto col(std::begin(res.columns)); col != std::end(res.columns); ++col)
   {
-    const std::string sql(sql_srid(sys, tbl, *p_col));
+    const std::string sql(sql_srid(sys, tbl, *col));
     if (!sql.empty())
     {
       cmd->exec(sql);
       if (cmd->fetch(row))
       {
-        numeric_cast(row[0], p_col->srid);
-        if (row.size() > 1) numeric_cast(row[1], p_col->epsg);
-        else p_col->epsg = p_col->srid;
+        numeric_cast(row[0], col->srid);
+        if (row.size() > 1) numeric_cast(row[1], col->epsg);
+        else col->epsg = col->srid;
         if (row.size() > 2)
         {
-          p_col->dbms_type.qualifier = string_cast<char>(row[2]);
-          p_col->lower_case_type.qualifier = transform<std::string>(p_col->dbms_type.qualifier, lower_case);
+          col->dbms_type.qualifier = string_cast<char>(row[2]);
+          col->lower_case_type.qualifier = transform<std::string>(col->dbms_type.qualifier, lower_case);
         }
       }
     }

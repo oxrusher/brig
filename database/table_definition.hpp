@@ -18,7 +18,7 @@ struct table_definition {
   std::vector<column_definition> columns;
   std::vector<index_definition> indexes;
 
-  // options for SELECT
+  // options
   std::string select_box_column;
   brig::boost::box select_box;
 

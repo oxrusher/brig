@@ -14,9 +14,9 @@ inline std::vector<column_definition> get_columns(const std::vector<column_defin
   std::vector<column_definition> res;
   for (size_t i(0); i < names.size(); ++i)
   {
-    auto p_col = std::find_if(cols.begin(), cols.end(), [&](const column_definition& col){ return col.name == names[i]; });
-    if (p_col == cols.end()) throw std::runtime_error("table error");
-    res.push_back(*p_col);
+    auto col(std::find_if(std::begin(cols), std::end(cols), [&](const column_definition& c){ return c.name == names[i]; }));
+    if (col == std::end(cols)) throw std::runtime_error("table error");
+    res.push_back(*col);
   }
   return res;
 }
