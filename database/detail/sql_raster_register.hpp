@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_DETAIL_SQL_REGISTER_RASTER_HPP
-#define BRIG_DATABASE_DETAIL_SQL_REGISTER_RASTER_HPP
+#ifndef BRIG_DATABASE_DETAIL_SQL_RASTER_REGISTER_HPP
+#define BRIG_DATABASE_DETAIL_SQL_RASTER_REGISTER_HPP
 
 #include <algorithm>
 #include <brig/database/column_definition.hpp>
@@ -34,6 +34,11 @@ inline column_definition get_column_definition(const std::string& name, column_t
   column_definition col;
   col.name = name;
   col.type = type;
+  // MySQL
+  // Max key length is 1000 bytes.
+  // The problem with UTF-8 is that every character reserves 3 bytes for the worst case.
+  // The key uses 3 * 100 = 300 characters == 900 bytes
+  col.chars = 100;
   col.not_null = true;
   return col;
 }
@@ -42,7 +47,6 @@ inline table_definition get_simple_rasters_definition(DBMS sys)
 {
   table_definition tbl;
   tbl.id.name = "simple_rasters";
-  normalize_identifier(sys, tbl.id);
 
   tbl.indexes.push_back(index_definition());
   index_definition& idx(tbl.indexes.back());
@@ -63,21 +67,18 @@ inline table_definition get_simple_rasters_definition(DBMS sys)
   return tbl;
 }
 
-inline void sql_register_raster(std::shared_ptr<command> cmd, raster_pyramid& raster, std::vector<std::string>& sql)
+inline void sql_raster_register(std::shared_ptr<command> cmd, raster_pyramid& raster, std::vector<std::string>& sql)
 {
   const DBMS sys(cmd->system());
   const std::string schema(get_schema(cmd));
 
+  cmd->exec(sql_tables(sys, "simple_rasters"));
   identifier simple_rasters;
-  simple_rasters.name = "simple_rasters";
-  normalize_identifier(sys, simple_rasters);
-
-  cmd->exec(sql_tables(sys, simple_rasters.name));
   std::vector<variant> row;
-  
   if (cmd->fetch(row))
   {
     simple_rasters.schema = string_cast<char>(row[0]);
+    simple_rasters.name = string_cast<char>(row[1]);
     if (cmd->fetch(row)) throw std::runtime_error("ambiguous simple_rasters error");
   }
   else
@@ -87,15 +88,24 @@ inline void sql_register_raster(std::shared_ptr<command> cmd, raster_pyramid& ra
     for (auto str(std::begin(strs)); str != std::end(strs); ++str)
       cmd->exec(*str);
     simple_rasters.schema = schema;
+    simple_rasters.name = "simple_rasters";
+    normalize_identifier(sys, simple_rasters);
   }
   auto tbl(get_table_definition(cmd, simple_rasters));
 
-  std::vector<std::string> reg;
+  if (raster.levels.empty()) throw std::runtime_error("raster error");
   for (auto lvl(std::begin(raster.levels)); lvl != std::end(raster.levels); ++lvl)
   {
     lvl->geometry_layer.schema = schema;
     normalize_identifier(sys, lvl->geometry_layer);
+    if (typeid(column_definition) == lvl->raster_column.type()) lvl->raster_column = ::boost::get<column_definition>(lvl->raster_column).name;
+  }
+  raster.id = raster.levels.front().geometry_layer;
+  raster.id.qualifier = ::boost::get<std::string>(raster.levels.front().raster_column);
 
+  std::vector<std::string> reg;
+  for (auto lvl(std::begin(raster.levels)); lvl != std::end(raster.levels); ++lvl)
+  {
     std::ostringstream stream; stream.imbue(std::locale::classic()); stream << std::scientific; stream.precision(17);
     stream << "INSERT INTO " << sql_identifier(sys, tbl.id) << "(";
     for (size_t col(0); col < tbl.columns.size(); ++col)
@@ -109,11 +119,7 @@ inline void sql_register_raster(std::shared_ptr<command> cmd, raster_pyramid& ra
       if (col > 0) stream << ", ";
       if ("schema" == tbl.columns[col].name) stream << "'" << schema << "'";
       else if ("table" == tbl.columns[col].name) stream << "'" << lvl->geometry_layer.name << "'";
-      else if ("raster" == tbl.columns[col].name)
-      {
-        if (typeid(column_definition) == lvl->raster_column.type()) lvl->raster_column = ::boost::get<column_definition>(lvl->raster_column).name;
-        stream << "'" << ::boost::get<std::string>(lvl->raster_column) << "'";
-      }
+      else if ("raster" == tbl.columns[col].name) stream << "'" << ::boost::get<std::string>(lvl->raster_column) << "'";
       else if ("base_schema" == tbl.columns[col].name) stream << "'" << schema << "'";
       else if ("base_table" == tbl.columns[col].name) stream << "'" << raster.id.name << "'";
       else if ("base_raster" == tbl.columns[col].name) stream << "'" << raster.id.qualifier << "'";
@@ -124,10 +130,6 @@ inline void sql_register_raster(std::shared_ptr<command> cmd, raster_pyramid& ra
     stream << ")";
     reg.push_back(stream.str());
   }
-
-  if (raster.levels.empty()) throw std::runtime_error("raster error");
-  raster.id = raster.levels.front().geometry_layer;
-  raster.id.qualifier = ::boost::get<std::string>(raster.levels.front().raster_column);
 
   std::string unreg;
   unreg += "DELETE FROM " + sql_identifier(sys, simple_rasters) + " WHERE ";
@@ -140,4 +142,4 @@ inline void sql_register_raster(std::shared_ptr<command> cmd, raster_pyramid& ra
 
 } } } // brig::database::detail
 
-#endif // BRIG_DATABASE_DETAIL_REGISTER_RASTER_HPP
+#endif // BRIG_DATABASE_DETAIL_SQL_RASTER_REGISTER_HPP

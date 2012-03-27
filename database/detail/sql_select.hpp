@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_DETAIL_SQL_ROWSET_HPP
-#define BRIG_DATABASE_DETAIL_SQL_ROWSET_HPP
+#ifndef BRIG_DATABASE_DETAIL_SQL_SELECT_HPP
+#define BRIG_DATABASE_DETAIL_SQL_SELECT_HPP
 
 #include <algorithm>
 #include <boost/geometry/algorithms/covered_by.hpp>
@@ -26,11 +26,9 @@
 namespace brig { namespace database { namespace detail {
 
 template <typename Dialect>
-void sql_rowset(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::string& sql, std::vector<variant>& params)
+std::string sql_select(std::shared_ptr<Dialect> dct, const table_definition& tbl)
 {
-  sql = "";
-  params.clear();
-  if (!tbl.select_sql_condition.empty()) params = tbl.select_parameters;
+  std::string sql;
 
   const DBMS sys(dct->system());
   std::vector<column_definition> cols(tbl.columns);
@@ -38,7 +36,7 @@ void sql_rowset(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::
   std::string sql_infix, sql_condition, sql_suffix;
   sql_limit(sys, tbl.select_rows, sql_infix, sql_condition, sql_suffix);
 
-  //
+  // try no spatial first
   auto geom_col(std::find_if(std::begin(cols), std::end(cols), [&](const column_definition& c){ return c.name == tbl.select_box_column; }));
   if ( tbl.select_box_column.empty() ||
        geom_col != std::end(cols) && geom_col->mbr.type() == typeid(brig::boost::box) && ::boost::geometry::covered_by(::boost::get<brig::boost::box>(geom_col->mbr), tbl.select_box)
@@ -49,10 +47,10 @@ void sql_rowset(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::
     if (!tbl.select_sql_condition.empty()) sql += " WHERE " + tbl.select_sql_condition;
     if (!sql_condition.empty()) sql += ") WHERE " + sql_condition;
     sql += " " + sql_suffix;
-    return;
+    return sql;
   }
 
-  //
+  // spatial
   if (geom_col == std::end(cols)) throw std::runtime_error("SQL error");
   std::vector<brig::boost::box> boxes(1, tbl.select_box);
   normalize_hemisphere(boxes, sys, is_geodetic_type(sys, *geom_col));
@@ -142,8 +140,9 @@ void sql_rowset(std::shared_ptr<Dialect> dct, const table_definition& tbl, std::
   }
   sql += " " + sql_suffix;
   if (!sql_condition.empty()) sql += ") WHERE " + sql_condition;
+  return sql;
 }
 
 } } } // brig::database::detail
 
-#endif // BRIG_DATABASE_DETAIL_SQL_ROWSET_HPP
+#endif // BRIG_DATABASE_DETAIL_SQL_SELECT_HPP

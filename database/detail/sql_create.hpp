@@ -22,6 +22,8 @@ namespace brig { namespace database { namespace detail {
 
 inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>& sql)
 {
+  static const int CharsLimit = 250;
+
   if (VoidSystem == sys) throw std::runtime_error("SQL error");
   auto col_end( std::remove_if(std::begin(tbl.columns), std::end(tbl.columns), [](const column_definition& c){ return VoidColumn == c.type; }) );
   for (auto idx(std::begin(tbl.indexes)); idx != std::end(tbl.indexes); ++idx)
@@ -56,6 +58,8 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
     if (first) first = false;
     else stream << ", ";
     stream << sql_identifier(sys, col->name) << " ";
+    int chars(CharsLimit);
+    if (col->chars > 0 && col->chars < CharsLimit) chars = col->chars;
 
     switch (sys)
     {
@@ -66,7 +70,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       case Double: stream << "DOUBLE"; break;
       case Geometry: stream << "DB2GSE.ST_GEOMETRY"; break;
       case Integer: stream << "BIGINT"; break;
-      case String: stream << "VARGRAPHIC(255)"; break;
+      case String: stream << "VARGRAPHIC(" << chars << ")"; break;
       }
       // When UNIQUE is used, null values are treated as any other values. For example, if the key is a single column that may contain null values, that column may contain no more than one null value.
       for (auto idx(std::begin(tbl.indexes)); idx != idx_end; ++idx)
@@ -83,14 +87,14 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       case Double: stream << "FLOAT"; break;
       case Geometry: stream << "GEOMETRY"; break;
       case Integer: stream << "BIGINT"; break;
-      case String: stream << "NVARCHAR(255)"; break;
+      case String: stream << "NVARCHAR(" << chars << ")"; break;
       }
       break;
 
     case MySQL:
       switch (col->type)
       {
-      case Blob: stream << "BLOB"; break;
+      case Blob: stream << "LONGBLOB"; break;
       case Double: stream << "DOUBLE"; break;
       case Geometry:
         stream << "GEOMETRY";
@@ -103,7 +107,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
           }
         break;
       case Integer: stream << "BIGINT"; break;
-      case String: stream << "NVARCHAR(255)"; break;
+      case String: stream << "NVARCHAR(" << chars << ")"; break;
       }
       break;
 
@@ -114,7 +118,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       case Double: stream << "BINARY_DOUBLE"; break;
       case Geometry: stream << "MDSYS.SDO_GEOMETRY"; break;
       case Integer: stream << "NUMBER(19)"; break;
-      case String: stream << "NVARCHAR2(255)"; break;
+      case String: stream << "NVARCHAR2(" << chars << ")"; break;
       }
       break;
 
@@ -124,7 +128,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       case Blob: stream << "BYTEA"; break;
       case Double: stream << "DOUBLE PRECISION"; break;
       case Integer: stream << "BIGINT"; break;
-      case String: stream << "VARCHAR(255)"; break;
+      case String: stream << "VARCHAR(" << chars << ")"; break;
       }
       break;
 

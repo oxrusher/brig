@@ -1062,7 +1062,7 @@ inline uint32_t lower_case(const uint32_t cp)
   make_pair(0x10426, 0x1044e), // DESERET CAPITAL LETTER OI
   make_pair(0x10427, 0x1044f), // DESERET CAPITAL LETTER EW
   };
-  auto iter = lower_bound(std::begin(mapping), std::end(mapping), make_pair<uint32_t, uint32_t>(cp, 0));
+  auto iter(lower_bound(std::begin(mapping), std::end(mapping), make_pair<uint32_t, uint32_t>(cp, 0)));
   return (iter != std::end(mapping) && iter->first == cp)? iter->second: cp;
 }
 

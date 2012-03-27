@@ -55,7 +55,7 @@ inline table_definition get_table_definition_sqlite(std::shared_ptr<command> cmd
     pri_idx.type = Primary;
     pri_idx.columns = keys;
     res.indexes.push_back(pri_idx);
-    sort(keys.begin(), keys.end());
+    std::sort(std::begin(keys), std::end(keys));
   }
 
   // indexes
@@ -87,20 +87,20 @@ inline table_definition get_table_definition_sqlite(std::shared_ptr<command> cmd
       seq_col.second = col;
       seq_cols.push_back(seq_col);
     }
-    std::sort(cols.begin(), cols.end());
-    std::sort(seq_cols.begin(), seq_cols.end());
+    std::sort(std::begin(cols), std::end(cols));
+    std::sort(std::begin(seq_cols), std::end(seq_cols));
     for (size_t j(0); j < seq_cols.size(); ++j)
       res.indexes[i].columns.push_back(seq_cols[j].second);
 
-    if (keys.size() == cols.size() && std::equal(keys.begin(), keys.end(), cols.begin()))
+    if (keys.size() == cols.size() && std::equal(std::begin(keys), std::end(keys), std::begin(cols)))
     {
       keys.clear();
       res.indexes[i].type = VoidIndex;
       res.indexes[0].columns = std::move(res.indexes[i].columns);
     }
   }
-  auto end = std::remove_if(res.indexes.begin(), res.indexes.end(), [](const index_definition& idx){ return VoidIndex == idx.type; });
-  res.indexes.resize(std::distance(res.indexes.begin(), end));
+  auto end(std::remove_if(std::begin(res.indexes), std::end(res.indexes), [](const index_definition& i){ return VoidIndex == i.type; }));
+  res.indexes.resize(std::distance(std::begin(res.indexes), end));
 
   // srid, epsg, spatial index
   for (size_t i(0); i < res.columns.size(); ++i)

@@ -1,10 +1,9 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_DETAIL_SQL_UNREGISTER_RASTER_HPP
-#define BRIG_DATABASE_DETAIL_SQL_UNREGISTER_RASTER_HPP
+#ifndef BRIG_DATABASE_DETAIL_SQL_RASTER_UNREGISTER_HPP
+#define BRIG_DATABASE_DETAIL_SQL_RASTER_UNREGISTER_HPP
 
 #include <brig/database/command.hpp>
-#include <brig/database/detail/normalize_identifier.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/detail/sql_tables.hpp>
 #include <brig/database/global.hpp>
@@ -18,17 +17,19 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline void sql_unregister_raster(std::shared_ptr<command> cmd, const raster_pyramid& raster, std::vector<std::string>& sql)
+inline void sql_raster_unregister(std::shared_ptr<command> cmd, const raster_pyramid& raster, std::vector<std::string>& sql)
 {
+  if (raster.levels.empty()) throw std::runtime_error("raster error");
+  for (auto lvl(std::begin(raster.levels)); lvl != std::end(raster.levels); ++lvl)
+    if (typeid(std::string) != lvl->raster_column.type() || !lvl->sql_condition.empty()) throw std::runtime_error("raster error");
+
   const DBMS sys(cmd->system());
-  identifier simple_rasters;
-  simple_rasters.name = "simple_rasters";
-  normalize_identifier(sys, simple_rasters);
-  cmd->exec(sql_tables(sys, simple_rasters.name));
+  cmd->exec(sql_tables(sys, "simple_rasters"));
   std::vector<variant> row;
   if (!cmd->fetch(row)) throw std::runtime_error("simple_rasters error");
+  identifier simple_rasters;
   simple_rasters.schema = string_cast<char>(row[0]);
-
+  simple_rasters.name = string_cast<char>(row[1]);
   if (cmd->fetch(row)) throw std::runtime_error("ambiguous simple_rasters error");
 
   std::string s;
@@ -40,4 +41,4 @@ inline void sql_unregister_raster(std::shared_ptr<command> cmd, const raster_pyr
 
 } } } // brig::database::detail
 
-#endif // BRIG_DATABASE_DETAIL_SQL_UNREGISTER_RASTER_HPP
+#endif // BRIG_DATABASE_DETAIL_SQL_RASTER_UNREGISTER_HPP

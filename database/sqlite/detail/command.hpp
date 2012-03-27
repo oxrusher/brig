@@ -181,6 +181,7 @@ inline void command::commit()
 {
   if (m_autocommit) return;
   exec("COMMIT");
+  exec("BEGIN");
 } // command::
 
 } } } } // brig::database::sqlite::detail

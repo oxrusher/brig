@@ -23,19 +23,19 @@ public:
   struct functor_impl : functor {
     R r;
     Func func;
-    explicit functor_impl(Func&& func_) : func(std::move(func_))  {}
+    explicit functor_impl(Func&& func_) : func(std::forward<Func>(func_))  {}
     virtual void operator()(ThreadedArgument* arg)  { r = func(arg); }
   }; // functor_impl<R, Func>
 
   template <typename Func>
   struct functor_impl<void, Func> : functor {
     Func func;
-    explicit functor_impl(Func&& func_) : func(std::move(func_))  {}
+    explicit functor_impl(Func&& func_) : func(std::forward<Func>(func_))  {}
     virtual void operator()(ThreadedArgument* arg)  { func(arg); }
   }; // functor_impl<void, Func>
 
   template <typename Func>
-  static functor_impl<typename Func::result_type, Func> bind(Func&& func)  { return functor_impl<typename Func::result_type, Func>(std::move(func)); }
+  static functor_impl<typename Func::result_type, Func> bind(Func&& func)  { return functor_impl<typename Func::result_type, Func>(std::forward<Func>(func)); }
 
 private:
   enum state  { BeforeStart, Idle, Calling, AfterFinish };

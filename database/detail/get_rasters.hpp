@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_DETAIL_GET_RASTER_LAYERS_HPP
-#define BRIG_DATABASE_DETAIL_GET_RASTER_LAYERS_HPP
+#ifndef BRIG_DATABASE_DETAIL_GET_RASTERS_HPP
+#define BRIG_DATABASE_DETAIL_GET_RASTERS_HPP
 
 #include <brig/boost/geometry.hpp>
 #include <brig/database/identifier.hpp>
@@ -16,7 +16,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline std::vector<raster_pyramid> get_raster_layers(std::shared_ptr<rowset> rs)
+inline std::vector<raster_pyramid> get_rasters(std::shared_ptr<rowset> rs)
 {
   std::vector<raster_pyramid> res;
   std::vector<variant> row;
@@ -50,4 +50,4 @@ inline std::vector<raster_pyramid> get_raster_layers(std::shared_ptr<rowset> rs)
 
 } } } // brig::database::detail
 
-#endif // BRIG_DATABASE_DETAIL_GET_RASTER_LAYERS_HPP
+#endif // BRIG_DATABASE_DETAIL_GET_RASTERS_HPP

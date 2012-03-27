@@ -1,12 +1,12 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_DETAIL_GET_RASTER_LAYERS_SQLITE_HPP
-#define BRIG_DATABASE_DETAIL_GET_RASTER_LAYERS_SQLITE_HPP
+#ifndef BRIG_DATABASE_DETAIL_GET_RASTERS_SQLITE_HPP
+#define BRIG_DATABASE_DETAIL_GET_RASTERS_SQLITE_HPP
 
 #include <brig/database/column_definition.hpp>
 #include <brig/database/command.hpp>
-#include <brig/database/detail/get_raster_layers.hpp>
-#include <brig/database/detail/sql_geometry_layers.hpp>
+#include <brig/database/detail/get_rasters.hpp>
+#include <brig/database/detail/sql_geometries.hpp>
 #include <brig/database/detail/sql_tables.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/raster_pyramid.hpp>
@@ -19,7 +19,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline std::vector<raster_pyramid> get_raster_layers_sqlite(std::shared_ptr<command> cmd)
+inline std::vector<raster_pyramid> get_rasters_sqlite(std::shared_ptr<command> cmd)
 {
   using namespace brig::database::detail;
   using namespace brig::unicode;
@@ -27,8 +27,8 @@ inline std::vector<raster_pyramid> get_raster_layers_sqlite(std::shared_ptr<comm
   cmd->exec(sql_tables(SQLite, "raster_pyramids"));
   if (cmd->fetch(row))
   {
-    cmd->exec("SELECT '', (r.table_prefix || '_rasters') base_tbl, 'raster' base_col, r.pixel_x_size res_x, r.pixel_y_size res_y, '', (r.table_prefix || '_metadata'), 'geometry', 'raster' FROM raster_pyramids r JOIN (" + sql_geometry_layers(SQLite, false) + ") g ON g.tbl = (r.table_prefix || '_metadata') ORDER BY base_tbl, base_col, res_x, res_y");
-    auto res = get_raster_layers(cmd);
+    cmd->exec("SELECT '', (r.table_prefix || '_rasters') base_tbl, 'raster' base_col, r.pixel_x_size res_x, r.pixel_y_size res_y, '', (r.table_prefix || '_metadata'), 'geometry', 'raster' FROM raster_pyramids r JOIN (" + sql_geometries(SQLite, false) + ") g ON g.tbl = (r.table_prefix || '_metadata') ORDER BY base_tbl, base_col, res_x, res_y");
+    auto res = get_rasters(cmd);
     for (size_t r(0); r < res.size(); ++r)
       for (size_t l(0); l < res[r].levels.size(); ++l)
       {
@@ -53,4 +53,4 @@ inline std::vector<raster_pyramid> get_raster_layers_sqlite(std::shared_ptr<comm
 
 } } } // brig::database::detail
 
-#endif // BRIG_DATABASE_DETAIL_GET_RASTER_LAYERS_SQLITE_HPP
+#endif // BRIG_DATABASE_DETAIL_GET_RASTERS_SQLITE_HPP

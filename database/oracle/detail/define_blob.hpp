@@ -26,7 +26,7 @@ public:
   virtual void operator()(variant& var);
 }; // define_blob
 
-inline define_blob::define_blob(handles* hnd, size_t order) : m_len(0), m_ind(OCI_IND_NULL)
+inline define_blob::define_blob(handles* hnd, size_t order) : m_len(0), m_ind(OCI_IND_NOTNULL)
 {
   m_piece.resize(SHRT_MAX);
   OCIDefine* def(0);
@@ -68,7 +68,7 @@ inline void define_blob::read()
     m_result.resize(size + m_len);
     memcpy(m_result.data() + size, m_piece.data(), m_len);
     m_len = 0;
-    m_ind = OCI_IND_NULL;
+    m_ind = OCI_IND_NOTNULL;
   }
 }
 
