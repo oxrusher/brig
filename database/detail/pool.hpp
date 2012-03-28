@@ -61,8 +61,8 @@ template <> class pool<true> : public pool<false> {
   ::boost::mutex m_mut;
 public:
   explicit pool(std::shared_ptr<command_allocator> allocator) : pool<false>(std::make_shared<threaded_command_allocator>(allocator))  {}
-  command* allocate()  { ::boost::lock_guard<::boost::mutex> lck(m_mut); return pool<false>::allocate(); }
-  void deallocate(command* cmd)  { ::boost::lock_guard<::boost::mutex> lck(m_mut); pool<false>::deallocate(cmd); }
+  command* allocate()  { ::boost::lock_guard<typename ::boost::mutex> lck(m_mut); return pool<false>::allocate(); }
+  void deallocate(command* cmd)  { ::boost::lock_guard<typename ::boost::mutex> lck(m_mut); pool<false>::deallocate(cmd); }
 }; // pool<true>
 
 } } } // brig::database::detail

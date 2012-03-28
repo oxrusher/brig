@@ -39,7 +39,7 @@ std::string sql_select(std::shared_ptr<Dialect> dct, const table_definition& tbl
   // try no spatial first
   auto geom_col(std::find_if(std::begin(cols), std::end(cols), [&](const column_definition& c){ return c.name == tbl.select_box_column; }));
   if ( tbl.select_box_column.empty() ||
-       geom_col != std::end(cols) && geom_col->mbr.type() == typeid(brig::boost::box) && ::boost::geometry::covered_by(::boost::get<brig::boost::box>(geom_col->mbr), tbl.select_box)
+       (geom_col != std::end(cols) && geom_col->mbr.type() == typeid(brig::boost::box) && ::boost::geometry::covered_by(::boost::get<brig::boost::box>(geom_col->mbr), tbl.select_box))
      )
   {
     if (!sql_condition.empty()) sql += "SELECT * FROM (";

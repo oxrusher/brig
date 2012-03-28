@@ -23,6 +23,7 @@ namespace brig { namespace database { namespace detail {
 inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>& sql)
 {
   static const int CharsLimit = 250;
+  auto loc = std::locale::classic();
 
   if (VoidSystem == sys) throw std::runtime_error("SQL error");
   auto col_end( std::remove_if(std::begin(tbl.columns), std::end(tbl.columns), [](const column_definition& c){ return VoidColumn == c.type; }) );
@@ -33,8 +34,9 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
   auto idx_end( std::remove_if(std::begin(tbl.indexes), std::end(tbl.indexes), [](const index_definition& i){ return VoidIndex == i.type; }) );
   normalize_identifier(sys, tbl.id);
 
-  // columns
-  auto loc = std::locale::classic();
+  // columns, primary key
+  {
+
   std::ostringstream stream; stream.imbue(loc);
   stream << "CREATE TABLE " << sql_identifier(sys, tbl.id.name) << " (";
   bool first(true);
@@ -43,6 +45,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
     if (Geometry == col->type)
       switch (sys)
       {
+      default: break;
       case Postgres:
       case SQLite: continue;
       case Oracle:
@@ -63,9 +66,12 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
 
     switch (sys)
     {
+    default: break;
+
     case DB2:
       switch (col->type)
       {
+      default: break;
       case Blob: stream << "BLOB"; break;
       case Double: stream << "DOUBLE"; break;
       case Geometry: stream << "DB2GSE.ST_GEOMETRY"; break;
@@ -83,6 +89,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
     case MS_SQL:
       switch (col->type)
       {
+      default: break;
       case Blob: stream << "VARBINARY(MAX)"; break;
       case Double: stream << "FLOAT"; break;
       case Geometry: stream << "GEOMETRY"; break;
@@ -94,6 +101,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
     case MySQL:
       switch (col->type)
       {
+      default: break;
       case Blob: stream << "LONGBLOB"; break;
       case Double: stream << "DOUBLE"; break;
       case Geometry:
@@ -114,6 +122,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
     case Oracle:
       switch (col->type)
       {
+      default: break;
       case Blob: stream << "BLOB"; break;
       case Double: stream << "BINARY_DOUBLE"; break;
       case Geometry: stream << "MDSYS.SDO_GEOMETRY"; break;
@@ -125,6 +134,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
     case Postgres:
       switch (col->type)
       {
+      default: break;
       case Blob: stream << "BYTEA"; break;
       case Double: stream << "DOUBLE PRECISION"; break;
       case Integer: stream << "BIGINT"; break;
@@ -135,6 +145,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
     case SQLite:
       switch (col->type)
       {
+      default: break;
       case Blob: stream << "BLOB"; break;
       case Double: stream << "REAL"; break; // real affinity
       case Integer: stream << "INTEGER"; break; // integer affinity
@@ -152,7 +163,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
   {
     idx->id = identifier();
     stream << ", PRIMARY KEY (";
-    first = true;
+    bool first(true);
     for (auto col_name(std::begin(idx->columns)); col_name != std::end(idx->columns); ++col_name)
     {
       if (first) first = false;
@@ -165,13 +176,16 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
   if (MySQL == sys) stream << " ENGINE = MyISAM";
   sql.push_back(stream.str());
 
+  } // columns, primary key
+
   // geometry
   for (auto col(std::begin(tbl.columns)); col != col_end; ++col)
     if (Geometry == col->type)
     {
-      stream = std::ostringstream(); stream.imbue(loc);
+      std::ostringstream stream; stream.imbue(loc);
       switch (sys)
       {
+      default: break;
       case DB2: stream << "BEGIN ATOMIC DECLARE msg_code INTEGER; DECLARE msg_text VARCHAR(1024); call DB2GSE.ST_register_spatial_column(NULL, '" << sql_identifier(sys, tbl.id.name) << "', '" << sql_identifier(sys, col->name) << "', (SELECT SRS_NAME FROM DB2GSE.ST_SPATIAL_REFERENCE_SYSTEMS WHERE ORGANIZATION LIKE 'EPSG' AND ORGANIZATION_COORDSYS_ID = " << col->epsg << " ORDER BY SRS_ID FETCH FIRST 1 ROWS ONLY), msg_code, msg_text); END"; break;
       case MS_SQL:
       case MySQL: break;
@@ -197,12 +211,13 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
     if (idx->columns.empty()) throw std::runtime_error("table error");
     idx->id.name = tbl.id.name + "_idx_" + string_cast<char>(++counter);
 
-    stream = std::ostringstream(); stream.imbue(loc);
+    std::ostringstream stream; stream.imbue(loc);
     if (Spatial == idx->type)
     {
       if (1 != idx->columns.size()) throw std::runtime_error("table error");
       switch (sys)
       {
+      default: break;
       case DB2: stream << "CREATE INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (" << sql_identifier(sys, idx->columns.front()) << ") EXTEND USING DB2GSE.SPATIAL_INDEX (1, 0, 0)"; break;
       case MS_SQL:
         {
@@ -224,7 +239,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       stream << "CREATE ";
       if (Unique == idx->type) stream << "UNIQUE ";
       stream << "INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (";
-      first = true;
+      bool first(true);
       for (auto col_name(std::begin(idx->columns)); col_name != std::end(idx->columns); ++col_name)
       {
         if (first) first = false;

@@ -60,7 +60,7 @@ template <typename ThreadedArgument>
 void mediator<ThreadedArgument>::set_state(state st, const std::exception_ptr& exc)
 {
   {
-    ::boost::unique_lock<::boost::mutex> lock(m_mut);
+    ::boost::unique_lock<typename ::boost::mutex> lock(m_mut);
     m_st = st;
     m_func = 0;
     m_exc = exc;
@@ -72,7 +72,7 @@ template <typename ThreadedArgument>
 void mediator<ThreadedArgument>::call(functor* func)
 {
   {
-    ::boost::unique_lock<::boost::mutex> lock(m_mut);
+    ::boost::unique_lock<typename ::boost::mutex> lock(m_mut);
     m_cond.wait(lock, [&](){ return Idle == this->m_st || AfterFinish == this->m_st; });
     if (Idle == m_st)
     {
@@ -83,7 +83,7 @@ void mediator<ThreadedArgument>::call(functor* func)
   }
   m_cond.notify_one();
 
-  ::boost::unique_lock<::boost::mutex> lock(m_mut);
+  ::boost::unique_lock<typename ::boost::mutex> lock(m_mut);
   m_cond.wait(lock, [&](){ return Idle == this->m_st || AfterFinish == this->m_st; });
   m_func = 0;
   if (!(m_exc == 0)) std::rethrow_exception(std::move(m_exc));
@@ -94,7 +94,7 @@ template <typename ThreadedArgument>
 bool mediator<ThreadedArgument>::handle(ThreadedArgument* arg)
 {
   {
-    ::boost::unique_lock<::boost::mutex> lock(m_mut);
+    ::boost::unique_lock<typename ::boost::mutex> lock(m_mut);
     m_cond.wait(lock, [&](){ return Calling == this->m_st || AfterFinish == this->m_st; });
     if (AfterFinish == m_st) return false;
 

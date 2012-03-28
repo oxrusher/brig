@@ -24,7 +24,7 @@ public:
 
 inline lib::lib() : p_pj_transform(0)
 {
-  auto handle = BRIG_DL_LIBRARY("proj.dll", "lib.so.0");
+  auto handle = BRIG_DL_LIBRARY("proj.dll", "libproj.so.0");
   if (  handle
     && (p_pj_free = BRIG_DL_FUNCTION(handle, pj_free))
     && (p_pj_get_release = BRIG_DL_FUNCTION(handle, pj_get_release))

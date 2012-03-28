@@ -13,6 +13,7 @@ inline bool is_geodetic_type(DBMS sys, const column_definition& col)
   if (Geometry == col.type)
     switch (sys)
     {
+    default: break;
     case DB2: return 2000000000 <= col.srid && col.srid <= 2000001000;
     case MS_SQL:
     case Postgres: return "geography" == col.lower_case_type.name;

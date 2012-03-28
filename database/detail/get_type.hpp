@@ -23,6 +23,7 @@ inline column_type get_type(DBMS sys, const column_definition& col)
 
   switch (sys)
   {
+  default: break;
   case DB2:
     if (col.lower_case_type.name.find("graphic") != std::string::npos) return String;
     break;

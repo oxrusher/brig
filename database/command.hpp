@@ -42,6 +42,8 @@ inline std::string command::sql_parameter(size_t, const column_definition& param
   if (Geometry == param_col.type)
     switch (sys)
     {
+    default: break;
+
     case DB2:
       stream << sql_identifier(sys, param_col.dbms_type) << "(CAST(? AS BLOB (100M)), " << param_col.srid << ")";
       return stream.str();
@@ -91,6 +93,7 @@ inline std::string command::sql_column(const column_definition& col)
     if (col.lower_case_type.name.find("time") != std::string::npos)
       switch (sys)
       {
+      default: break;
       case DB2:
       case Oracle:
       case Postgres: return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) as " + id;
@@ -100,6 +103,7 @@ inline std::string command::sql_column(const column_definition& col)
     else if (col.lower_case_type.name.find("date") != std::string::npos)
       switch (sys)
       {
+      default: break;
       case DB2:
       case Oracle:
       case Postgres: return "TO_CHAR(" + id + ", 'YYYY-MM-DD') as " + id;
@@ -120,6 +124,7 @@ inline std::string command::sql_column(const column_definition& col)
   if (Geometry == col.type)
     switch (sys)
     {
+    default: break;
     case DB2: return "DB2GSE.ST_AsBinary(" + id + ") as " + id;
     case MS_SQL: return id + ".STAsBinary() as " + id;
     case MySQL:

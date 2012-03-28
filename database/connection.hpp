@@ -125,6 +125,7 @@ std::vector<raster_pyramid> connection<Threading>::get_raster_layers()
   std::vector<raster_pyramid> specific;
   switch (cmd->system())
   {
+  default: break;
   case SQLite: specific = get_rasters_sqlite(cmd); break;
   case Postgres: specific = get_rasters_postgres(cmd); break;
   }
@@ -182,6 +183,8 @@ void connection<Threading>::create_check_mbr(table_definition& tbl)
   const DBMS sys(cmd->system());
   switch (sys)
   {
+  default: break;
+
   case Oracle:
     for (auto col(std::begin(tbl.columns)); col != std::end(tbl.columns); ++col)
       if (Geometry == col->type && typeid(bool) == col->mbr.type()) col->mbr = true;
