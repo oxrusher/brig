@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <boost/utility.hpp>
 #include <brig/database/sqlite/detail/lib.hpp>
-#include <cstdint>
 #include <stdexcept>
 #include <string>
 
@@ -17,7 +16,7 @@ class db_handle : ::boost::noncopyable {
 public:
   db_handle(const std::string& file);
   virtual ~db_handle()  { lib::singleton().p_sqlite3_close(m_db); }
-  int64_t affected()  { return lib::singleton().p_sqlite3_changes(m_db); }
+  size_t affected()  { return lib::singleton().p_sqlite3_changes(m_db); }
   void check(int r)  { if (SQLITE_OK != r) error(); }
   void error();
   sqlite3_stmt* prepare_stmt(const std::string& sql);

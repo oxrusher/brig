@@ -26,7 +26,7 @@ basic_ostream<CharT, TraitsT>& operator<<(basic_ostream<CharT, TraitsT>& stream,
 {
   if (stream.flags() & ios::hex)
   {
-    const size_t width(stream.width());
+    const size_t width(size_t(stream.width()));
     const size_t size(blob.size());
     const size_t count(width == 0? size: std::min<>(width / 2, size));
 
