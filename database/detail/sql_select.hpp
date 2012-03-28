@@ -72,7 +72,7 @@ std::string sql_select(std::shared_ptr<Dialect> dct, const table_definition& tbl
   std::string sql_key_tbl, sql_tbl(sql_identifier(sys, tbl.id));
   if (MS_SQL == sys && boxes.size() > 1)
   {
-    if (unique_cols.empty()) throw std::runtime_error("SQL error");
+    if (unique_cols.empty()) throw std::runtime_error("unique columns error");
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql_key_tbl += " UNION ";
@@ -81,7 +81,7 @@ std::string sql_select(std::shared_ptr<Dialect> dct, const table_definition& tbl
   }
   else if (Oracle == sys && boxes.size() > 1)
   {
-    if (unique_cols.empty()) throw std::runtime_error("SQL error");
+    if (unique_cols.empty()) throw std::runtime_error("unique columns error");
     sql_key_tbl += "SELECT " + sql_infix + " DISTINCT * FROM (";
     for (size_t i(0); i < boxes.size(); ++i)
     {
@@ -94,6 +94,15 @@ std::string sql_select(std::shared_ptr<Dialect> dct, const table_definition& tbl
   }
   else if (SQLite == sys)
   {
+    if (unique_cols.empty())
+    {
+      column_definition col;
+      col.name = "rowid";
+      col.type = Integer;
+      col.dbms_type.name = "int";
+      col.lower_case_type.name = "int";
+      unique_cols.push_back(col);
+    }
     if (unique_cols.size() != 1) throw std::runtime_error("SQL error");
     sql_key_tbl += "SELECT pkid " + sql_identifier(sys, unique_cols[0].name) + " FROM " + sql_identifier(sys, "idx_" + tbl.id.name + "_" + tbl.select_box_column) + " WHERE ";
     for (size_t i(0); i < boxes.size(); ++i)
