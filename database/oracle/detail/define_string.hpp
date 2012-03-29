@@ -21,7 +21,8 @@ public:
   virtual void operator()(variant& var);
 }; // define_string
 
-inline define_string::define_string(handles* hnd, size_t order, ub2 size, ub1 cs_form) : m_str(size > 0? size: SHRT_MAX / sizeof(char16_t), 0), m_ind(OCI_IND_NULL)
+inline define_string::define_string(handles* hnd, size_t order, ub2 size, ub1 cs_form)
+  : m_str(size > 0? size: SHRT_MAX / sizeof(char16_t), 0), m_ind(OCI_IND_NULL)
 {
   OCIDefine* def(0);
   hnd->check(lib::singleton().p_OCIDefineByPos(hnd->stmt, &def, hnd->err, ub4(order)

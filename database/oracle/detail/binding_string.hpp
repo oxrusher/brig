@@ -23,7 +23,7 @@ inline binding_string::binding_string(handles* hnd, size_t order, const std::str
 {
   const size_t size((m_str.size() + 1) * sizeof(char16_t));
   if (size > SHRT_MAX) throw std::runtime_error("OCI type error");
-  m_ind = OCIInd(m_str.empty()? OCI_IND_NULL: size);
+  m_ind = OCIInd(size);
   OCIBind* bnd(0);
   hnd->check(lib::singleton().p_OCIBindByPos(hnd->stmt, &bnd, hnd->err, ub4(order), (void*)m_str.c_str(), m_ind, SQLT_STR, &m_ind, 0, 0, 0, 0, OCI_DEFAULT));
   hnd->check(lib::singleton().p_OCIAttrSet(bnd, OCI_HTYPE_BIND, (void*)&cs_form, 0, OCI_ATTR_CHARSET_FORM, hnd->err));

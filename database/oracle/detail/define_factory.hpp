@@ -5,6 +5,7 @@
 
 #include <brig/database/identifier.hpp>
 #include <brig/database/oracle/detail/define.hpp>
+#include <brig/database/oracle/detail/define_binary.hpp>
 #include <brig/database/oracle/detail/define_blob.hpp>
 #include <brig/database/oracle/detail/define_geometry.hpp>
 #include <brig/database/oracle/detail/define_impl.hpp>
@@ -24,6 +25,8 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 siz
   // binary
   case SQLT_BIN:
   case SQLT_VBI:
+    return new define_binary(hnd, order, size);
+
   case SQLT_LBI:
   case SQLT_LVB:
   case SQLT_BFILE:

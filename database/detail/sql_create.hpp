@@ -25,6 +25,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
   static const int CharsLimit = 250;
   auto loc = std::locale::classic();
 
+  // unknown column type
   if (VoidSystem == sys) throw std::runtime_error("SQL error");
   auto col_end( std::remove_if(std::begin(tbl.columns), std::end(tbl.columns), [](const column_definition& c){ return VoidColumn == c.type; }) );
   for (auto idx(std::begin(tbl.indexes)); idx != std::end(tbl.indexes); ++idx)
@@ -40,6 +41,27 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
   std::ostringstream stream; stream.imbue(loc);
   stream << "CREATE TABLE " << sql_identifier(sys, tbl.id.name) << " (";
   bool first(true);
+
+  // force primary key if necessary
+  switch (sys)
+  {
+  default: break;
+  case MS_SQL:
+    if (std::find_if(std::begin(tbl.indexes), idx_end, [&](const index_definition& i){ return Primary == i.type; }) == idx_end)
+    {
+      stream << "ID INTEGER IDENTITY";
+      first = false;
+    }
+    break;
+  case Oracle:
+    if (std::find_if(std::begin(tbl.indexes), idx_end, [&](const index_definition& i){ return Primary == i.type || Unique == i.type; }) == idx_end)
+    {
+      stream << "ID NVARCHAR2(32) DEFAULT SYS_GUID() PRIMARY KEY";
+      first = false;
+    }
+    break;
+  }
+
   for (auto col(std::begin(tbl.columns)); col != col_end; ++col)
   {
     if (Geometry == col->type)
