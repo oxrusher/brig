@@ -3,6 +3,7 @@
 #ifndef BRIG_DATABASE_ODBC_DETAIL_BINDING_BLOB_HPP
 #define BRIG_DATABASE_ODBC_DETAIL_BINDING_BLOB_HPP
 
+#include <algorithm>
 #include <brig/blob_t.hpp>
 #include <brig/database/odbc/detail/binding.hpp>
 #include <brig/database/odbc/detail/get_sql_type.hpp>
@@ -18,7 +19,7 @@ public:
   binding_blob(const blob_t& blob, DBMS sys) : m_ptr((void*)blob.data()), m_ind(blob.size()), m_sys(sys)  {}
   virtual SQLSMALLINT c_type()  { return SQL_C_BINARY; }
   virtual SQLSMALLINT sql_type()  { return get_sql_type_blob(m_sys); }
-  virtual SQLULEN precision()  { return m_ind; }
+  virtual SQLULEN precision()  { return std::max<>(SQLULEN(m_ind), SQLULEN(1)); }
   virtual SQLPOINTER val_ptr()  { return m_ptr; }
   virtual SQLLEN* ind()  { return &m_ind; }
 }; // binding_blob

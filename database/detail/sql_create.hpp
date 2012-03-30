@@ -49,8 +49,14 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
   case MS_SQL:
     if (std::find_if(std::begin(tbl.indexes), idx_end, [&](const index_definition& i){ return Primary == i.type; }) == idx_end)
     {
-      stream << "ID INTEGER IDENTITY";
-      first = false;
+      auto idx(std::find_if(std::begin(tbl.indexes), idx_end, [&](const index_definition& i){ return Unique == i.type; }));
+      if (idx == idx_end)
+      {
+        stream << "ID BIGINT IDENTITY PRIMARY KEY";
+        first = false;
+      }
+      else
+        idx->type = Primary;
     }
     break;
   case Oracle:

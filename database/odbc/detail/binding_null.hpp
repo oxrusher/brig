@@ -19,7 +19,7 @@ public:
   binding_null(column_type type, DBMS sys) : m_type(type), m_ind(SQL_NULL_DATA), m_sys(sys)  {}
   virtual SQLSMALLINT c_type();
   virtual SQLSMALLINT sql_type();
-  virtual SQLULEN precision()  { return 0; }
+  virtual SQLULEN precision();
   virtual SQLPOINTER val_ptr()  { return 0; }
   virtual SQLLEN* ind()  { return &m_ind; }
 }; // binding_null
@@ -29,9 +29,9 @@ inline SQLSMALLINT binding_null::c_type()
   switch (m_type)
   {
     default: throw std::runtime_error("ODBC type error");
-    case Blob: return SQL_C_BINARY;
-    case Double: return SQL_C_DOUBLE;
+    case Blob:
     case Geometry: return SQL_C_BINARY;
+    case Double: return SQL_C_DOUBLE;
     case Integer: return SQL_C_SBIGINT;
     case String: return SQL_C_WCHAR;
   };
@@ -42,11 +42,23 @@ inline SQLSMALLINT binding_null::sql_type()
   switch (m_type)
   {
     default: throw std::runtime_error("ODBC type error");
-    case Blob: return get_sql_type_blob(m_sys);
+    case Blob:
+    case Geometry: return get_sql_type_blob(m_sys);
     case Double: return SQL_DOUBLE;
-    case Geometry: return SQL_VARBINARY;
     case Integer: return SQL_BIGINT;
     case String: return get_sql_type_string(m_sys);
+  };
+}
+
+inline SQLULEN binding_null::precision()
+{
+  switch (m_type)
+  {
+    default: return 0;
+    case Blob:
+    case Geometry:
+    case String: return 1;
+    case Double: return 15;
   };
 } // binding_null::
 
