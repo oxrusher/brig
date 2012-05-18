@@ -34,7 +34,7 @@ class command : public brig::database::command
   void close_stmt();
 
 public:
-  command(const std::string& file) : m_db(file), m_stmt(0), m_done(false), m_autocommit(true)  {}
+  explicit command(const std::string& file) : m_db(file), m_stmt(0), m_done(false), m_autocommit(true)  {}
   virtual ~command();
   virtual DBMS system()  { return SQLite; }
   virtual std::string sql_column(const column_definition& col);

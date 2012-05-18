@@ -14,7 +14,7 @@ namespace brig { namespace database { namespace sqlite { namespace detail {
 class db_handle : ::boost::noncopyable {
   sqlite3* m_db;
 public:
-  db_handle(const std::string& file);
+  explicit db_handle(const std::string& file);
   virtual ~db_handle()  { lib::singleton().p_sqlite3_close(m_db); }
   size_t affected()  { return lib::singleton().p_sqlite3_changes(m_db); }
   void check(int r)  { if (SQLITE_OK != r) error(); }
