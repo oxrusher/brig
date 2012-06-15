@@ -4,8 +4,6 @@
 #define BRIG_DATABASE_DETAIL_POOL_HPP
 
 #include <boost/circular_buffer.hpp>
-#include <boost/thread/locks.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/utility.hpp>
 #include <brig/database/command.hpp>
 #include <brig/database/command_allocator.hpp>
@@ -13,6 +11,7 @@
 #include <brig/database/global.hpp>
 #include <exception>
 #include <memory>
+#include <mutex>
 
 namespace brig { namespace database { namespace detail {
 
@@ -58,11 +57,11 @@ inline void pool<false>::deallocate(command* cmd)
 } // pool<false>::
 
 template <> class pool<true> : public pool<false> {
-  ::boost::mutex m_mut;
+  std::mutex m_mut;
 public:
   explicit pool(std::shared_ptr<command_allocator> allocator) : pool<false>(std::make_shared<threaded_command_allocator>(allocator))  {}
-  command* allocate()  { ::boost::lock_guard<typename ::boost::mutex> lck(m_mut); return pool<false>::allocate(); }
-  void deallocate(command* cmd)  { ::boost::lock_guard<typename ::boost::mutex> lck(m_mut); pool<false>::deallocate(cmd); }
+  command* allocate()  { std::lock_guard<typename std::mutex> lck(m_mut); return pool<false>::allocate(); }
+  void deallocate(command* cmd)  { std::lock_guard<typename std::mutex> lck(m_mut); pool<false>::deallocate(cmd); }
 }; // pool<true>
 
 } } } // brig::database::detail

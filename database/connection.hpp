@@ -8,7 +8,6 @@
 #include <brig/database/column_definition.hpp>
 #include <brig/database/command.hpp>
 #include <brig/database/command_allocator.hpp>
-#include <brig/database/detail/deleter.hpp>
 #include <brig/database/detail/get_rasters_postgres.hpp>
 #include <brig/database/detail/get_rasters_simple.hpp>
 #include <brig/database/detail/get_rasters_sqlite.hpp>
@@ -34,6 +33,7 @@
 #include <brig/database/rowset.hpp>
 #include <brig/database/table_definition.hpp>
 #include <brig/database/variant.hpp>
+#include <brig/detail/deleter.hpp>
 #include <brig/string_cast.hpp>
 #include <iterator>
 #include <memory>
@@ -56,7 +56,7 @@ public:
   std::vector<raster_pyramid> get_raster_layers();
   table_definition get_table_definition(const identifier& tbl)  { return detail::get_table_definition(get_command(), tbl); }
   brig::boost::box get_mbr(const identifier& tbl, column_definition& col);
-  std::shared_ptr<command> get_command()  { return std::shared_ptr<command>(m_pool->allocate(), detail::deleter<pool_type>(m_pool)); }
+  std::shared_ptr<command> get_command()  { return std::shared_ptr<command>(m_pool->allocate(), brig::detail::deleter<command, pool_type>(m_pool)); }
 
   std::shared_ptr<rowset> select(const table_definition& tbl);
   void create_check_mbr(table_definition& tbl);

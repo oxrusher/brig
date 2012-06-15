@@ -52,7 +52,7 @@ public:
 
 inline lib::lib() : p_sqlite3_step(0), p_spatialite_version(0)
 {
-  auto handle = BRIG_DL_LIBRARY("spatialite.dll", "libspatialite.so.2");
+  auto handle = BRIG_DL_LIBRARY("libspatialite-2.dll", "libspatialite.so.2");
   if (  handle
 	&& (p_sqlite3_auto_extension = BRIG_DL_FUNCTION(handle, sqlite3_auto_extension))
 	&& (p_sqlite3_backup_finish = BRIG_DL_FUNCTION(handle, sqlite3_backup_finish))
