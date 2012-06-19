@@ -100,7 +100,7 @@ std::string sql_select(std::shared_ptr<Dialect> dct, const table_definition& tbl
       col.name = "rowid";
       col.type = Integer;
       col.dbms_type.name = "int";
-      col.lower_case_type.name = "int";
+      col.dbms_type_lcase.name = "int";
       unique_cols.push_back(col);
     }
     if (unique_cols.size() != 1) throw std::runtime_error("SQL error");

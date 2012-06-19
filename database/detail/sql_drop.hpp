@@ -28,15 +28,9 @@ inline void sql_drop(DBMS sys, const table_definition& tbl, std::vector<std::str
     if (Geometry != col->type) continue;
     switch (sys)
     {
-    case VoidSystem: throw std::runtime_error("SQL error");
-    case MS_SQL:
-    case MySQL:
-    case Oracle: break;
+    default: break;
     case DB2: sql.push_back("BEGIN ATOMIC DECLARE msg_code INTEGER; DECLARE msg_text VARCHAR(1024); call DB2GSE.ST_unregister_spatial_column('" + sql_identifier(sys, tbl.id.schema) + "', '" + sql_identifier(sys, tbl.id.name) + "', '" + sql_identifier(sys, col->name) + "', msg_code, msg_text); END"); break;
-    case Postgres:
-      if ("geometry" == col->lower_case_type.name)
-        sql.push_back("SELECT DropGeometryColumn('" + tbl.id.schema + "', '" + tbl.id.name + "', '" + col->name + "')");
-      break;
+    case Postgres: if ("geometry" == col->dbms_type_lcase.name) sql.push_back("SELECT DropGeometryColumn('" + tbl.id.schema + "', '" + tbl.id.name + "', '" + col->name + "')"); break;
     case SQLite: sql.push_back("SELECT DiscardGeometryColumn('" + tbl.id.name + "', '" + col->name + "')"); break;
     }
   }

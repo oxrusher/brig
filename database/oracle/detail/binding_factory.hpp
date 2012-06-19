@@ -33,7 +33,7 @@ struct binding_visitor : ::boost::static_visitor<binding*> {
   binding* operator()(int64_t v) const  { return new binding_impl<int64_t, SQLT_INT>(hnd, i, v); }
   binding* operator()(float v) const  { return new binding_impl<float, SQLT_FLT>(hnd, i, v); }
   binding* operator()(double v) const  { return new binding_impl<double, SQLT_FLT>(hnd, i, v); }
-  binding* operator()(const std::string& r) const  { return new binding_string(hnd, i, r, col? get_charset_form(col->lower_case_type): SQLCS_NCHAR); }
+  binding* operator()(const std::string& r) const  { return new binding_string(hnd, i, r, col? get_charset_form(col->dbms_type_lcase): SQLCS_NCHAR); }
   binding* operator()(const blob_t&) const;
 }; // binding_visitor
 
@@ -46,7 +46,7 @@ inline binding* binding_visitor::operator()(const null_t&) const
     case Double: return new binding_impl<double, SQLT_FLT>(hnd, i);
     case Geometry: return new binding_geometry(hnd, i, blob_t(), col->srid);
     case Integer: return new binding_impl<int64_t, SQLT_INT>(hnd, i);
-    case String: return new binding_string(hnd, i, std::string(), get_charset_form(col->lower_case_type));
+    case String: return new binding_string(hnd, i, std::string(), get_charset_form(col->dbms_type_lcase));
   };
 }
 

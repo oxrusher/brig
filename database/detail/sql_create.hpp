@@ -94,12 +94,24 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
 
     switch (sys)
     {
-    default: break;
+    case VoidSystem: throw std::runtime_error("SQL error");
+
+    case CUBRID:
+      switch (col->type)
+      {
+      case VoidColumn:
+      case Geometry: throw std::runtime_error("SQL error");
+      case Blob: stream << "BLOB"; break;
+      case Double: stream << "DOUBLE"; break;
+      case Integer: stream << "BIGINT"; break;
+      case String: stream << "NCHAR VARYING(" << chars << ")"; break;
+      }
+      break;
 
     case DB2:
       switch (col->type)
       {
-      default: break;
+      case VoidColumn: throw std::runtime_error("SQL error");
       case Blob: stream << "BLOB"; break;
       case Double: stream << "DOUBLE"; break;
       case Geometry: stream << "DB2GSE.ST_GEOMETRY"; break;
@@ -117,7 +129,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
     case MS_SQL:
       switch (col->type)
       {
-      default: break;
+      case VoidColumn: throw std::runtime_error("SQL error");
       case Blob: stream << "VARBINARY(MAX)"; break;
       case Double: stream << "FLOAT"; break;
       case Geometry: stream << "GEOMETRY"; break;
@@ -129,7 +141,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
     case MySQL:
       switch (col->type)
       {
-      default: break;
+      case VoidColumn: throw std::runtime_error("SQL error");
       case Blob: stream << "LONGBLOB"; break;
       case Double: stream << "DOUBLE"; break;
       case Geometry:
@@ -150,7 +162,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
     case Oracle:
       switch (col->type)
       {
-      default: break;
+      case VoidColumn: throw std::runtime_error("SQL error");
       case Blob: stream << "BLOB"; break;
       case Double: stream << "BINARY_DOUBLE"; break;
       case Geometry: stream << "MDSYS.SDO_GEOMETRY"; break;
@@ -162,7 +174,8 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
     case Postgres:
       switch (col->type)
       {
-      default: break;
+      case VoidColumn:
+      case Geometry: throw std::runtime_error("SQL error");
       case Blob: stream << "BYTEA"; break;
       case Double: stream << "DOUBLE PRECISION"; break;
       case Integer: stream << "BIGINT"; break;
@@ -173,7 +186,8 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
     case SQLite:
       switch (col->type)
       {
-      default: break;
+      case VoidColumn:
+      case Geometry: throw std::runtime_error("SQL error");
       case Blob: stream << "BLOB"; break;
       case Double: stream << "REAL"; break; // real affinity
       case Integer: stream << "INTEGER"; break; // integer affinity
@@ -213,7 +227,8 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       std::ostringstream stream; stream.imbue(loc);
       switch (sys)
       {
-      default: break;
+      case VoidSystem:
+      case CUBRID: throw std::runtime_error("SQL error");
       case DB2: stream << "BEGIN ATOMIC DECLARE msg_code INTEGER; DECLARE msg_text VARCHAR(1024); call DB2GSE.ST_register_spatial_column(NULL, '" << sql_identifier(sys, tbl.id.name) << "', '" << sql_identifier(sys, col->name) << "', (SELECT SRS_NAME FROM DB2GSE.ST_SPATIAL_REFERENCE_SYSTEMS WHERE ORGANIZATION LIKE 'EPSG' AND ORGANIZATION_COORDSYS_ID = " << col->epsg << " ORDER BY SRS_ID FETCH FIRST 1 ROWS ONLY), msg_code, msg_text); END"; break;
       case MS_SQL:
       case MySQL: break;
@@ -245,7 +260,8 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       if (1 != idx->columns.size()) throw std::runtime_error("table error");
       switch (sys)
       {
-      default: break;
+      case VoidSystem:
+      case CUBRID: throw std::runtime_error("SQL error");
       case DB2: stream << "CREATE INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (" << sql_identifier(sys, idx->columns.front()) << ") EXTEND USING DB2GSE.SPATIAL_INDEX (1, 0, 0)"; break;
       case MS_SQL:
         {

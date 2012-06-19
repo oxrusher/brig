@@ -26,9 +26,9 @@ inline std::string sql_box_filter(DBMS sys, const column_definition& col, const 
     bool geography(false), raster(false);
 
     if (VoidColumn == col.type) throw std::runtime_error("SQL error");
-    else if ("raster" == col.lower_case_type.name) raster = true;
-    else if ("geography" == col.lower_case_type.name) geography = true;
-    else if ("geometry" != col.lower_case_type.name) throw std::runtime_error("SQL error");
+    else if ("raster" == col.dbms_type_lcase.name) raster = true;
+    else if ("geography" == col.dbms_type_lcase.name) geography = true;
+    else if ("geometry" != col.dbms_type_lcase.name) throw std::runtime_error("SQL error");
 
     if (raster) stream << "ST_Envelope(";
     stream << id;
@@ -53,7 +53,7 @@ inline std::string sql_box_filter(DBMS sys, const column_definition& col, const 
     break;
   case MS_SQL:
     {
-    const bool geography("geography" == col.lower_case_type.name);
+    const bool geography("geography" == col.dbms_type_lcase.name);
     const int srid(0 < col.srid? col.srid: geography? 4326: 0);
     stream << "" << id << ".Filter(";
     if (geography) stream << "GEOGRAPHY::STGeomFromWKB(";

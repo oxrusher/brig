@@ -118,7 +118,8 @@ inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(
   {
     using namespace brig::unicode;
     const std::string sys(transform<std::string>(buf, lower_case));
-         if (sys.find("db2") != std::string::npos) m_sys = DB2;
+         if (sys.find("cubrid") != std::string::npos) m_sys = CUBRID;
+    else if (sys.find("db2") != std::string::npos) m_sys = DB2;
     else if (sys.find("microsoft") != std::string::npos
           && sys.find("sql") != std::string::npos
           && sys.find("server") != std::string::npos) m_sys = MS_SQL;

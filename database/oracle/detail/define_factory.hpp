@@ -18,7 +18,7 @@
 
 namespace brig { namespace database { namespace oracle { namespace detail {
 
-inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 size, sb2 precision, sb1 scale, const identifier& lower_case_type)
+inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 size, sb2 precision, sb1 scale, const identifier& dbms_type_lcase)
 {
   switch (data_type)
   {
@@ -51,7 +51,7 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 siz
   case SQLT_LVC:
   case SQLT_CFILE:
   case SQLT_CLOB:
-    return new define_string(hnd, order, size, get_charset_form(lower_case_type));
+    return new define_string(hnd, order, size, get_charset_form(dbms_type_lcase));
 
   // numeric
   case SQLT_INT:
@@ -85,7 +85,7 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 siz
 
   // named data type
   case SQLT_NTY:
-    if ("mdsys" == lower_case_type.schema && "sdo_geometry" == lower_case_type.name) return new define_geometry(hnd, order);
+    if ("mdsys" == dbms_type_lcase.schema && "sdo_geometry" == dbms_type_lcase.name) return new define_geometry(hnd, order);
     break;
   }
 

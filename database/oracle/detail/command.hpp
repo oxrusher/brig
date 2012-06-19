@@ -159,11 +159,11 @@ inline std::vector<std::string> command::columns()
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_schema, &type_schema_len, OCI_ATTR_SCHEMA_NAME, m_hnd.err));
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_name, &type_name_len, OCI_ATTR_TYPE_NAME, m_hnd.err));
 
-      identifier lower_case_type;
-      lower_case_type.schema = transform<std::string>(type_schema, lower_case);
-      lower_case_type.name = transform<std::string>(type_name, lower_case);
+      identifier dbms_type_lcase;
+      dbms_type_lcase.schema = transform<std::string>(type_schema, lower_case);
+      dbms_type_lcase.name = transform<std::string>(type_name, lower_case);
 
-      m_cols.push_back(define_factory(&m_hnd, i + 1, data_type, size, precision, scale, lower_case_type));
+      m_cols.push_back(define_factory(&m_hnd, i + 1, data_type, size, precision, scale, dbms_type_lcase));
       cols.push_back(transform<std::string>(name));
 
     }
@@ -195,7 +195,7 @@ inline std::string command::sql_parameter(size_t order, const column_definition&
 {
   using namespace brig::database::detail;
   std::ostringstream stream; stream.imbue(std::locale::classic());
-  if (Geometry == param_col.type && "sdo_geometry" != param_col.lower_case_type.name)
+  if (Geometry == param_col.type && "sdo_geometry" != param_col.dbms_type_lcase.name)
     stream << sql_identifier(Oracle, param_col.dbms_type) << "(:" << (order + 1) << ")";
   else
     stream << ":" << (order + 1);
@@ -208,7 +208,7 @@ inline std::string command::sql_column(const column_definition& col)
   if (col.sql_expression.empty() && Geometry == col.type)
   {
     const std::string id(sql_identifier(Oracle, col.name));
-    if ("sdo_geometry" == col.lower_case_type.name) return id;
+    if ("sdo_geometry" == col.dbms_type_lcase.name) return id;
     else return sql_identifier(Oracle, col.dbms_type) + ".GET_SDO_GEOM(" + id + ") as " + id;
   }
   return brig::database::command::sql_column(col);

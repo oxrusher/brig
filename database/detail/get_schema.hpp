@@ -20,6 +20,7 @@ inline std::string get_schema(std::shared_ptr<command> cmd)
   switch (cmd->system())
   {
   default: throw std::runtime_error("SQL error");
+  case CUBRID: sql = "SELECT CURRENT_USER"; break;
   case DB2: sql = "VALUES CURRENT_SCHEMA"; break;
   case MS_SQL: sql = "SELECT SCHEMA_NAME()"; break;
   case MySQL: sql = "select schema()"; break;

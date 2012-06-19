@@ -17,14 +17,13 @@ inline std::string sql_srid(const DBMS sys, const identifier& tbl, const column_
   if (Postgres == sys)
   {
     if (VoidColumn == col.type) return "";
-    else if ("raster" == col.lower_case_type.name) return "SELECT c.SRID, (CASE s.AUTH_NAME WHEN 'EPSG' THEN s.AUTH_SRID ELSE NULL END) epsg FROM (SELECT SRID FROM PUBLIC.RASTER_COLUMNS WHERE R_TABLE_SCHEMA = '" + tbl.schema + "' AND R_TABLE_NAME = '" + tbl.name + "' AND R_RASTER_COLUMN = '" + col.name + "') c LEFT JOIN PUBLIC.SPATIAL_REF_SYS s ON c.SRID = s.SRID";
-    else if ("geography" == col.lower_case_type.name) return "SELECT c.SRID, (CASE s.AUTH_NAME WHEN 'EPSG' THEN s.AUTH_SRID ELSE NULL END) epsg, c.TYPE FROM (SELECT SRID, TYPE FROM PUBLIC.GEOGRAPHY_COLUMNS WHERE F_TABLE_SCHEMA = '" + tbl.schema + "' AND F_TABLE_NAME = '" + tbl.name + "' AND F_GEOGRAPHY_COLUMN = '" + col.name + "') c LEFT JOIN PUBLIC.SPATIAL_REF_SYS s ON c.SRID = s.SRID";
-    else if ("geometry" == col.lower_case_type.name) return "SELECT c.SRID, (CASE s.AUTH_NAME WHEN 'EPSG' THEN s.AUTH_SRID ELSE NULL END) epsg, c.TYPE FROM (SELECT SRID, TYPE FROM PUBLIC.GEOMETRY_COLUMNS WHERE F_TABLE_SCHEMA = '" + tbl.schema + "' AND F_TABLE_NAME = '" + tbl.name + "' AND F_GEOMETRY_COLUMN = '" + col.name + "') c LEFT JOIN PUBLIC.SPATIAL_REF_SYS s ON c.SRID = s.SRID";
+    else if ("raster" == col.dbms_type_lcase.name) return "SELECT c.SRID, (CASE s.AUTH_NAME WHEN 'EPSG' THEN s.AUTH_SRID ELSE NULL END) epsg FROM (SELECT SRID FROM PUBLIC.RASTER_COLUMNS WHERE R_TABLE_SCHEMA = '" + tbl.schema + "' AND R_TABLE_NAME = '" + tbl.name + "' AND R_RASTER_COLUMN = '" + col.name + "') c LEFT JOIN PUBLIC.SPATIAL_REF_SYS s ON c.SRID = s.SRID";
+    else if ("geography" == col.dbms_type_lcase.name) return "SELECT c.SRID, (CASE s.AUTH_NAME WHEN 'EPSG' THEN s.AUTH_SRID ELSE NULL END) epsg, c.TYPE FROM (SELECT SRID, TYPE FROM PUBLIC.GEOGRAPHY_COLUMNS WHERE F_TABLE_SCHEMA = '" + tbl.schema + "' AND F_TABLE_NAME = '" + tbl.name + "' AND F_GEOGRAPHY_COLUMN = '" + col.name + "') c LEFT JOIN PUBLIC.SPATIAL_REF_SYS s ON c.SRID = s.SRID";
+    else if ("geometry" == col.dbms_type_lcase.name) return "SELECT c.SRID, (CASE s.AUTH_NAME WHEN 'EPSG' THEN s.AUTH_SRID ELSE NULL END) epsg, c.TYPE FROM (SELECT SRID, TYPE FROM PUBLIC.GEOMETRY_COLUMNS WHERE F_TABLE_SCHEMA = '" + tbl.schema + "' AND F_TABLE_NAME = '" + tbl.name + "' AND F_GEOMETRY_COLUMN = '" + col.name + "') c LEFT JOIN PUBLIC.SPATIAL_REF_SYS s ON c.SRID = s.SRID";
     else return "";
   }
 
-  if (Geometry != col.type)
-    return "";
+  if (Geometry != col.type) return "";
 
   switch (sys)
   {

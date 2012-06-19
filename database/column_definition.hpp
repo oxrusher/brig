@@ -14,13 +14,13 @@ namespace brig { namespace database {
 
 struct column_definition {
   std::string name, sql_expression;
-  identifier dbms_type, lower_case_type;
+  identifier dbms_type, dbms_type_lcase;
   column_type type;
   int chars, precision, scale, srid, epsg;
-  ::boost::variant<bool, brig::boost::box> mbr;
   bool not_null;
+  ::boost::variant<bool, brig::boost::box> mbr;
 
-  column_definition() : type(VoidColumn), chars(-1), precision(-1), scale(-1), srid(-1), epsg(-1), mbr(false), not_null(false)  {}
+  column_definition() : type(VoidColumn), chars(-1), precision(-1), scale(-1), srid(-1), epsg(-1), not_null(false), mbr(false)  {}
 }; // column_definition
 
 } } // brig::database

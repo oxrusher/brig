@@ -59,7 +59,7 @@ inline std::string command::sql_parameter(size_t, const column_definition& param
 
     case Oracle:
       {
-      const bool conv("sdo_geometry" != param_col.lower_case_type.name);
+      const bool conv("sdo_geometry" != param_col.dbms_type_lcase.name);
       if (conv) stream << sql_identifier(sys, param_col.dbms_type) << "(";
       stream << "MDSYS.SDO_GEOMETRY(TO_BLOB(?), " << param_col.srid << ")";
       if (conv) stream << ")";
@@ -67,7 +67,7 @@ inline std::string command::sql_parameter(size_t, const column_definition& param
       return stream.str();
 
     case Postgres:
-      if ("geography" == param_col.lower_case_type.name)
+      if ("geography" == param_col.dbms_type_lcase.name)
       {
         if (param_col.srid != 4326) throw std::runtime_error("SRID error");
         stream << "ST_GeogFromWKB(?)";
@@ -90,20 +90,22 @@ inline std::string command::sql_column(const column_definition& col)
   // http://en.wikipedia.org/wiki/ISO_8601
   if (String == col.type)
   {
-    if (col.lower_case_type.name.find("time") != std::string::npos)
+    if (col.dbms_type_lcase.name.find("time") != std::string::npos)
       switch (sys)
       {
       default: break;
+      case CUBRID:
       case DB2:
       case Oracle:
       case Postgres: return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) as " + id;
       case MS_SQL: return "CONVERT(CHAR(19), " + id + ", 126) as " + id;
       case MySQL: return "DATE_FORMAT(" + id + ", '%Y-%m-%dT%T') as " + id;
       }
-    else if (col.lower_case_type.name.find("date") != std::string::npos)
+    else if (col.dbms_type_lcase.name.find("date") != std::string::npos)
       switch (sys)
       {
       default: break;
+      case CUBRID:
       case DB2:
       case Oracle:
       case Postgres: return "TO_CHAR(" + id + ", 'YYYY-MM-DD') as " + id;
@@ -115,9 +117,9 @@ inline std::string command::sql_column(const column_definition& col)
   if (Postgres == sys)
   {
     if (VoidColumn == col.type) return id;
-    else if ("raster" == col.lower_case_type.name) return "ST_AsBinary(ST_Envelope(" + id + ")) as " + id;
-    else if ("geography" == col.lower_case_type.name
-          || "geometry" == col.lower_case_type.name) return "ST_AsBinary(" + id + ") as " + id;
+    else if ("raster" == col.dbms_type_lcase.name) return "ST_AsBinary(ST_Envelope(" + id + ")) as " + id;
+    else if ("geography" == col.dbms_type_lcase.name
+          || "geometry" == col.dbms_type_lcase.name) return "ST_AsBinary(" + id + ") as " + id;
     else return id;
   }
 

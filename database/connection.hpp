@@ -92,16 +92,21 @@ std::vector<identifier> connection<Threading>::get_geometry_layers()
 {
   using namespace brig::database::detail;
 
+  std::vector<identifier> res;
   auto cmd(get_command());
   const DBMS sys(cmd->system());
   std::vector<variant> row;
-  if (SQLite == sys)
-  {
-    cmd->exec(sql_tables(sys, "geometry_columns"));
-    if (!cmd->fetch(row)) return std::vector<identifier>();
-  }
 
-  std::vector<identifier> res;
+  switch (sys)
+  {
+    default: break;
+    case CUBRID: return res;
+    case SQLite:
+      cmd->exec(sql_tables(sys, "geometry_columns"));
+      if (!cmd->fetch(row)) return res;
+      break;
+  }
+  
   cmd->exec(sql_geometries(sys, true));
   while (cmd->fetch(row))
   {

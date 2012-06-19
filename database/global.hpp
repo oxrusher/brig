@@ -7,6 +7,7 @@ namespace brig { namespace database {
 
 enum DBMS {
   VoidSystem,
+  CUBRID,
   DB2,
   MS_SQL,
   MySQL,

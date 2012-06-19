@@ -39,7 +39,7 @@ inline std::vector<raster_pyramid> get_rasters_sqlite(std::shared_ptr<command> c
         col.name = ::boost::get<std::string>(res[r].levels[l].raster_column);
         col.sql_expression = "(SELECT r FROM (SELECT id i, raster r FROM " + tbl + ") t WHERE t.i = " + "id)";
         col.dbms_type.name = "BLOB";
-        col.lower_case_type.name = transform<std::string>(col.dbms_type.name, lower_case);
+        col.dbms_type_lcase.name = transform<std::string>(col.dbms_type.name, lower_case);
         col.type = Blob;
         res[r].levels[l].raster_column = col;
         res[r].levels[l].sql_condition = hint + "pixel_x_size = " + cmd->sql_parameter(0, column_definition()) + " AND " + hint + "pixel_y_size = " + cmd->sql_parameter(1, column_definition());

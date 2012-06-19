@@ -15,6 +15,7 @@ inline std::string sql_indexed_columns(DBMS sys, const identifier& tbl)
   switch (sys)
   {
   default: throw std::runtime_error("SQL error");
+  case CUBRID: return "SELECT '', i.index_name, i.is_primary_key, i.is_unique, 0, k.key_attr_name, k.asc_desc FROM _db_class c, _db_index i, _db_index_key k WHERE c.owner.name = '" + tbl.schema + "' AND c.class_name = '" + tbl.name + "' AND i.class_of = c AND k.index_of = i ORDER BY i.is_primary_key DESC, i.index_name, k.key_order";
   case DB2: return "SELECT RTRIM(i.INDSCHEMA), i.INDNAME, (CASE i.UNIQUERULE WHEN 'P' THEN 1 ELSE 0 END) pri, (CASE i.UNIQUERULE WHEN 'D' THEN 0 ELSE 1 END) unq, (CASE RTRIM(i.IESCHEMA) || '.' || i.IENAME WHEN 'DB2GSE.SPATIAL_INDEX' THEN 1 ELSE 0 END) sp, c.COLNAME, (CASE c.COLORDER WHEN 'D' THEN 1 ELSE 0 END) dsc FROM SYSCAT.INDEXES i, SYSCAT.INDEXCOLUSE c WHERE i.INDSCHEMA = c.INDSCHEMA AND i.INDNAME = c.INDNAME AND i.TABSCHEMA = '" + tbl.schema + "' AND i.TABNAME = '" + tbl.name + "' ORDER BY pri DESC, i.INDSCHEMA, i.INDNAME, c.COLSEQ";
   // index name is unique only within the table
   case MS_SQL: return "SELECT '', i.name, i.is_primary_key, i.is_unique, (CASE i.type WHEN 4 THEN 1 ELSE 0 END) sp, COL_NAME(c.object_id, c.column_id) col, c.is_descending_key FROM sys.indexes i, sys.index_columns c WHERE i.object_id = OBJECT_ID('\"" + tbl.schema + "\".\"" + tbl.name + "\"') AND i.object_id = c.object_id AND i.index_id = c.index_id ORDER BY i.is_primary_key DESC, i.name, c.key_ordinal";

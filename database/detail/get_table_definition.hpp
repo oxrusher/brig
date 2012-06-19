@@ -45,8 +45,8 @@ inline table_definition get_table_definition(std::shared_ptr<command> cmd, const
     col.name = string_cast<char>(row[0]);
     col.dbms_type.schema = string_cast<char>(row[1]);
     col.dbms_type.name = string_cast<char>(row[2]); 
-    col.lower_case_type.schema = transform<std::string>(col.dbms_type.schema, lower_case);
-    col.lower_case_type.name = transform<std::string>(col.dbms_type.name, lower_case);
+    col.dbms_type_lcase.schema = transform<std::string>(col.dbms_type.schema, lower_case);
+    col.dbms_type_lcase.name = transform<std::string>(col.dbms_type.name, lower_case);
     col.type = get_type(sys, col);
     numeric_cast(row[3], col.chars);
     numeric_cast(row[4], col.precision);
@@ -104,7 +104,7 @@ inline table_definition get_table_definition(std::shared_ptr<command> cmd, const
         if (row.size() > 2)
         {
           col->dbms_type.qualifier = string_cast<char>(row[2]);
-          col->lower_case_type.qualifier = transform<std::string>(col->dbms_type.qualifier, lower_case);
+          col->dbms_type_lcase.qualifier = transform<std::string>(col->dbms_type.qualifier, lower_case);
         }
       }
     }
