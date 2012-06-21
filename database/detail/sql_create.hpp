@@ -101,10 +101,10 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       {
       case VoidColumn:
       case Geometry: throw std::runtime_error("SQL error");
-      case Blob: stream << "BLOB"; break;
+      case Blob: stream << "BIT VARYING"; break;
       case Double: stream << "DOUBLE"; break;
       case Integer: stream << "BIGINT"; break;
-      case String: stream << "NCHAR VARYING(" << chars << ")"; break;
+      case String: stream << "STRING"; break;
       }
       break;
 

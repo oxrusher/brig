@@ -3,6 +3,7 @@
 #ifndef BRIG_DATABASE_ODBC_DETAIL_COMMAND_HPP
 #define BRIG_DATABASE_ODBC_DETAIL_COMMAND_HPP
 
+#include <algorithm>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <brig/database/command.hpp>
 #include <brig/database/odbc/detail/binding_factory.hpp>

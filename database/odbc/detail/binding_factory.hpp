@@ -14,8 +14,10 @@
 #include <brig/database/odbc/detail/binding_null.hpp>
 #include <brig/database/odbc/detail/binding_string.hpp>
 #include <brig/database/odbc/detail/lib.hpp>
+#include <brig/database/null_t.hpp>
 #include <brig/database/variant.hpp>
 #include <cstdint>
+#include <string>
 
 namespace brig { namespace database { namespace odbc { namespace detail {
 

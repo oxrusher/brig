@@ -7,7 +7,6 @@
 #include <brig/database/odbc/detail/get_data.hpp>
 #include <brig/database/odbc/detail/lib.hpp>
 #include <brig/database/variant.hpp>
-#include <cstring>
 #include <vector>
 
 namespace brig { namespace database { namespace odbc { namespace detail {

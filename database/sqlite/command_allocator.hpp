@@ -6,7 +6,6 @@
 #include <brig/database/command_allocator.hpp>
 #include <brig/database/sqlite/detail/command.hpp>
 #include <brig/database/sqlite/detail/lib.hpp>
-#include <memory>
 #include <string>
 
 namespace brig { namespace database { namespace sqlite {
