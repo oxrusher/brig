@@ -6,7 +6,6 @@
 #include <brig/database/command.hpp>
 #include <brig/database/command_allocator.hpp>
 #include <brig/database/detail/double_page.hpp>
-#include <brig/detail/deleter.hpp>
 #include <brig/detail/mediator.hpp>
 #include <memory>
 #include <thread>
@@ -34,7 +33,7 @@ inline threaded_command::threaded_command(std::shared_ptr<command_allocator> all
 {
   auto worker = [](std::shared_ptr<command_allocator> allocator, std::shared_ptr<mediator> med)
   {
-    std::unique_ptr<command, brig::detail::deleter<command, command_allocator>> cmd(allocator->allocate(), brig::detail::deleter<command, command_allocator>(allocator));
+    std::unique_ptr<command> cmd(allocator->allocate());
     med->start();
     while (med->handle(cmd.get())) med->dpg.prefill(cmd.get());
   };

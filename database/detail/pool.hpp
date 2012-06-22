@@ -3,7 +3,6 @@
 #ifndef BRIG_DATABASE_DETAIL_POOL_HPP
 #define BRIG_DATABASE_DETAIL_POOL_HPP
 
-#include <boost/circular_buffer.hpp>
 #include <boost/utility.hpp>
 #include <brig/database/command.hpp>
 #include <brig/database/command_allocator.hpp>
@@ -12,6 +11,7 @@
 #include <exception>
 #include <memory>
 #include <mutex>
+#include <stack>
 
 namespace brig { namespace database { namespace detail {
 
@@ -19,9 +19,9 @@ template <bool Threading> class pool;
 
 template <> class pool<false> : ::boost::noncopyable {
   std::shared_ptr<command_allocator> m_allocator;
-  ::boost::circular_buffer<command*> m_commands;
+  std::stack<command*> m_commands;
 public:
-  explicit pool(std::shared_ptr<command_allocator> allocator) : m_allocator(allocator), m_commands(PoolSize)  {}
+  explicit pool(std::shared_ptr<command_allocator> allocator) : m_allocator(allocator)  {}
   virtual ~pool();
   command* allocate();
   void deallocate(command* cmd);
@@ -29,31 +29,34 @@ public:
 
 inline pool<false>::~pool()
 {
-  for (size_t i(0); i < m_commands.size(); ++i)
-    m_allocator->deallocate(m_commands[i]);
+  while (!m_commands.empty())
+  {
+    delete m_commands.top();
+    m_commands.pop();
+  }
 }
 
 inline command* pool<false>::allocate()
 {
   if (m_commands.empty()) return m_allocator->allocate();
-  command* cmd(m_commands.back());
-  m_commands.pop_back();
+  command* cmd(m_commands.top());
+  m_commands.pop();
   return cmd;
 }
 
 inline void pool<false>::deallocate(command* cmd)
 {
-  if (!m_commands.full())
+  if (m_commands.size() < PoolSize)
   {
     try
     {
       cmd->set_autocommit(true);
-      m_commands.push_back(cmd);
+      m_commands.push(cmd);
       return;
     }
     catch (const std::exception&)  {}
   }
-  m_allocator->deallocate(cmd);
+  delete cmd;
 } // pool<false>::
 
 template <> class pool<true> : public pool<false> {
