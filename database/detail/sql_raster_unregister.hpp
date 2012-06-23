@@ -21,7 +21,7 @@ inline void sql_raster_unregister(std::shared_ptr<command> cmd, const raster_pyr
 {
   if (raster.levels.empty()) throw std::runtime_error("raster error");
   for (auto lvl(std::begin(raster.levels)); lvl != std::end(raster.levels); ++lvl)
-    if (typeid(std::string) != lvl->raster_column.type() || !lvl->sql_condition.empty()) throw std::runtime_error("raster error");
+    if (!lvl->raster.query_expression.empty()) throw std::runtime_error("raster error");
 
   const DBMS sys(cmd->system());
   cmd->exec(sql_tables(sys, "simple_rasters"));
@@ -34,8 +34,8 @@ inline void sql_raster_unregister(std::shared_ptr<command> cmd, const raster_pyr
 
   std::string s;
   s += "DELETE FROM " + sql_identifier(sys, simple_rasters) + " WHERE ";
-  if (SQLite != sys) s += sql_identifier(sys, "base_schema") + " = '" + raster.id.schema + "' AND ";
-  s += sql_identifier(sys, "base_table") + " = '" + raster.id.name + "' AND " + sql_identifier(sys, "base_raster") + " = '" + raster.id.qualifier + "'";
+  if (SQLite != sys) s += sql_identifier(sys, "base_schema") + " = '" + raster.schema + "' AND ";
+  s += sql_identifier(sys, "base_table") + " = '" + raster.name + "' AND " + sql_identifier(sys, "base_raster") + " = '" + raster.qualifier + "'";
   sql.push_back(s);
 }
 

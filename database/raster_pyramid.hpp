@@ -9,10 +9,7 @@
 
 namespace brig { namespace database {
 
-struct raster_pyramid {
-  identifier id;
-  std::vector<raster_level> levels;
-}; // raster_pyramid
+struct raster_pyramid : identifier  { std::vector<raster_level> levels; };
 
 } } // brig::database
 

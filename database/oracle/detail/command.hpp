@@ -205,7 +205,7 @@ inline std::string command::sql_parameter(size_t order, const column_definition&
 inline std::string command::sql_column(const column_definition& col)
 {
   using namespace brig::database::detail;
-  if (col.sql_expression.empty() && Geometry == col.type)
+  if (col.query_expression.empty() && Geometry == col.type)
   {
     const std::string id(sql_identifier(Oracle, col.name));
     if ("sdo_geometry" == col.dbms_type_lcase.name) return id;

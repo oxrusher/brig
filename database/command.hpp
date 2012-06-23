@@ -85,7 +85,7 @@ inline std::string command::sql_column(const column_definition& col)
   const DBMS sys(system());
   const std::string id(sql_identifier(sys, col.name));
 
-  if (!col.sql_expression.empty()) return col.sql_expression + " as " + id;
+  if (!col.query_expression.empty()) return col.query_expression + " as " + id;
 
   // http://en.wikipedia.org/wiki/ISO_8601
   if (String == col.type)

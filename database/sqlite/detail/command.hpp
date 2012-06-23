@@ -69,7 +69,7 @@ inline command::~command()
 
 inline void command::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_definition>& /*param_cols*/)
 {
-  if (!m_stmt || sql != m_sql || !m_done)
+  if (!m_stmt || sql.empty() || sql != m_sql || !m_done)
   {
     close_stmt();
     m_stmt = m_db.prepare_stmt(sql);
@@ -164,7 +164,7 @@ inline bool command::fetch(std::vector<variant>& row)
 inline std::string command::sql_column(const column_definition& col)
 {
   using namespace brig::database::detail;
-  if (col.sql_expression.empty() && Geometry == col.type)
+  if (col.query_expression.empty() && Geometry == col.type)
     return sql_identifier(SQLite, col.name);
   else
     return brig::database::command::sql_column(col);

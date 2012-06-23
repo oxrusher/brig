@@ -12,8 +12,6 @@
 #include <brig/database/raster_pyramid.hpp>
 #include <brig/database/variant.hpp>
 #include <brig/string_cast.hpp>
-#include <brig/unicode/lower_case.hpp>
-#include <brig/unicode/transform.hpp>
 #include <memory>
 #include <vector>
 
@@ -22,7 +20,6 @@ namespace brig { namespace database { namespace detail {
 inline std::vector<raster_pyramid> get_rasters_postgres(std::shared_ptr<command> cmd)
 {
   using namespace brig::database::detail;
-  using namespace brig::unicode;
   std::vector<variant> row;
   cmd->exec(sql_tables(Postgres, "raster_columns"));
   while (cmd->fetch(row))
@@ -33,14 +30,9 @@ inline std::vector<raster_pyramid> get_rasters_postgres(std::shared_ptr<command>
       for (size_t r(0); r < res.size(); ++r)
         for (size_t l(0); l < res[r].levels.size(); ++l)
         {
-          const std::string col_name(::boost::get<std::string>(res[r].levels[l].raster_column));
-          column_definition col;
-          col.name = col_name + "_as_jpg";
-          col.sql_expression = "ST_AsJPEG(" + sql_identifier(Postgres, col_name) + ")";
-          col.dbms_type.name = "bytea";
-          col.dbms_type_lcase.name = transform<std::string>(col.dbms_type.name, lower_case);
-          col.type = Blob;
-          res[r].levels[l].raster_column = col;
+          const std::string col_name(sql_identifier(Postgres, res[r].levels[l].raster.name));
+          res[r].levels[l].raster.name = col_name + "_as_jpg";
+          res[r].levels[l].raster.query_expression = "ST_AsJPEG(" + col_name  + ")";
         }
       return res;
     }

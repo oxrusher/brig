@@ -30,7 +30,9 @@ inline std::vector<raster_pyramid> get_rasters(std::shared_ptr<rowset> rs)
     if (cur_id.schema != prev_id.schema || cur_id.name != prev_id.name || cur_id.qualifier != prev_id.qualifier)
     {
       res.push_back(raster_pyramid());
-      res.back().id = cur_id;
+      res.back().schema = cur_id.schema;
+      res.back().name = cur_id.name;
+      res.back().qualifier = cur_id.qualifier;
       prev_id = cur_id;
     }
 
@@ -39,10 +41,10 @@ inline std::vector<raster_pyramid> get_rasters(std::shared_ptr<rowset> rs)
     numeric_cast(row[3], res_x);
     numeric_cast(row[4], res_y);
     lvl.resolution = brig::boost::point(res_x, res_y);
-    lvl.geometry_layer.schema = string_cast<char>(row[5]);
-    lvl.geometry_layer.name = string_cast<char>(row[6]);
-    lvl.geometry_layer.qualifier = string_cast<char>(row[7]);
-    lvl.raster_column = string_cast<char>(row[8]);
+    lvl.geometry.schema = string_cast<char>(row[5]);
+    lvl.geometry.name = string_cast<char>(row[6]);
+    lvl.geometry.qualifier = string_cast<char>(row[7]);
+    lvl.raster.name = string_cast<char>(row[8]);
     res.back().levels.push_back(lvl);
   }
   return res;

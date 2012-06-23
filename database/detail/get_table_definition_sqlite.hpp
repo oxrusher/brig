@@ -31,7 +31,9 @@ inline table_definition get_table_definition_sqlite(std::shared_ptr<command> cmd
 
   // columns
   table_definition res;
-  res.id = tbl;
+  res.schema = tbl.schema;
+  res.name = tbl.name;
+  res.qualifier = tbl.qualifier;
   std::vector<std::string> keys;
   std::vector<variant> row;
   cmd->exec("PRAGMA TABLE_INFO(" + sql_identifier(SQLite, tbl) + ')');
@@ -66,7 +68,7 @@ inline table_definition get_table_definition_sqlite(std::shared_ptr<command> cmd
   while (cmd->fetch(row))
   {
     index_definition idx;
-    idx.id.name = string_cast<char>(row[1]);
+    idx.name = string_cast<char>(row[1]);
     int unique(0);
     idx.type = (numeric_cast(row[2], unique) && !unique)? Duplicate: Unique;
     res.indexes.push_back(idx);
@@ -75,9 +77,9 @@ inline table_definition get_table_definition_sqlite(std::shared_ptr<command> cmd
   // indexed columns
   for (size_t i(0); i < res.indexes.size(); ++i)
   {
-    if (res.indexes[i].id.name.empty()) continue;
+    if (res.indexes[i].name.empty()) continue;
 
-    cmd->exec("PRAGMA INDEX_INFO(" + sql_identifier(SQLite, res.indexes[i].id) + ')');
+    cmd->exec("PRAGMA INDEX_INFO(" + sql_identifier(SQLite, res.indexes[i]) + ')');
     std::vector<std::string> cols;
     std::vector<std::pair<int, std::string>> seq_cols;
     while (cmd->fetch(row))

@@ -36,7 +36,9 @@ inline table_definition get_table_definition(std::shared_ptr<command> cmd, const
 
   // columns
   table_definition res;
-  res.id = tbl;
+  res.schema = tbl.schema;
+  res.name = tbl.name;
+  res.qualifier = tbl.qualifier;
   cmd->exec(sql_columns(sys, tbl));
   std::vector<variant> row;
   while (cmd->fetch(row))
@@ -64,12 +66,14 @@ inline table_definition get_table_definition(std::shared_ptr<command> cmd, const
     id.schema = string_cast<char>(row[0]);
     id.name = string_cast<char>(row[1]);
 
-    if (id.schema != idx.id.schema || id.name != idx.id.name)
+    if (id.schema != idx.schema || id.name != idx.name)
     {
       if (VoidIndex != idx.type) res.indexes.push_back(std::move(idx));
 
       idx = index_definition();
-      idx.id = id;
+      idx.schema = id.schema;
+      idx.name = id.name;
+      idx.qualifier = id.qualifier;
       int primary(0), unique(0), spatial(0);
       numeric_cast(row[2], primary);
       numeric_cast(row[3], unique);

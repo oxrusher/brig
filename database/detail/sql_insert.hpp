@@ -19,10 +19,10 @@ template <typename Dialect>
 std::string sql_insert(std::shared_ptr<Dialect> dct, const table_definition& tbl)
 {
   const DBMS sys(dct->system());
-  std::vector<column_definition> insert_cols = tbl.select_columns.empty()? tbl.columns: get_columns(tbl.columns, tbl.select_columns);
+  std::vector<column_definition> insert_cols = tbl.query_columns.empty()? tbl.columns: get_columns(tbl.columns, tbl.query_columns);
   std::string prefix, suffix;
 
-  prefix += "INSERT INTO " + sql_identifier(sys, tbl.id) + "(";
+  prefix += "INSERT INTO " + sql_identifier(sys, tbl) + "(";
   suffix += "VALUES(";
   for (size_t i(0); i < insert_cols.size(); ++i)
   {

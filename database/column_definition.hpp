@@ -3,24 +3,22 @@
 #ifndef BRIG_DATABASE_COLUMN_DEFINITION_HPP
 #define BRIG_DATABASE_COLUMN_DEFINITION_HPP
 
-#include <boost/variant/get.hpp>
-#include <boost/variant/variant.hpp>
-#include <brig/boost/geometry.hpp>
+#include <brig/database/alias.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/identifier.hpp>
-#include <string>
+#include <brig/database/variant.hpp>
 
 namespace brig { namespace database {
 
-struct column_definition {
-  std::string name, sql_expression;
-  identifier dbms_type, dbms_type_lcase;
+struct column_definition : alias {
   column_type type;
+  identifier dbms_type, dbms_type_lcase;
   int chars, precision, scale, srid, epsg;
   bool not_null;
-  ::boost::variant<bool, brig::boost::box> mbr;
 
-  column_definition() : type(VoidColumn), chars(-1), precision(-1), scale(-1), srid(-1), epsg(-1), not_null(false), mbr(false)  {}
+  variant query_condition;
+
+  column_definition() : type(VoidColumn), chars(-1), precision(-1), scale(-1), srid(-1), epsg(-1), not_null(false)  {}
 }; // column_definition
 
 } } // brig::database

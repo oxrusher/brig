@@ -10,8 +10,7 @@
 
 namespace brig { namespace database {
 
-struct index_definition {
-  identifier id;
+struct index_definition : identifier {
   index_type type;
   std::vector<std::string> columns;
 

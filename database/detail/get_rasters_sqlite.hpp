@@ -11,8 +11,6 @@
 #include <brig/database/global.hpp>
 #include <brig/database/raster_pyramid.hpp>
 #include <brig/database/variant.hpp>
-#include <brig/unicode/lower_case.hpp>
-#include <brig/unicode/transform.hpp>
 #include <ios>
 #include <memory>
 #include <vector>
@@ -22,7 +20,6 @@ namespace brig { namespace database { namespace detail {
 inline std::vector<raster_pyramid> get_rasters_sqlite(std::shared_ptr<command> cmd)
 {
   using namespace brig::database::detail;
-  using namespace brig::unicode;
   std::vector<variant> row;
   cmd->exec(sql_tables(SQLite, "raster_pyramids"));
   if (cmd->fetch(row))
@@ -32,19 +29,19 @@ inline std::vector<raster_pyramid> get_rasters_sqlite(std::shared_ptr<command> c
     for (size_t r(0); r < res.size(); ++r)
       for (size_t l(0); l < res[r].levels.size(); ++l)
       {
-        const std::string tbl(sql_identifier(SQLite, res[r].id));
-        const std::string hint((double(l) / double(res[r].levels.size())) < 0.15? "+": "");
+        const std::string tbl(sql_identifier(SQLite, res[r]));
+        const bool hint((double(l) / double(res[r].levels.size())) < 0.15);
+        alias col;
 
-        column_definition col;
-        col.name = ::boost::get<std::string>(res[r].levels[l].raster_column);
-        col.sql_expression = "(SELECT r FROM (SELECT id i, raster r FROM " + tbl + ") t WHERE t.i = " + "id)";
-        col.dbms_type.name = "BLOB";
-        col.dbms_type_lcase.name = transform<std::string>(col.dbms_type.name, lower_case);
-        col.type = Blob;
-        res[r].levels[l].raster_column = col;
-        res[r].levels[l].sql_condition = hint + "pixel_x_size = " + cmd->sql_parameter(0, column_definition()) + " AND " + hint + "pixel_y_size = " + cmd->sql_parameter(1, column_definition());
-        res[r].levels[l].parameters.push_back( res[r].levels[l].resolution.get<0>() );
-        res[r].levels[l].parameters.push_back( res[r].levels[l].resolution.get<1>() );
+        res[r].levels[l].raster.query_expression = "(SELECT r FROM (SELECT id i, raster r FROM " + tbl + ") t WHERE t.i = " + "id)";
+
+        col.name = "pixel_x_size";
+        col.query_expression = hint? "+pixel_x_size": "";
+        res[r].levels[l].query_conditions.push_back(std::make_pair(col, res[r].levels[l].resolution.get<0>()));
+
+        col.name = "pixel_y_size";
+        col.query_expression = hint? "+pixel_y_size": "";
+        res[r].levels[l].query_conditions.push_back(std::make_pair(col, res[r].levels[l].resolution.get<1>()));
       }
     return res;
   }

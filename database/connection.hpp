@@ -55,7 +55,7 @@ public:
   std::vector<identifier> get_geometry_layers();
   std::vector<raster_pyramid> get_raster_layers();
   table_definition get_table_definition(const identifier& tbl)  { return detail::get_table_definition(get_command(), tbl); }
-  brig::boost::box get_mbr(const identifier& tbl, column_definition& col);
+  brig::boost::box get_mbr(const identifier& tbl, const column_definition& col);
   std::shared_ptr<command> get_command()  { return std::shared_ptr<command>(m_pool->allocate(), brig::detail::deleter<command, pool_type>(m_pool)); }
 
   std::shared_ptr<rowset> select(const table_definition& tbl);
@@ -136,24 +136,19 @@ std::vector<raster_pyramid> connection<Threading>::get_raster_layers()
   }
 
   std::vector<raster_pyramid> res;
-  auto cmp([](const raster_pyramid& a, const raster_pyramid& b){ return a.id.schema < b.id.schema || a.id.name < b.id.name || a.id.qualifier < b.id.qualifier; });
+  auto cmp([](const raster_pyramid& a, const raster_pyramid& b){ return a.schema < b.schema || a.name < b.name || a.qualifier < b.qualifier; });
   std::merge(std::begin(specific), std::end(specific), std::begin(simple), std::end(simple), std::back_inserter(res), cmp);
   return res;
 }
 
 template <bool Threading>
-brig::boost::box connection<Threading>::get_mbr(const identifier& tbl, column_definition& col)
+brig::boost::box connection<Threading>::get_mbr(const identifier& tbl, const column_definition& col)
 {
   using namespace brig::boost;
 
   auto cmd(get_command());
   const std::string sql(detail::sql_mbr(cmd->system(), tbl, col));
-  if (sql.empty())
-  {
-    box res(point(-180, -90), point(180, 90)); // geodetic
-    col.mbr = res;
-    return res;
-  }
+  if (sql.empty()) return box(point(-180, -90), point(180, 90)); // geodetic
 
   cmd->exec(sql);
   std::vector<variant> row;
@@ -164,11 +159,7 @@ brig::boost::box connection<Threading>::get_mbr(const identifier& tbl, column_de
     && numeric_cast(row[2], xmax)
     && numeric_cast(row[3], ymax)
      )
-  {
-    box res(point(xmin, ymin), point(xmax, ymax));
-    col.mbr = res;
-    return res;
-  }
+    return box(point(xmin, ymin), point(xmax, ymax));
 
   throw std::runtime_error("MBR error");
 }
@@ -177,7 +168,10 @@ template <bool Threading>
 std::shared_ptr<rowset> connection<Threading>::select(const table_definition& tbl)
 {
   auto cmd(get_command());
-  cmd->exec(detail::sql_select(cmd, tbl), tbl.select_parameters);
+  std::string sql;
+  std::vector<variant> params;
+  detail::sql_select(cmd, tbl, sql, params);
+  cmd->exec(sql, params);
   return cmd;
 }
 
@@ -192,7 +186,7 @@ void connection<Threading>::create_check_mbr(table_definition& tbl)
 
   case Oracle:
     for (auto col(std::begin(tbl.columns)); col != std::end(tbl.columns); ++col)
-      if (Geometry == col->type && typeid(bool) == col->mbr.type()) col->mbr = true;
+      if (Geometry == col->type && typeid(blob_t) != col->query_condition.type()) col->query_condition = blob_t();
     break;
 
   case MS_SQL:
@@ -200,7 +194,7 @@ void connection<Threading>::create_check_mbr(table_definition& tbl)
       if (Spatial == idx->type)
       {
         auto col(std::find_if(std::begin(tbl.columns), std::end(tbl.columns), [&](const column_definition& c){ return c.name == idx->columns.front(); }));
-        if (typeid(bool) == col->mbr.type()) col->mbr = true;
+        if (Geometry == col->type && typeid(blob_t) != col->query_condition.type()) col->query_condition = blob_t();
       }
     break;
   }
