@@ -30,9 +30,9 @@ inline std::vector<raster_pyramid> get_rasters_postgres(std::shared_ptr<command>
       for (size_t r(0); r < res.size(); ++r)
         for (size_t l(0); l < res[r].levels.size(); ++l)
         {
-          const std::string col_name(sql_identifier(Postgres, res[r].levels[l].raster.name));
+          const std::string col_name(res[r].levels[l].raster.name);
           res[r].levels[l].raster.name = col_name + "_as_jpg";
-          res[r].levels[l].raster.query_expression = "ST_AsJPEG(" + col_name  + ")";
+          res[r].levels[l].raster.query_expression = "ST_AsJPEG(" + sql_identifier(Postgres, col_name)  + ")";
         }
       return res;
     }
