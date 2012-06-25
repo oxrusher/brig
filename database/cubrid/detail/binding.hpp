@@ -27,7 +27,7 @@ struct binding_visitor : ::boost::static_visitor<int> {
   int operator()(float v) const  { return lib::singleton().p_cci_bind_param(req, i, CCI_A_TYPE_FLOAT, &v, type != CCI_U_TYPE_NULL? type: CCI_U_TYPE_FLOAT, 0); }
   int operator()(double v) const  { return lib::singleton().p_cci_bind_param(req, i, CCI_A_TYPE_DOUBLE, &v, type != CCI_U_TYPE_NULL? type: CCI_U_TYPE_DOUBLE, 0); }
   int operator()(const blob_t& r) const;
-  int operator()(const std::string& r) const  { return lib::singleton().p_cci_bind_param(req, i, CCI_A_TYPE_STR, (void*)r.c_str(), type != CCI_U_TYPE_NULL? type: CCI_U_TYPE_VARNCHAR, CCI_BIND_PTR); }
+  int operator()(const std::string& r) const  { return lib::singleton().p_cci_bind_param(req, i, CCI_A_TYPE_STR, (void*)r.c_str(), type != CCI_U_TYPE_NULL? type: CCI_U_TYPE_STRING, CCI_BIND_PTR); }
 }; // binding_visitor
 
 inline int binding_visitor::operator()(const blob_t& r) const

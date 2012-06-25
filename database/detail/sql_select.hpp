@@ -29,7 +29,7 @@ namespace brig { namespace database { namespace detail {
 template <typename Dialect>
 void sql_select
   ( std::shared_ptr<Dialect> dct, const table_definition& tbl
-  , std::string& sql, std::vector<variant>& params
+  , std::string& sql, std::vector<variant>& params, std::vector<column_definition>& param_cols
   )
 {
   const DBMS sys(dct->system());
@@ -44,6 +44,7 @@ void sql_select
       sql_conditions += col->query_expression.empty()? col->name: col->query_expression;
       sql_conditions += " = (" + dct->sql_parameter(params.size(), *col) + ")"; // Oracle workaround
       params.push_back(col->query_condition);
+      param_cols.push_back(*col);
     }
 
   // not spatial first

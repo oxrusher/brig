@@ -170,8 +170,9 @@ std::shared_ptr<rowset> connection<Threading>::select(const table_definition& tb
   auto cmd(get_command());
   std::string sql;
   std::vector<variant> params;
-  detail::sql_select(cmd, tbl, sql, params);
-  cmd->exec(sql, params);
+  std::vector<column_definition> param_cols;
+  detail::sql_select(cmd, tbl, sql, params, param_cols);
+  cmd->exec(sql, params, param_cols);
   return cmd;
 }
 
