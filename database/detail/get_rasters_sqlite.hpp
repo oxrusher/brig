@@ -10,8 +10,6 @@
 #include <brig/database/detail/sql_tables.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/raster_pyramid.hpp>
-#include <brig/database/variant.hpp>
-#include <ios>
 #include <memory>
 #include <vector>
 
@@ -29,19 +27,21 @@ inline std::vector<raster_pyramid> get_rasters_sqlite(std::shared_ptr<command> c
     for (size_t r(0); r < res.size(); ++r)
       for (size_t l(0); l < res[r].levels.size(); ++l)
       {
-        const std::string tbl(sql_identifier(SQLite, res[r]));
+        const std::string tbl(sql_identifier(SQLite, res[r].id));
         const bool hint((double(l) / double(res[r].levels.size())) < 0.15);
-        alias col;
+        column_definition col;
 
         res[r].levels[l].raster.query_expression = "(SELECT r FROM (SELECT id i, raster r FROM " + tbl + ") t WHERE t.i = " + "id)";
 
         col.name = "pixel_x_size";
         col.query_expression = hint? "+pixel_x_size": "";
-        res[r].levels[l].query_conditions.push_back(std::make_pair(col, res[r].levels[l].resolution.get<0>()));
+        col.query_condition = res[r].levels[l].resolution.get<0>();
+        res[r].levels[l].query_conditions.push_back(col);
 
         col.name = "pixel_y_size";
         col.query_expression = hint? "+pixel_y_size": "";
-        res[r].levels[l].query_conditions.push_back(std::make_pair(col, res[r].levels[l].resolution.get<1>()));
+        col.query_condition = res[r].levels[l].resolution.get<1>();
+        res[r].levels[l].query_conditions.push_back(col);
       }
     return res;
   }

@@ -46,7 +46,7 @@ inline column_definition get_column_definition(const std::string& name, column_t
 inline table_definition get_simple_rasters_definition(DBMS sys)
 {
   table_definition tbl;
-  tbl.name = "simple_rasters";
+  tbl.id.name = "simple_rasters";
 
   tbl.indexes.push_back(index_definition());
   index_definition& idx(tbl.indexes.back());
@@ -100,15 +100,15 @@ inline void sql_raster_register(std::shared_ptr<command> cmd, raster_pyramid& ra
     normalize_identifier(sys, lvl->geometry);
     lvl->raster.query_expression = "";
   }
-  raster.schema = raster.levels.front().geometry.schema;
-  raster.name = raster.levels.front().geometry.name;
-  raster.qualifier = raster.levels.front().raster.name;
+  raster.id.schema = raster.levels.front().geometry.schema;
+  raster.id.name = raster.levels.front().geometry.name;
+  raster.id.qualifier = raster.levels.front().raster.name;
 
   std::vector<std::string> reg;
   for (auto lvl(std::begin(raster.levels)); lvl != std::end(raster.levels); ++lvl)
   {
     std::ostringstream stream; stream.imbue(std::locale::classic()); stream << std::scientific; stream.precision(17);
-    stream << "INSERT INTO " << sql_identifier(sys, tbl) << "(";
+    stream << "INSERT INTO " << sql_identifier(sys, tbl.id) << "(";
     for (size_t col(0); col < tbl.columns.size(); ++col)
     {
       if (col > 0) stream << ", ";
@@ -122,8 +122,8 @@ inline void sql_raster_register(std::shared_ptr<command> cmd, raster_pyramid& ra
       else if ("table" == tbl.columns[col].name) stream << "'" << lvl->geometry.name << "'";
       else if ("raster" == tbl.columns[col].name) stream << "'" << lvl->raster.name << "'";
       else if ("base_schema" == tbl.columns[col].name) stream << "'" << schema << "'";
-      else if ("base_table" == tbl.columns[col].name) stream << "'" << raster.name << "'";
-      else if ("base_raster" == tbl.columns[col].name) stream << "'" << raster.qualifier << "'";
+      else if ("base_table" == tbl.columns[col].name) stream << "'" << raster.id.name << "'";
+      else if ("base_raster" == tbl.columns[col].name) stream << "'" << raster.id.qualifier << "'";
       else if ("geometry" == tbl.columns[col].name) stream << "'" << lvl->geometry.qualifier << "'";
       else if ("resolution_x" == tbl.columns[col].name) stream << lvl->resolution.get<0>();
       else if ("resolution_y" == tbl.columns[col].name) stream << lvl->resolution.get<1>();
@@ -134,8 +134,8 @@ inline void sql_raster_register(std::shared_ptr<command> cmd, raster_pyramid& ra
 
   std::string unreg;
   unreg += "DELETE FROM " + sql_identifier(sys, simple_rasters) + " WHERE ";
-  if (SQLite != sys) unreg += sql_identifier(sys, "base_schema") + " = '" + raster.schema + "' AND ";
-  unreg += sql_identifier(sys, "base_table") + " = '" + raster.name + "' AND " + sql_identifier(sys, "base_raster") + " = '" + raster.qualifier + "'";
+  if (SQLite != sys) unreg += sql_identifier(sys, "base_schema") + " = '" + raster.id.schema + "' AND ";
+  unreg += sql_identifier(sys, "base_table") + " = '" + raster.id.name + "' AND " + sql_identifier(sys, "base_raster") + " = '" + raster.id.qualifier + "'";
 
   sql.push_back(unreg);
   sql.insert(std::end(sql), std::begin(reg), std::end(reg));

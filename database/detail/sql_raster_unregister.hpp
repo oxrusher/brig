@@ -34,8 +34,8 @@ inline void sql_raster_unregister(std::shared_ptr<command> cmd, const raster_pyr
 
   std::string s;
   s += "DELETE FROM " + sql_identifier(sys, simple_rasters) + " WHERE ";
-  if (SQLite != sys) s += sql_identifier(sys, "base_schema") + " = '" + raster.schema + "' AND ";
-  s += sql_identifier(sys, "base_table") + " = '" + raster.name + "' AND " + sql_identifier(sys, "base_raster") + " = '" + raster.qualifier + "'";
+  if (SQLite != sys) s += sql_identifier(sys, "base_schema") + " = '" + raster.id.schema + "' AND ";
+  s += sql_identifier(sys, "base_table") + " = '" + raster.id.name + "' AND " + sql_identifier(sys, "base_raster") + " = '" + raster.id.qualifier + "'";
   sql.push_back(s);
 }
 

@@ -22,7 +22,7 @@ std::string sql_insert(std::shared_ptr<Dialect> dct, const table_definition& tbl
   std::vector<column_definition> insert_cols = tbl.query_columns.empty()? tbl.columns: get_columns(tbl.columns, tbl.query_columns);
   std::string prefix, suffix;
 
-  prefix += "INSERT INTO " + sql_identifier(sys, tbl) + "(";
+  prefix += "INSERT INTO " + sql_identifier(sys, tbl.id) + "(";
   suffix += "VALUES(";
   for (size_t i(0); i < insert_cols.size(); ++i)
   {

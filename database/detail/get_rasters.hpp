@@ -30,9 +30,7 @@ inline std::vector<raster_pyramid> get_rasters(std::shared_ptr<rowset> rs)
     if (cur_id.schema != prev_id.schema || cur_id.name != prev_id.name || cur_id.qualifier != prev_id.qualifier)
     {
       res.push_back(raster_pyramid());
-      res.back().schema = cur_id.schema;
-      res.back().name = cur_id.name;
-      res.back().qualifier = cur_id.qualifier;
+      res.back().id = cur_id;
       prev_id = cur_id;
     }
 
@@ -45,6 +43,7 @@ inline std::vector<raster_pyramid> get_rasters(std::shared_ptr<rowset> rs)
     lvl.geometry.name = string_cast<char>(row[6]);
     lvl.geometry.qualifier = string_cast<char>(row[7]);
     lvl.raster.name = string_cast<char>(row[8]);
+    lvl.raster.type = Blob;
     res.back().levels.push_back(lvl);
   }
   return res;

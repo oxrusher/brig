@@ -11,7 +11,8 @@
 
 namespace brig { namespace database {
 
-struct table_definition : identifier {
+struct table_definition {
+  identifier id;
   std::vector<column_definition> columns;
   std::vector<index_definition> indexes;
 

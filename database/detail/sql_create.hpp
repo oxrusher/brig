@@ -37,13 +37,13 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       if (std::find_if(std::begin(tbl.columns), col_end, [&](const column_definition& c){ return c.name == *col_name; }) == col_end)
         idx->type = VoidIndex;
   auto idx_end( std::remove_if(std::begin(tbl.indexes), std::end(tbl.indexes), [](const index_definition& i){ return VoidIndex == i.type; }) );
-  normalize_identifier(sys, tbl);
+  normalize_identifier(sys, tbl.id);
 
   // columns, primary key
   {
 
   std::ostringstream stream; stream.imbue(loc);
-  stream << "CREATE TABLE " << sql_identifier(sys, tbl.name) << " (";
+  stream << "CREATE TABLE " << sql_identifier(sys, tbl.id.name) << " (";
   bool first(true);
 
   // force primary key if necessary
@@ -207,9 +207,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
   auto idx(std::find_if(std::begin(tbl.indexes), idx_end, [&](const index_definition& i){ return Primary == i.type; }));
   if (idx != idx_end)
   {
-    idx->schema = "";
-    idx->name = "";
-    idx->qualifier = "";
+    idx->id = identifier();
     stream << ", PRIMARY KEY (";
     bool first(true);
     for (auto col_name(std::begin(idx->columns)); col_name != std::end(idx->columns); ++col_name)
@@ -235,7 +233,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       {
       case VoidSystem:
       case CUBRID: throw std::runtime_error("SQL error");
-      case DB2: stream << "BEGIN ATOMIC DECLARE msg_code INTEGER; DECLARE msg_text VARCHAR(1024); call DB2GSE.ST_register_spatial_column(NULL, '" << sql_identifier(sys, tbl.name) << "', '" << sql_identifier(sys, col->name) << "', (SELECT SRS_NAME FROM DB2GSE.ST_SPATIAL_REFERENCE_SYSTEMS WHERE ORGANIZATION LIKE 'EPSG' AND ORGANIZATION_COORDSYS_ID = " << col->epsg << " ORDER BY SRS_ID FETCH FIRST 1 ROWS ONLY), msg_code, msg_text); END"; break;
+      case DB2: stream << "BEGIN ATOMIC DECLARE msg_code INTEGER; DECLARE msg_text VARCHAR(1024); call DB2GSE.ST_register_spatial_column(NULL, '" << sql_identifier(sys, tbl.id.name) << "', '" << sql_identifier(sys, col->name) << "', (SELECT SRS_NAME FROM DB2GSE.ST_SPATIAL_REFERENCE_SYSTEMS WHERE ORGANIZATION LIKE 'EPSG' AND ORGANIZATION_COORDSYS_ID = " << col->epsg << " ORDER BY SRS_ID FETCH FIRST 1 ROWS ONLY), msg_code, msg_text); END"; break;
       case MS_SQL:
       case MySQL: break;
       case Oracle:
@@ -245,11 +243,11 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
         if (blob.empty()) throw std::runtime_error("SQL error");
         auto box(envelope(geom_from_wkb(blob)));
         const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>()), eps(0.000001);
-        stream << "BEGIN DELETE FROM MDSYS.USER_SDO_GEOM_METADATA WHERE TABLE_NAME = '" << tbl.name << "' AND COLUMN_NAME = '" << col->name << "'; INSERT INTO MDSYS.USER_SDO_GEOM_METADATA (TABLE_NAME, COLUMN_NAME, DIMINFO, SRID) VALUES ('" << tbl.name << "', '" << col->name << "', MDSYS.SDO_DIM_ARRAY(MDSYS.SDO_DIM_ELEMENT('X', " << xmin << ", " << xmax << ", " << eps << "), MDSYS.SDO_DIM_ELEMENT('Y', " << ymin << ", " << ymax << ", " << eps << ")), (SELECT SRID FROM MDSYS.SDO_COORD_REF_SYS WHERE DATA_SOURCE LIKE 'EPSG' AND SRID = " << col->epsg << " AND ROWNUM <= 1)); END;";
+        stream << "BEGIN DELETE FROM MDSYS.USER_SDO_GEOM_METADATA WHERE TABLE_NAME = '" << tbl.id.name << "' AND COLUMN_NAME = '" << col->name << "'; INSERT INTO MDSYS.USER_SDO_GEOM_METADATA (TABLE_NAME, COLUMN_NAME, DIMINFO, SRID) VALUES ('" << tbl.id.name << "', '" << col->name << "', MDSYS.SDO_DIM_ARRAY(MDSYS.SDO_DIM_ELEMENT('X', " << xmin << ", " << xmax << ", " << eps << "), MDSYS.SDO_DIM_ELEMENT('Y', " << ymin << ", " << ymax << ", " << eps << ")), (SELECT SRID FROM MDSYS.SDO_COORD_REF_SYS WHERE DATA_SOURCE LIKE 'EPSG' AND SRID = " << col->epsg << " AND ROWNUM <= 1)); END;";
         }
         break;
-      case Postgres: stream << "SELECT AddGeometryColumn('" << tbl.name << "', '" << col->name << "', (SELECT SRID FROM PUBLIC.SPATIAL_REF_SYS WHERE AUTH_NAME LIKE 'EPSG' AND AUTH_SRID = " << col->epsg << " ORDER BY SRID FETCH FIRST 1 ROWS ONLY), 'GEOMETRY', 2)"; break;
-      case SQLite: stream << "SELECT AddGeometryColumn('" << tbl.name << "', '" << col->name << "', (SELECT SRID FROM SPATIAL_REF_SYS WHERE AUTH_NAME LIKE 'EPSG' AND AUTH_SRID = " << col->epsg << " ORDER BY SRID LIMIT 1), 'GEOMETRY', 2)"; break;
+      case Postgres: stream << "SELECT AddGeometryColumn('" << tbl.id.name << "', '" << col->name << "', (SELECT SRID FROM PUBLIC.SPATIAL_REF_SYS WHERE AUTH_NAME LIKE 'EPSG' AND AUTH_SRID = " << col->epsg << " ORDER BY SRID FETCH FIRST 1 ROWS ONLY), 'GEOMETRY', 2)"; break;
+      case SQLite: stream << "SELECT AddGeometryColumn('" << tbl.id.name << "', '" << col->name << "', (SELECT SRID FROM SPATIAL_REF_SYS WHERE AUTH_NAME LIKE 'EPSG' AND AUTH_SRID = " << col->epsg << " ORDER BY SRID LIMIT 1), 'GEOMETRY', 2)"; break;
       }
       const std::string str(stream.str()); if (!str.empty()) sql.push_back(str);
     }
@@ -260,7 +258,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
   {
     if (Primary == idx->type) continue;
     if (idx->columns.empty()) throw std::runtime_error("table error");
-    idx->name = tbl.name + "_idx_" + string_cast<char>(++counter);
+    idx->id.name = tbl.id.name + "_idx_" + string_cast<char>(++counter);
 
     std::ostringstream stream; stream.imbue(loc);
     if (Spatial == idx->type)
@@ -270,7 +268,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       {
       case VoidSystem:
       case CUBRID: throw std::runtime_error("SQL error");
-      case DB2: stream << "CREATE INDEX " << sql_identifier(sys, idx->name) << " ON " << sql_identifier(sys, tbl.name) << " (" << sql_identifier(sys, idx->columns.front()) << ") EXTEND USING DB2GSE.SPATIAL_INDEX (1, 0, 0)"; break;
+      case DB2: stream << "CREATE INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (" << sql_identifier(sys, idx->columns.front()) << ") EXTEND USING DB2GSE.SPATIAL_INDEX (1, 0, 0)"; break;
       case MS_SQL:
         {
         auto col(std::find_if(std::begin(tbl.columns), col_end, [&](const column_definition& c){ return c.name == idx->columns.front(); }));
@@ -279,20 +277,20 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
         if (blob.empty()) throw std::runtime_error("SQL error");
         auto box(envelope(geom_from_wkb(blob)));
         const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>());
-        stream << "CREATE SPATIAL INDEX " << sql_identifier(sys, idx->name) << " ON " << sql_identifier(sys, tbl.name) << " (" << sql_identifier(sys, idx->columns.front()) << ") USING GEOMETRY_GRID WITH (BOUNDING_BOX = (" << xmin << ", " << ymin << ", " << xmax << ", " << ymax << "))";
+        stream << "CREATE SPATIAL INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (" << sql_identifier(sys, idx->columns.front()) << ") USING GEOMETRY_GRID WITH (BOUNDING_BOX = (" << xmin << ", " << ymin << ", " << xmax << ", " << ymax << "))";
         }
         break;
-      case MySQL: stream << "CREATE SPATIAL INDEX " << sql_identifier(sys, idx->name) << " ON " << sql_identifier(sys, tbl.name) << " (" << sql_identifier(sys, idx->columns.front()) << ")"; break;
-      case Oracle: stream << "CREATE INDEX " << sql_identifier(sys, idx->name) << " ON " << sql_identifier(sys, tbl.name) << " (" << sql_identifier(sys, idx->columns.front()) << ") INDEXTYPE IS MDSYS.SPATIAL_INDEX"; break;
-      case Postgres: stream << "CREATE INDEX " << sql_identifier(sys, idx->name) << " ON " << sql_identifier(sys, tbl.name) << " USING GIST(" << sql_identifier(sys, idx->columns.front()) << ")"; break;
-      case SQLite: stream << "SELECT CreateSpatialIndex('" << tbl.name << "', '" << idx->columns.front() << "')"; idx->name = ""; break;
+      case MySQL: stream << "CREATE SPATIAL INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (" << sql_identifier(sys, idx->columns.front()) << ")"; break;
+      case Oracle: stream << "CREATE INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (" << sql_identifier(sys, idx->columns.front()) << ") INDEXTYPE IS MDSYS.SPATIAL_INDEX"; break;
+      case Postgres: stream << "CREATE INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " USING GIST(" << sql_identifier(sys, idx->columns.front()) << ")"; break;
+      case SQLite: stream << "SELECT CreateSpatialIndex('" << tbl.id.name << "', '" << idx->columns.front() << "')"; idx->id.name = ""; break;
       }
     }
     else
     {
       stream << "CREATE ";
       if (Unique == idx->type) stream << "UNIQUE ";
-      stream << "INDEX " << sql_identifier(sys, idx->name) << " ON " << sql_identifier(sys, tbl.name) << " (";
+      stream << "INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (";
       bool first(true);
       for (auto col_name(std::begin(idx->columns)); col_name != std::end(idx->columns); ++col_name)
       {

@@ -136,7 +136,7 @@ std::vector<raster_pyramid> connection<Threading>::get_raster_layers()
   }
 
   std::vector<raster_pyramid> res;
-  auto cmp([](const raster_pyramid& a, const raster_pyramid& b){ return a.schema < b.schema || a.name < b.name || a.qualifier < b.qualifier; });
+  auto cmp([](const raster_pyramid& a, const raster_pyramid& b){ return a.id.schema < b.id.schema || a.id.name < b.id.name || a.id.qualifier < b.id.qualifier; });
   std::merge(std::begin(specific), std::end(specific), std::begin(simple), std::end(simple), std::back_inserter(res), cmp);
   return res;
 }

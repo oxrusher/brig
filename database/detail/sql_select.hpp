@@ -51,7 +51,7 @@ void sql_select
   if (geom_col == std::end(cols))
   {
     if (!sql_counter.empty()) sql += "SELECT * FROM (";
-    sql += "SELECT " + sql_infix + " " + sql_select_list(dct, select_cols) + " FROM " + sql_identifier(sys, tbl);
+    sql += "SELECT " + sql_infix + " " + sql_select_list(dct, select_cols) + " FROM " + sql_identifier(sys, tbl.id);
     if (!sql_conditions.empty()) sql += " WHERE " + sql_conditions;
     if (!sql_counter.empty()) sql += ") WHERE " + sql_counter;
     sql += " " + sql_suffix;
@@ -67,7 +67,7 @@ void sql_select
   {
     auto idx(std::find_if(std::begin(tbl.indexes), std::end(tbl.indexes), [&](const index_definition& i){ return Spatial == i.type && i.columns.front() == geom_col->name; }));
     if (idx == std::end(tbl.indexes)) throw std::runtime_error("SQL error");
-    sql_hint = "WITH(INDEX(" + sql_identifier(sys, *idx) + "))";
+    sql_hint = "WITH(INDEX(" + sql_identifier(sys, idx->id) + "))";
   }
 
   std::vector<column_definition> unique_cols;
@@ -76,7 +76,7 @@ void sql_select
   if (idx != std::end(tbl.indexes)) unique_cols = get_columns(cols, idx->columns);
 
   // key table
-  std::string sql_key_tbl, sql_tbl(sql_identifier(sys, tbl));
+  std::string sql_key_tbl, sql_tbl(sql_identifier(sys, tbl.id));
   if (MS_SQL == sys && boxes.size() > 1)
   {
     if (unique_cols.empty()) throw std::runtime_error("unique columns error");
@@ -111,7 +111,7 @@ void sql_select
       unique_cols.push_back(col);
     }
     if (unique_cols.size() != 1) throw std::runtime_error("SQL error");
-    sql_key_tbl += "SELECT pkid " + sql_identifier(sys, unique_cols[0].name) + " FROM " + sql_identifier(sys, "idx_" + tbl.name + "_" + geom_col->name) + " WHERE ";
+    sql_key_tbl += "SELECT pkid " + sql_identifier(sys, unique_cols[0].name) + " FROM " + sql_identifier(sys, "idx_" + tbl.id.name + "_" + geom_col->name) + " WHERE ";
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql_key_tbl += " OR ";

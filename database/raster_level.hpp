@@ -4,22 +4,18 @@
 #define BRIG_DATABASE_RASTER_LEVLEL_HPP
 
 #include <brig/boost/geometry.hpp>
-#include <brig/database/alias.hpp>
+#include <brig/database/column_definition.hpp>
 #include <brig/database/identifier.hpp>
-#include <brig/database/variant.hpp>
-#include <string>
 #include <vector>
-#include <utility>
 
 namespace brig { namespace database {
 
-struct raster_level
-{
+struct raster_level {
   brig::boost::point resolution;
   identifier geometry;
-  alias raster;
+  column_definition raster;
 
-  std::vector<std::pair<alias, variant>> query_conditions;
+  std::vector<column_definition> query_conditions;
 
   raster_level() : resolution(0, 0)  {}
 }; // raster_level
