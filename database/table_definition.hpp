@@ -6,8 +6,8 @@
 #include <brig/database/column_definition.hpp>
 #include <brig/database/identifier.hpp>
 #include <brig/database/index_definition.hpp>
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace brig { namespace database {
