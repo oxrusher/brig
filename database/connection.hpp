@@ -194,7 +194,7 @@ void connection<Threading>::create_check_mbr(table_definition& tbl)
     for (auto idx(std::begin(tbl.indexes)); idx != std::end(tbl.indexes); ++idx)
       if (Spatial == idx->type)
       {
-        auto col(std::find_if(std::begin(tbl.columns), std::end(tbl.columns), [&](const column_definition& c){ return c.name == idx->columns.front(); }));
+        auto col(tbl[idx->columns.front()]);
         if (Geometry == col->type && typeid(blob_t) != col->query_condition.type()) col->query_condition = blob_t();
       }
     break;

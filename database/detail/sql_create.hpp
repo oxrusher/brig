@@ -271,7 +271,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       case DB2: stream << "CREATE INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (" << sql_identifier(sys, idx->columns.front()) << ") EXTEND USING DB2GSE.SPATIAL_INDEX (1, 0, 0)"; break;
       case MS_SQL:
         {
-        auto col(std::find_if(std::begin(tbl.columns), col_end, [&](const column_definition& c){ return c.name == idx->columns.front(); }));
+        auto col(tbl[idx->columns.front()]);
         if (typeid(blob_t) != col->query_condition.type()) throw std::runtime_error("SQL error");
         const blob_t& blob(::boost::get<blob_t>(col->query_condition));
         if (blob.empty()) throw std::runtime_error("SQL error");
