@@ -169,10 +169,9 @@ std::shared_ptr<rowset> connection<Threading>::select(const table_definition& tb
 {
   auto cmd(get_command());
   std::string sql;
-  std::vector<variant> params;
-  std::vector<column_definition> param_cols;
-  detail::sql_select(cmd, tbl, sql, params, param_cols);
-  cmd->exec(sql, params, param_cols);
+  std::vector<column_definition> params;
+  detail::sql_select(cmd, tbl, sql, params);
+  cmd->exec(sql, params);
   return cmd;
 }
 
@@ -187,7 +186,7 @@ void connection<Threading>::create_check_mbr(table_definition& tbl)
 
   case Oracle:
     for (auto col(std::begin(tbl.columns)); col != std::end(tbl.columns); ++col)
-      if (Geometry == col->type && typeid(blob_t) != col->query_condition.type()) col->query_condition = blob_t();
+      if (Geometry == col->type && typeid(blob_t) != col->query_value.type()) col->query_value = blob_t();
     break;
 
   case MS_SQL:
@@ -195,7 +194,7 @@ void connection<Threading>::create_check_mbr(table_definition& tbl)
       if (Spatial == idx->type)
       {
         auto col(tbl[idx->columns.front()]);
-        if (Geometry == col->type && typeid(blob_t) != col->query_condition.type()) col->query_condition = blob_t();
+        if (Geometry == col->type && typeid(blob_t) != col->query_value.type()) col->query_value = blob_t();
       }
     break;
   }

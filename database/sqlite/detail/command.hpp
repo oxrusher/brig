@@ -38,11 +38,7 @@ public:
   virtual ~command();
   virtual DBMS system()  { return SQLite; }
   virtual std::string sql_column(const column_definition& col);
-  virtual void exec
-    ( const std::string& sql
-    , const std::vector<variant>& params = std::vector<variant>()
-    , const std::vector<column_definition>& param_cols = std::vector<column_definition>()
-    );
+  virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>());
   virtual size_t affected()  { return m_db.affected(); }
   virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
@@ -67,7 +63,7 @@ inline command::~command()
   close_stmt();
 }
 
-inline void command::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_definition>& /*param_cols*/)
+inline void command::exec(const std::string& sql, const std::vector<column_definition>& params)
 {
   if (!m_stmt || sql.empty() || sql != m_sql || !m_done)
   {
@@ -83,7 +79,7 @@ inline void command::exec(const std::string& sql, const std::vector<variant>& pa
   }
 
   for (size_t i(0); i < params.size(); ++i)
-    m_db.check(bind(m_stmt, i, params[i]));
+    m_db.check(bind(m_stmt, i, params[i].query_value));
 
   switch (lib::singleton().p_sqlite3_step(m_stmt))
   {

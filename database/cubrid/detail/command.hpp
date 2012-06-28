@@ -28,11 +28,7 @@ public:
   command(const std::string& ip, int port, const std::string& db, const std::string& usr, const std::string& pwd);
   virtual ~command()  { close_all(); }
   virtual DBMS system()  { return CUBRID; }
-  virtual void exec
-    ( const std::string& sql
-    , const std::vector<variant>& params = std::vector<variant>()
-    , const std::vector<column_definition>& param_cols = std::vector<column_definition>()
-    );
+  virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>());
   virtual size_t affected()  { return size_t(m_res < 0? 0: m_res); }
   virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
@@ -74,7 +70,7 @@ inline command::command(const std::string& ip, int port, const std::string& db, 
   std::swap(m_con, con);
 }
 
-inline void command::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_definition>& param_cols)
+inline void command::exec(const std::string& sql, const std::vector<column_definition>& params)
 {
   close_request();
   int req(lib::singleton().p_cci_prepare(m_con, (char*)sql.c_str(), 0, &m_err));
@@ -82,7 +78,7 @@ inline void command::exec(const std::string& sql, const std::vector<variant>& pa
   std::swap(m_req, req);
 
   for (size_t i(0); i < params.size(); ++i)
-    if (lib::error(bind(m_req, i, params[i], i < param_cols.size()? &param_cols[i]: 0))) throw std::runtime_error("CUBRID error");
+    if (lib::error(bind(m_req, i, params[i]))) throw std::runtime_error("CUBRID error");
 
   m_res = lib::singleton().p_cci_execute(m_req, 0, 0, &m_err);
   check(m_res);

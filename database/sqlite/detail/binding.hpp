@@ -27,12 +27,12 @@ struct binding_visitor : ::boost::static_visitor<int> {
   int operator()(const std::string& r) const  { return lib::singleton().p_sqlite3_bind_text(stmt, i, r.c_str(), -1, SQLITE_STATIC); }
 }; // binding_visitor
 
-inline int bind(sqlite3_stmt* stmt, size_t param, const variant& var)
+inline int bind(sqlite3_stmt* stmt, size_t order, const variant& param)
 {
   binding_visitor visitor;
   visitor.stmt = stmt;
-  visitor.i = int(param + 1);
-  return ::boost::apply_visitor(visitor, var);
+  visitor.i = int(order + 1);
+  return ::boost::apply_visitor(visitor, param);
 }
 
 } } } } // brig::database::sqlite::detail

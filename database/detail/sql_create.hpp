@@ -238,8 +238,8 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       case MySQL: break;
       case Oracle:
         {
-        if (typeid(blob_t) != col->query_condition.type()) throw std::runtime_error("SQL error");
-        const blob_t& blob(::boost::get<blob_t>(col->query_condition));
+        if (typeid(blob_t) != col->query_value.type()) throw std::runtime_error("SQL error");
+        const blob_t& blob(::boost::get<blob_t>(col->query_value));
         if (blob.empty()) throw std::runtime_error("SQL error");
         auto box(envelope(geom_from_wkb(blob)));
         const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>()), eps(0.000001);
@@ -272,8 +272,8 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       case MS_SQL:
         {
         auto col(tbl[idx->columns.front()]);
-        if (typeid(blob_t) != col->query_condition.type()) throw std::runtime_error("SQL error");
-        const blob_t& blob(::boost::get<blob_t>(col->query_condition));
+        if (typeid(blob_t) != col->query_value.type()) throw std::runtime_error("SQL error");
+        const blob_t& blob(::boost::get<blob_t>(col->query_value));
         if (blob.empty()) throw std::runtime_error("SQL error");
         auto box(envelope(geom_from_wkb(blob)));
         const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>());

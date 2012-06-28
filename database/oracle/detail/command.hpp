@@ -35,12 +35,9 @@ public:
   command(const std::string& srv, const std::string& usr, const std::string& pwd);
   virtual ~command()  { close_all(); }
   virtual DBMS system()  { return Oracle; }
-  virtual std::string sql_parameter(size_t order, const column_definition& param_col);
+  virtual std::string sql_parameter(size_t order, const column_definition& param);
   virtual std::string sql_column(const column_definition& col);
-  virtual void exec
-    ( const std::string& sql
-    , const std::vector<variant>& params = std::vector<variant>()
-    , const std::vector<column_definition>& param_cols = std::vector<column_definition>()
+  virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()
     );
   virtual size_t affected();
   virtual std::vector<std::string> columns();
@@ -105,7 +102,7 @@ inline command::command(const std::string& srv_, const std::string& usr_, const 
   catch (const std::exception&)  { close_all(); throw; }
 }
 
-inline void command::exec(const std::string& sql_, const std::vector<variant>& params, const std::vector<column_definition>& param_cols)
+inline void command::exec(const std::string& sql_, const std::vector<column_definition>& params)
 {
   const std::u16string sql(brig::unicode::transform<std::u16string>(sql_));
 
@@ -117,7 +114,7 @@ inline void command::exec(const std::string& sql_, const std::vector<variant>& p
 
   ::boost::ptr_vector<binding> binds;
   for (size_t i(0); i < params.size(); ++i)
-    binds.push_back(binding_factory(&m_hnd, i, params[i], i < param_cols.size()? &param_cols[i]: 0));
+    binds.push_back(binding_factory(&m_hnd, i, params[i]));
 
   m_hnd.check(lib::singleton().p_OCIStmtExecute(m_hnd.svc, m_hnd.stmt, m_hnd.err, OCI_STMT_SELECT == stmt_type? 0: 1, 0, 0, 0, m_autocommit? OCI_COMMIT_ON_SUCCESS: OCI_DEFAULT));
 }
@@ -191,12 +188,12 @@ inline bool command::fetch(std::vector<variant>& row)
   return true;
 }
 
-inline std::string command::sql_parameter(size_t order, const column_definition& param_col)
+inline std::string command::sql_parameter(size_t order, const column_definition& param)
 {
   using namespace brig::database::detail;
   std::ostringstream stream; stream.imbue(std::locale::classic());
-  if (Geometry == param_col.type && "sdo_geometry" != param_col.dbms_type_lcase.name)
-    stream << sql_identifier(Oracle, param_col.dbms_type) << "(:" << (order + 1) << ")";
+  if (Geometry == param.type && "sdo_geometry" != param.dbms_type_lcase.name)
+    stream << sql_identifier(Oracle, param.dbms_type) << "(:" << (order + 1) << ")";
   else
     stream << ":" << (order + 1);
   return stream.str();

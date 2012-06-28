@@ -23,10 +23,10 @@ namespace brig { namespace database { namespace odbc { namespace detail {
 
 class binding_visitor : public ::boost::static_visitor<binding*> {
   const DBMS m_sys;
-  const column_definition* m_col;
+  const column_definition& m_param;
 public:
-  explicit binding_visitor(DBMS sys_, const column_definition* col_) : m_sys(sys_), m_col(col_)  {}
-  binding* operator()(const null_t&) const  { return new binding_null(m_col? m_col->type: VoidColumn, m_sys); }
+  explicit binding_visitor(DBMS sys_, const column_definition& param) : m_sys(sys_), m_param(param)  {}
+  binding* operator()(const null_t&) const  { return new binding_null(m_param.type, m_sys); }
   binding* operator()(int16_t v) const  { return new binding_impl<int16_t, SQL_C_SSHORT, SQL_SMALLINT>(v); }
   binding* operator()(int32_t v) const  { return new binding_impl<int32_t, SQL_C_SLONG, SQL_INTEGER>(v); }
   binding* operator()(int64_t v) const  { return Postgres == m_sys? operator()(int32_t(v)): new binding_impl<int64_t, SQL_C_SBIGINT, SQL_BIGINT>(v); } // todo:
@@ -36,9 +36,9 @@ public:
   binding* operator()(const blob_t& r) const  { return new binding_blob(r, m_sys); }
 }; // binding_visitor
 
-inline binding* binding_factory(DBMS sys, const variant& var, const column_definition* param_col)
+inline binding* binding_factory(DBMS sys, const column_definition& param)
 {
-  return ::boost::apply_visitor(binding_visitor(sys, param_col), var);
+  return ::boost::apply_visitor(binding_visitor(sys, param), param.query_value);
 }
 
 } } } } // brig::database::odbc::detail

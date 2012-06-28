@@ -31,11 +31,7 @@ public:
   command(const std::string& str);
   virtual ~command()  { close_all(); }
   virtual DBMS system()  { return m_sys; }
-  virtual void exec
-    ( const std::string& sql
-    , const std::vector<variant>& params = std::vector<variant>()
-    , const std::vector<column_definition>& param_cols = std::vector<column_definition>()
-    );
+  virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>());
   virtual size_t affected();
   virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
@@ -131,7 +127,7 @@ inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(
   }
 }
 
-inline void command::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_definition>& param_cols)
+inline void command::exec(const std::string& sql, const std::vector<column_definition>& params)
 {
   if (SQL_NULL_HANDLE == m_stmt || sql != m_sql)
   {
@@ -151,7 +147,7 @@ inline void command::exec(const std::string& sql, const std::vector<variant>& pa
   ::boost::ptr_vector<binding> binds;
   for (size_t i(0); i < params.size(); ++i)
   {
-    binding* bind(binding_factory(m_sys, params[i], i < param_cols.size()? &param_cols[i]: 0));
+    binding* bind(binding_factory(m_sys, params[i]));
     binds.push_back(bind);
     check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLBindParameter(m_stmt, SQLUSMALLINT(i + 1), SQL_PARAM_INPUT
       , bind->c_type(), bind->sql_type(), bind->precision(), 0, bind->val_ptr(), 0, bind->ind()));

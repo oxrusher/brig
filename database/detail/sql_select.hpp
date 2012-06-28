@@ -29,7 +29,7 @@ namespace brig { namespace database { namespace detail {
 template <typename Dialect>
 void sql_select
   ( std::shared_ptr<Dialect> dct, const table_definition& tbl
-  , std::string& sql, std::vector<variant>& params, std::vector<column_definition>& param_cols
+  , std::string& sql, std::vector<column_definition>& params
   )
 {
   const DBMS sys(dct->system());
@@ -38,17 +38,16 @@ void sql_select
   std::string sql_infix, sql_counter, sql_suffix, sql_conditions;
   sql_limit(sys, tbl.query_rows, sql_infix, sql_counter, sql_suffix);
   for (auto col(std::begin(tbl.columns)); col != std::end(tbl.columns); ++col)
-    if (Geometry != col->type && typeid(null_t) != col->query_condition.type())
+    if (Geometry != col->type && typeid(null_t) != col->query_value.type())
     {
       if (!sql_conditions.empty()) sql_conditions += "AND ";
       sql_conditions += col->query_expression.empty()? col->name: col->query_expression;
       sql_conditions += " = (" + dct->sql_parameter(params.size(), *col) + ")"; // Oracle workaround
-      params.push_back(col->query_condition);
-      param_cols.push_back(*col);
+      params.push_back(*col);
     }
 
   // not spatial first
-  auto geom_col(std::find_if(std::begin(cols), std::end(cols), [](const column_definition& col){ return Geometry == col.type && typeid(null_t) != col.query_condition.type(); }));
+  auto geom_col(std::find_if(std::begin(cols), std::end(cols), [](const column_definition& col){ return Geometry == col.type && typeid(null_t) != col.query_value.type(); }));
   if (geom_col == std::end(cols))
   {
     if (!sql_counter.empty()) sql += "SELECT * FROM (";
@@ -60,7 +59,7 @@ void sql_select
   }
 
   // spatial
-  std::vector<brig::boost::box> boxes(1, brig::boost::envelope(brig::boost::geom_from_wkb(::boost::get<blob_t>(geom_col->query_condition))));
+  std::vector<brig::boost::box> boxes(1, brig::boost::envelope(brig::boost::geom_from_wkb(::boost::get<blob_t>(geom_col->query_value))));
   normalize_hemisphere(boxes, sys, is_geodetic_type(sys, *geom_col));
 
   std::string sql_hint;

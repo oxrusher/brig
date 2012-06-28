@@ -35,13 +35,13 @@ inline std::vector<raster_pyramid> get_rasters_sqlite(std::shared_ptr<command> c
 
         col.name = "pixel_x_size";
         col.query_expression = hint? "+pixel_x_size": "";
-        col.query_condition = res[r].levels[l].resolution.get<0>();
-        res[r].levels[l].query_conditions.push_back(col);
+        col.query_value = res[r].levels[l].resolution.get<0>();
+        res[r].levels[l].query_values.push_back(col);
 
         col.name = "pixel_y_size";
         col.query_expression = hint? "+pixel_y_size": "";
-        col.query_condition = res[r].levels[l].resolution.get<1>();
-        res[r].levels[l].query_conditions.push_back(col);
+        col.query_value = res[r].levels[l].resolution.get<1>();
+        res[r].levels[l].query_values.push_back(col);
       }
     return res;
   }

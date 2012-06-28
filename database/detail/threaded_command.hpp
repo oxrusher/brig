@@ -19,9 +19,9 @@ public:
   explicit threaded_command(std::shared_ptr<command_allocator> allocator);
   virtual ~threaded_command()  { m_med->stop(); }
   virtual DBMS system();
-  virtual std::string sql_parameter(size_t order, const column_definition& param_col);
+  virtual std::string sql_parameter(size_t order, const column_definition& param);
   virtual std::string sql_column(const column_definition& col);
-  virtual void exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_definition>& param_cols);
+  virtual void exec(const std::string& sql, const std::vector<column_definition>& params);
   virtual size_t affected();
   virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
@@ -46,9 +46,9 @@ inline DBMS threaded_command::system()
   return m_med->call(&command::system, std::placeholders::_1);
 }
 
-inline std::string threaded_command::sql_parameter(size_t order, const column_definition& param_col)
+inline std::string threaded_command::sql_parameter(size_t order, const column_definition& param)
 {
-  return m_med->call(&command::sql_parameter, std::placeholders::_1, order, std::cref(param_col));
+  return m_med->call(&command::sql_parameter, std::placeholders::_1, order, std::cref(param));
 }
 
 inline std::string threaded_command::sql_column(const column_definition& col)
@@ -56,10 +56,10 @@ inline std::string threaded_command::sql_column(const column_definition& col)
   return m_med->call(&command::sql_column, std::placeholders::_1, std::cref(col));
 }
 
-inline void threaded_command::exec(const std::string& sql, const std::vector<variant>& params, const std::vector<column_definition>& param_cols)
+inline void threaded_command::exec(const std::string& sql, const std::vector<column_definition>& params)
 {
   m_med->dpg.clear();
-  m_med->call(&command::exec, std::placeholders::_1, std::cref(sql), std::cref(params), std::cref(param_cols));
+  m_med->call(&command::exec, std::placeholders::_1, std::cref(sql), std::cref(params));
 }
 
 inline size_t threaded_command::affected()

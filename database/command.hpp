@@ -17,16 +17,12 @@
 namespace brig { namespace database {
 
 struct command : public rowset {
-  virtual void exec
-    ( const std::string& sql
-    , const std::vector<variant>& params = std::vector<variant>()
-    , const std::vector<column_definition>& param_cols = std::vector<column_definition>()
-    ) = 0;
+  virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) = 0;
   virtual size_t affected() = 0;
 
   // dialect
   virtual DBMS system() = 0;
-  virtual std::string sql_parameter(size_t order, const column_definition& param_col);
+  virtual std::string sql_parameter(size_t order, const column_definition& param);
   virtual std::string sql_column(const column_definition& col);
 
   // transaction
@@ -34,46 +30,46 @@ struct command : public rowset {
   virtual void commit() = 0;
 }; // command
 
-inline std::string command::sql_parameter(size_t, const column_definition& param_col)
+inline std::string command::sql_parameter(size_t, const column_definition& param)
 {
   using namespace detail;
   const DBMS sys(system());
   std::ostringstream stream; stream.imbue(std::locale::classic());
-  if (Geometry == param_col.type)
+  if (Geometry == param.type)
     switch (sys)
     {
     default: break;
 
     case DB2:
-      stream << sql_identifier(sys, param_col.dbms_type) << "(CAST(? AS BLOB (100M)), " << param_col.srid << ")";
+      stream << sql_identifier(sys, param.dbms_type) << "(CAST(? AS BLOB (100M)), " << param.srid << ")";
       return stream.str();
 
     case MS_SQL:
-      stream << sql_identifier(sys, param_col.dbms_type) << "::STGeomFromWKB(?, " << param_col.srid << ")";
+      stream << sql_identifier(sys, param.dbms_type) << "::STGeomFromWKB(?, " << param.srid << ")";
       return stream.str();
 
     case MySQL:
     case SQLite:
-      stream << "GeomFromWKB(?, " << param_col.srid << ")";
+      stream << "GeomFromWKB(?, " << param.srid << ")";
       return stream.str();
 
     case Oracle:
       {
-      const bool conv("sdo_geometry" != param_col.dbms_type_lcase.name);
-      if (conv) stream << sql_identifier(sys, param_col.dbms_type) << "(";
-      stream << "MDSYS.SDO_GEOMETRY(TO_BLOB(?), " << param_col.srid << ")";
+      const bool conv("sdo_geometry" != param.dbms_type_lcase.name);
+      if (conv) stream << sql_identifier(sys, param.dbms_type) << "(";
+      stream << "MDSYS.SDO_GEOMETRY(TO_BLOB(?), " << param.srid << ")";
       if (conv) stream << ")";
       }
       return stream.str();
 
     case Postgres:
-      if ("geography" == param_col.dbms_type_lcase.name)
+      if ("geography" == param.dbms_type_lcase.name)
       {
-        if (param_col.srid != 4326) throw std::runtime_error("SRID error");
+        if (param.srid != 4326) throw std::runtime_error("SRID error");
         stream << "ST_GeogFromWKB(?)";
       }
       else
-        stream << "ST_GeomFromWKB(?, " << param_col.srid << ")";
+        stream << "ST_GeomFromWKB(?, " << param.srid << ")";
       return stream.str();
     }
   return "?";

@@ -38,14 +38,14 @@ inline int binding_visitor::operator()(const blob_t& r) const
   return lib::singleton().p_cci_bind_param(req, i, CCI_A_TYPE_BIT, &bit, type != CCI_U_TYPE_NULL? type: CCI_U_TYPE_BIT, 0);
 }
 
-inline int bind(int req, size_t param, const variant& var, const column_definition* param_col)
+inline int bind(int req, size_t order, const column_definition& param)
 {
   binding_visitor visitor;
   visitor.req = req;
-  visitor.i = int(param + 1);
+  visitor.i = int(order + 1);
   visitor.type = CCI_U_TYPE_NULL;
 
-  switch (param_col? param_col->type: VoidColumn)
+  switch (param.type)
   {
   case VoidColumn: break;
   case Blob:
@@ -53,13 +53,13 @@ inline int bind(int req, size_t param, const variant& var, const column_definiti
   case Double: visitor.type = CCI_U_TYPE_DOUBLE; break;
   case Integer: visitor.type = CCI_U_TYPE_BIGINT; break;
   case String: visitor.type
-    = (param_col->dbms_type_lcase.name.find("nchar") != std::string::npos || param_col->dbms_type_lcase.name.find("national") != std::string::npos)
+    = (param.dbms_type_lcase.name.find("nchar") != std::string::npos || param.dbms_type_lcase.name.find("national") != std::string::npos)
     ? CCI_U_TYPE_VARNCHAR
     : CCI_U_TYPE_STRING;
     break;
   }
 
-  return ::boost::apply_visitor(visitor, var);
+  return ::boost::apply_visitor(visitor, param.query_value);
 }
 
 } } } } // brig::database::cubrid::detail
