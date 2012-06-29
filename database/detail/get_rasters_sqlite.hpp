@@ -34,14 +34,16 @@ inline std::vector<raster_pyramid> get_rasters_sqlite(std::shared_ptr<command> c
         res[r].levels[l].raster.query_expression = "(SELECT r FROM (SELECT id i, raster r FROM " + tbl + ") t WHERE t.i = " + "id)";
 
         col.name = "pixel_x_size";
+        col.type = Double;
         col.query_expression = hint? "+pixel_x_size": "";
         col.query_value = res[r].levels[l].resolution.get<0>();
-        res[r].levels[l].query_values.push_back(col);
+        res[r].levels[l].query_conditions.push_back(col);
 
         col.name = "pixel_y_size";
+        col.type = Double;
         col.query_expression = hint? "+pixel_y_size": "";
         col.query_value = res[r].levels[l].resolution.get<1>();
-        res[r].levels[l].query_values.push_back(col);
+        res[r].levels[l].query_conditions.push_back(col);
       }
     return res;
   }

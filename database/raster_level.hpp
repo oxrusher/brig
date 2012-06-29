@@ -15,7 +15,7 @@ struct raster_level {
   identifier geometry;
   column_definition raster;
 
-  std::vector<column_definition> query_values;
+  std::vector<column_definition> query_conditions;
 
   raster_level() : resolution(0, 0)  {}
 }; // raster_level
