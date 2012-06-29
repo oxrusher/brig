@@ -21,7 +21,7 @@ struct binding_visitor : ::boost::static_visitor<int> {
   T_CCI_U_TYPE type;
 
   int operator()(const null_t&) const  { return lib::singleton().p_cci_bind_param(req, i, CCI_A_TYPE_STR, 0, CCI_U_TYPE_NULL, 0); }
-  int operator()(int16_t v) const  { return int32_t v32(v); lib::singleton().p_cci_bind_param(req, i, CCI_A_TYPE_INT, &v32, type != CCI_U_TYPE_NULL? type: CCI_U_TYPE_SHORT, 0); }
+  int operator()(int16_t v) const  { int32_t v32(v); return lib::singleton().p_cci_bind_param(req, i, CCI_A_TYPE_INT, &v32, type != CCI_U_TYPE_NULL? type: CCI_U_TYPE_SHORT, 0); }
   int operator()(int32_t v) const  { return lib::singleton().p_cci_bind_param(req, i, CCI_A_TYPE_INT, &v, type != CCI_U_TYPE_NULL? type: CCI_U_TYPE_INT, 0); }
   int operator()(int64_t v) const  { return lib::singleton().p_cci_bind_param(req, i, CCI_A_TYPE_BIGINT, &v, type != CCI_U_TYPE_NULL? type: CCI_U_TYPE_BIGINT, 0); }
   int operator()(float v) const  { return lib::singleton().p_cci_bind_param(req, i, CCI_A_TYPE_FLOAT, &v, type != CCI_U_TYPE_NULL? type: CCI_U_TYPE_FLOAT, 0); }
