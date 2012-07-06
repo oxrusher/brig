@@ -17,6 +17,7 @@ public:
   decltype(OCIBindByPos) *p_OCIBindByPos;
   decltype(OCIBindDynamic) *p_OCIBindDynamic;
   decltype(OCIBindObject) *p_OCIBindObject;
+  decltype(OCIClientVersion) *p_OCIClientVersion;
   decltype(OCICollAppend) *p_OCICollAppend;
   decltype(OCICollGetElem) *p_OCICollGetElem;
   decltype(OCICollSize) *p_OCICollSize;
@@ -54,13 +55,14 @@ public:
 
 inline lib::lib() : p_OCITypeByName(0)
 {
-  auto handle = BRIG_DL_LIBRARY("oci.dll", "libclntsh.so.11.1");
+  auto handle = BRIG_DL_LIBRARY("oci.dll", "libclntsh.so");
   if (  handle
     && (p_OCIAttrGet = BRIG_DL_FUNCTION(handle, OCIAttrGet))
     && (p_OCIAttrSet = BRIG_DL_FUNCTION(handle, OCIAttrSet))
     && (p_OCIBindByPos = BRIG_DL_FUNCTION(handle, OCIBindByPos))
     && (p_OCIBindDynamic = BRIG_DL_FUNCTION(handle, OCIBindDynamic))
     && (p_OCIBindObject = BRIG_DL_FUNCTION(handle, OCIBindObject))
+    && (p_OCIClientVersion = BRIG_DL_FUNCTION(handle, OCIClientVersion))
     && (p_OCICollAppend = BRIG_DL_FUNCTION(handle, OCICollAppend))
     && (p_OCICollGetElem = BRIG_DL_FUNCTION(handle, OCICollGetElem))
     && (p_OCICollSize = BRIG_DL_FUNCTION(handle, OCICollSize))

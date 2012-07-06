@@ -41,7 +41,7 @@ public:
 
 inline lib::lib() : p_SQLSetEnvAttr(0)
 {
-  auto handle = BRIG_DL_LIBRARY("odbc32.dll", "libodbc.so.1");
+  auto handle = BRIG_DL_LIBRARY("odbc32.dll", "libodbc.so");
   if (  handle
     && (p_SQLAllocHandle = BRIG_DL_FUNCTION(handle, SQLAllocHandle))
     && (p_SQLBindParameter = BRIG_DL_FUNCTION(handle, SQLBindParameter))
