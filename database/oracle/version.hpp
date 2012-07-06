@@ -16,7 +16,7 @@ inline std::string oci_version()
   sword major_version(0), minor_version(0), update_num(0), patch_num(0), port_update_num(0);
   detail::lib::singleton().p_OCIClientVersion(&major_version, &minor_version, &update_num, &patch_num, &port_update_num);
   std::ostringstream stream; stream.imbue(std::locale::classic());
-  stream << major_version << "." << minor_version << "." << update_num;
+  stream << major_version << "." << minor_version << "." << update_num << "." << patch_num << "." << port_update_num;
   return stream.str();
 }
 
