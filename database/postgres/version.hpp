@@ -14,11 +14,11 @@ inline std::string libpq_version()
 {
   if (detail::lib::singleton().empty()) return "";
   const int version(detail::lib::singleton().p_PQlibVersion());
-  const int major(version / 10000);
-  const int minor((version % 10000) / 100);
+  const int major_version(version / 10000);
+  const int minor_version((version % 10000) / 100);
   const int revision(version % 100);
   std::ostringstream stream; stream.imbue(std::locale::classic());
-  stream << major << "." << minor << "." << revision;
+  stream << major_version << "." << minor_version << "." << revision;
   return stream.str();
 }
 
