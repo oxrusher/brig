@@ -5,6 +5,7 @@
 #ifndef BRIG_DETAIL_OGC_HPP
 #define BRIG_DETAIL_OGC_HPP
 
+#include <boost/detail/endian.hpp>
 #include <brig/detail/copy.hpp>
 #include <cstdint>
 #include <iterator>
@@ -14,15 +15,15 @@ namespace brig { namespace detail { namespace ogc {
 
 enum ByteOrder {
   BigEndian = 0,
-  LittleEndian = 1
+  LittleEndian = 1,
+#if defined BOOST_LITTLE_ENDIAN
+  HostEndian = LittleEndian
+#elif defined BOOST_BIG_ENDIAN
+  HostEndian = BigEndian
+#else
+  #error byte order error
+#endif
 };
-
-inline uint8_t system_byte_order()
-{
-  static const uint16_t two_bytes(1);
-  static const uint8_t byte_order(*((const uint8_t*)&two_bytes) == 0? BigEndian : LittleEndian);
-  return byte_order;
-}
 
 template <typename InputIterator>
 uint8_t read_byte_order(InputIterator& iter)
@@ -38,7 +39,7 @@ template <typename OutputIterator>
 void write_byte_order(OutputIterator& iter)
 {
   static_assert(sizeof(typename std::iterator_traits<OutputIterator>::value_type) == sizeof(uint8_t), "size error");
-  *iter = system_byte_order();
+  *iter = HostEndian;
   ++iter;
 }
 
@@ -47,7 +48,7 @@ T read(uint8_t byte_order, InputIterator& iter)
 {
   T val(0);
   uint8_t* ptr = (uint8_t*)(&val);
-  if (system_byte_order() == byte_order)
+  if (HostEndian == byte_order)
     copy<T>(iter, ptr);
   else
     reverse_copy<T>(iter, ptr);

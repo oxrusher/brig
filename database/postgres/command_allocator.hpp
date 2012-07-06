@@ -1,14 +1,14 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_CUBRID_COMMAND_ALLOCATOR_HPP
-#define BRIG_DATABASE_CUBRID_COMMAND_ALLOCATOR_HPP
+#ifndef BRIG_DATABASE_POSTGRES_COMMAND_ALLOCATOR_HPP
+#define BRIG_DATABASE_POSTGRES_COMMAND_ALLOCATOR_HPP
 
 #include <brig/database/command_allocator.hpp>
-#include <brig/database/cubrid/detail/command.hpp>
-#include <brig/database/cubrid/detail/lib.hpp>
+#include <brig/database/postgres/detail/command.hpp>
+#include <brig/database/postgres/detail/lib.hpp>
 #include <string>
 
-namespace brig { namespace database { namespace cubrid {
+namespace brig { namespace database { namespace postgres {
 
 class command_allocator : public brig::database::command_allocator {
   std::string m_host, m_db, m_usr, m_pwd;
@@ -22,6 +22,6 @@ public:
     { return new detail::command(m_host, m_port, m_db, m_usr, m_pwd); }
 }; // command_allocator
 
-} } } // brig::database::cubrid
+} } } // brig::database::postgres
 
-#endif // BRIG_DATABASE_CUBRID_COMMAND_ALLOCATOR_HPP
+#endif // BRIG_DATABASE_POSTGRES_COMMAND_ALLOCATOR_HPP

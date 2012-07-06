@@ -49,6 +49,9 @@ inline column_type get_type(DBMS sys, const column_definition& col)
   case Postgres:
     if (col.dbms_type_lcase.name.find("serial") != std::string::npos) return Integer;
     else if ("bytea" == col.dbms_type_lcase.name) return Blob;
+    else if (col.dbms_type_lcase.name.find("array") != std::string::npos
+          && col.dbms_type_lcase.name.find("char") == std::string::npos
+          && col.dbms_type_lcase.name.find("text") == std::string::npos) return VoidColumn;
     break;
   }
 

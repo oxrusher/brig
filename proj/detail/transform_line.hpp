@@ -29,7 +29,7 @@ void transform_line(uint8_t byte_order, InputType*& in_ptr, OutputType*& out_ptr
   static_assert(sizeof(OutputType) == sizeof(uint8_t), "size error");
   const uint32_t point_xy_count(read<uint32_t>(byte_order, in_ptr)); write<uint32_t>(out_ptr, point_xy_count);
   double* point_xy_begin((double*)out_ptr);
-  if (system_byte_order() == byte_order)
+  if (HostEndian == byte_order)
   {
     const size_t bytes(point_xy_count * 2 * sizeof(double));
     if (in_ptr != out_ptr) memcpy(out_ptr, in_ptr, bytes);

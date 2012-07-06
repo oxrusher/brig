@@ -17,7 +17,7 @@ inline std::string sql_schema_filter(DBMS sys, const std::string& col)
   case MS_SQL: return col + " NOT IN ('guest','INFORMATION_SCHEMA','sys') AND " + col + " NOT LIKE 'db[_]%' AND " + col + " NOT LIKE 'sys[_]%'";
   case MySQL: return col + " NOT IN ('information_schema','mysql','performance_schema')";
   case Oracle: return col + " NOT IN ('ANONYMOUS','APEX_040000','CTXSYS','DBSNMP','DIP','DMSYS','EXFSYS','MDDATA','MDSYS','MGMT_VIEW','OLAPSYS','ORDPLUGINS','ORDSYS','OUTLN','SI_INFORMTN_SCHEMA','SYS','SYSMAN','TSMSYS','WKSYS','WMSYS','XDB')"; // sample schemas: HR,OE,PM,IX,SH
-  case Postgres: return col + " NOT SIMILAR TO '(information\\_schema)|(pg\\_%)'";
+  case Postgres: return col + " NOT SIMILAR TO E'(information\\_schema)|(pg\\_%)'";
   }
 }
 

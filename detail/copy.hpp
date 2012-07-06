@@ -41,7 +41,7 @@ void reverse_copy(InputIterator& in_iter, OutputType*& out_ptr)
 
   for (size_t i(0); i < sizeof(T); ++i)
   {
-    out_ptr[sizeof(T) - i + 1] = static_cast<uint8_t>(*in_iter);
+    out_ptr[sizeof(T) - i - 1] = static_cast<uint8_t>(*in_iter);
     ++in_iter;
   }
   out_ptr += sizeof(T);
