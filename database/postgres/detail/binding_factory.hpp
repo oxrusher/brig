@@ -6,13 +6,13 @@
 #include <boost/variant/apply_visitor.hpp>
 #include <boost/variant/static_visitor.hpp>
 #include <brig/blob_t.hpp>
+#include <brig/database/null_t.hpp>
 #include <brig/database/postgres/detail/binding.hpp>
 #include <brig/database/postgres/detail/binding_blob.hpp>
 #include <brig/database/postgres/detail/binding_impl.hpp>
 #include <brig/database/postgres/detail/binding_null.hpp>
 #include <brig/database/postgres/detail/binding_string.hpp>
 #include <brig/database/postgres/detail/lib.hpp>
-#include <brig/database/null_t.hpp>
 #include <brig/database/variant.hpp>
 #include <cstdint>
 #include <string>

@@ -28,11 +28,10 @@ class command : public brig::database::command {
 
   void check(bool r);
   void close_result();
-  void close_all();
 
 public:
   command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd);
-  virtual ~command()  { close_all(); }
+  virtual ~command();
   virtual DBMS system()  { return Postgres; }
   virtual std::string sql_parameter(size_t order, const column_definition& param);
   virtual std::string sql_column(const column_definition& col);
@@ -53,15 +52,6 @@ inline void command::close_result()
   lib::singleton().p_PQclear(res);
 }
 
-inline void command::close_all()
-{
-  m_autocommit = true;
-  close_result();
-  if (!m_con) return;
-  PGconn* con(0); std::swap(m_con, con);
-  lib::singleton().p_PQfinish(con);
-}
-
 inline void command::check(bool r)
 {
   if (r) return;
@@ -76,6 +66,12 @@ inline command::command(const std::string& host, int port, const std::string& db
   if (lib::singleton().empty()) throw std::runtime_error("Postgres error");
   m_con = lib::singleton().p_PQsetdbLogin((char*)host.c_str(), (char*)string_cast<char>(port).c_str(), 0, 0, (char*)db.c_str(), (char*)usr.c_str(), (char*)pwd.c_str());
   check(lib::singleton().p_PQstatus(m_con) == CONNECTION_OK);
+}
+
+inline command::~command()
+{
+  close_result();
+  lib::singleton().p_PQfinish(m_con);
 }
 
 inline std::string command::sql_parameter(size_t order, const column_definition& param)
@@ -137,6 +133,7 @@ inline void command::exec(const std::string& sql, const std::vector<column_defin
 
 inline size_t command::affected()
 {
+  if (!m_res) return 0;
   try  { return ::boost::lexical_cast<size_t>(lib::singleton().p_PQcmdTuples(m_res)); }
   catch (::boost::bad_lexical_cast&)  { return 0; }
 }

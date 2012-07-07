@@ -27,7 +27,7 @@ inline int get_data_blob::operator()(int req, size_t col, variant& var)
     var = blob_t();
     blob_t& blob(::boost::get<blob_t>(var));
     blob.resize(data.size);
-    memcpy(blob.data(), data.buf, data.size);
+    if (!blob.empty()) memcpy(blob.data(), data.buf, data.size);
   }
   return r;
 } // get_data_blob::

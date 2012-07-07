@@ -1,0 +1,38 @@
+// Andrew Naplavkov
+
+#ifndef BRIG_DATABASE_MYSQL_DETAIL_BIND_RESULT_VAL_HPP
+#define BRIG_DATABASE_MYSQL_DETAIL_BIND_RESULT_VAL_HPP
+
+#include <brig/database/mysql/detail/bind_result.hpp>
+#include <brig/database/mysql/detail/lib.hpp>
+#include <brig/database/null_t.hpp>
+#include <brig/database/variant.hpp>
+
+namespace brig { namespace database { namespace mysql { namespace detail {
+
+template <typename T, enum_field_types TypeID>
+class bind_result_val : public bind_result {
+  T m_val;
+public:
+  explicit bind_result_val(MYSQL_BIND& bind);
+  virtual void operator()(MYSQL_STMT* stmt, MYSQL_BIND& bind, unsigned int col, variant& var);
+}; // bind_result_val
+
+template <typename T, enum_field_types TypeID>
+bind_result_val<T, TypeID>::bind_result_val(MYSQL_BIND& bind) : bind_result(bind), m_val(0)
+{
+  bind.buffer_type = TypeID;
+  bind.buffer = (void*)&m_val;
+  bind.buffer_length = sizeof(T);
+}
+
+template <typename T, enum_field_types TypeID>
+void bind_result_val<T, TypeID>::operator()(MYSQL_STMT*, MYSQL_BIND&, unsigned int, variant& var)
+{
+  if (m_is_null) var = null_t();
+  else var = m_val;
+} // bind_result_val::
+
+} } } } // brig::database::mysql::detail
+
+#endif // BRIG_DATABASE_MYSQL_DETAIL_BIND_RESULT_VAL_HPP
