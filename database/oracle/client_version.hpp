@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_ORACLE_VERSION_HPP
-#define BRIG_DATABASE_ORACLE_VERSION_HPP
+#ifndef BRIG_DATABASE_ORACLE_CLIENT_VERSION_HPP
+#define BRIG_DATABASE_ORACLE_CLIENT_VERSION_HPP
 
 #include <brig/database/oracle/detail/lib.hpp>
 #include <locale>
@@ -10,7 +10,7 @@
 
 namespace brig { namespace database { namespace oracle {
 
-inline std::string oci_version()
+inline std::string client_version()
 {
   if (detail::lib::singleton().empty()) return "";
   sword major_version(0), minor_version(0), update_num(0), patch_num(0), port_update_num(0);
@@ -22,4 +22,4 @@ inline std::string oci_version()
 
 } } } // brig::database::oracle
 
-#endif // BRIG_DATABASE_ORACLE_VERSION_HPP
+#endif // BRIG_DATABASE_ORACLE_CLIENT_VERSION_HPP

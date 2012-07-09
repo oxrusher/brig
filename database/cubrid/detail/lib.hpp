@@ -26,12 +26,14 @@ public:
   decltype(cci_prepare) *p_cci_prepare;
   decltype(cci_set_autocommit) *p_cci_set_autocommit;
 
+  decltype(cci_get_version) *p_cci_get_version;
+
   bool empty() const  { return p_cci_set_autocommit == 0; }
   static lib& singleton()  { static lib s; return s; }
   static bool error(int r)  { return r < CCI_ER_NO_ERROR; }
 }; // lib
 
-inline lib::lib() : p_cci_set_autocommit(0)
+inline lib::lib() : p_cci_set_autocommit(0), p_cci_get_version(0)
 {
   auto handle = BRIG_DL_LIBRARY("cascci.dll", "libcascci.so");
   if (  handle
@@ -48,6 +50,9 @@ inline lib::lib() : p_cci_set_autocommit(0)
     && (p_cci_get_result_info = BRIG_DL_FUNCTION(handle, cci_get_result_info))
     && (p_cci_prepare = BRIG_DL_FUNCTION(handle, cci_prepare))
      )  p_cci_set_autocommit = BRIG_DL_FUNCTION(handle, cci_set_autocommit);
+
+  if (!empty())
+    p_cci_get_version = BRIG_DL_FUNCTION(handle, cci_get_version);
 } // lib::
 
 } } } } // brig::database::cubrid::detail

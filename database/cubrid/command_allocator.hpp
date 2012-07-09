@@ -6,20 +6,19 @@
 #include <brig/database/command_allocator.hpp>
 #include <brig/database/cubrid/detail/command.hpp>
 #include <brig/database/cubrid/detail/lib.hpp>
+#include <brig/string_cast.hpp>
 #include <string>
 
 namespace brig { namespace database { namespace cubrid {
 
 class command_allocator : public brig::database::command_allocator {
-  std::string m_host, m_db, m_usr, m_pwd;
-  int m_port;
+  std::string m_url, m_usr, m_pwd;
 public:
   command_allocator(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd)
-    : m_host(host), m_db(db), m_usr(usr), m_pwd(pwd)
-    , m_port(port)
+    : m_url("cci:CUBRID:" + host + ":" + string_cast<char>(port) + ":" + db + ":::?login_timeout=10000"), m_usr(usr), m_pwd(pwd)
     { detail::lib::singleton(); }
   virtual command* allocate()
-    { return new detail::command(m_host, m_port, m_db, m_usr, m_pwd); }
+    { return new detail::command(m_url, m_usr, m_pwd); }
 }; // command_allocator
 
 } } } // brig::database::cubrid

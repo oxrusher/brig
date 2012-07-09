@@ -9,7 +9,6 @@
 #include <brig/database/cubrid/detail/binding.hpp>
 #include <brig/database/cubrid/detail/get_data_factory.hpp>
 #include <brig/database/cubrid/detail/lib.hpp>
-#include <brig/string_cast.hpp>
 #include <stdexcept>
 #include <string>
 
@@ -25,7 +24,7 @@ class command : public brig::database::command {
   void close_all();
 
 public:
-  command(const std::string& ip, int port, const std::string& db, const std::string& usr, const std::string& pwd);
+  command(const std::string& url, const std::string& usr, const std::string& pwd);
   virtual ~command()  { close_all(); }
   virtual DBMS system()  { return CUBRID; }
   virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>());
@@ -60,10 +59,9 @@ inline void command::close_all()
   lib::singleton().p_cci_disconnect(con, &m_err);
 }
 
-inline command::command(const std::string& ip, int port, const std::string& db, const std::string& usr, const std::string& pwd)
+inline command::command(const std::string& url, const std::string& usr, const std::string& pwd)
   : m_con(CCI_ER_CON_HANDLE), m_req(CCI_ER_REQ_HANDLE), m_res(0)
 {
-  const std::string url("cci:CUBRID:" + ip + ":" + string_cast<char>(port) + ":" + db + ":::?login_timeout=10000");
   if (lib::singleton().empty()) throw std::runtime_error("CUBRID error");
   int con(lib::singleton().p_cci_connect_with_url((char*)url.c_str(), (char*)usr.c_str(), (char*)pwd.c_str()));
   if (lib::error(con)) throw std::runtime_error("CUBRID error");

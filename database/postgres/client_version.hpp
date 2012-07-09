@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_POSTGRES_VERSION_HPP
-#define BRIG_DATABASE_POSTGRES_VERSION_HPP
+#ifndef BRIG_DATABASE_POSTGRES_CLIENT_VERSION_HPP
+#define BRIG_DATABASE_POSTGRES_CLIENT_VERSION_HPP
 
 #include <brig/database/postgres/detail/lib.hpp>
 #include <locale>
@@ -10,7 +10,7 @@
 
 namespace brig { namespace database { namespace postgres {
 
-inline std::string libpq_version()
+inline std::string client_version()
 {
   if (detail::lib::singleton().empty()) return "";
   const int version(detail::lib::singleton().p_PQlibVersion());
@@ -24,4 +24,4 @@ inline std::string libpq_version()
 
 } } } // brig::database::postgres
 
-#endif // BRIG_DATABASE_POSTGRES_VERSION_HPP
+#endif // BRIG_DATABASE_POSTGRES_CLIENT_VERSION_HPP
