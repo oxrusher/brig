@@ -39,7 +39,7 @@ public:
 
 inline lib::lib() : p_mysql_stmt_result_metadata(0)
 {
-  auto handle = BRIG_DL_LIBRARY("libmysql.dll", "libmysql.so");
+  auto handle = BRIG_DL_LIBRARY("libmysql.dll", "libmysqlclient.so");
   if (  handle
     && (p_mysql_close = BRIG_DL_FUNCTION(handle, mysql_close))
     && (p_mysql_error = BRIG_DL_FUNCTION(handle, mysql_error))
