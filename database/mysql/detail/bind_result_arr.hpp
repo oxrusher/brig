@@ -17,35 +17,39 @@ class bind_result_arr : public bind_result {
   unsigned long m_lenght;
 public:
   explicit bind_result_arr(MYSQL_BIND& bind);
-  virtual void operator()(MYSQL_STMT* stmt, MYSQL_BIND& bind, unsigned int col, variant& var);
+  virtual int operator()(MYSQL_STMT* stmt, unsigned int col, variant& var);
 }; // bind_result_arr
 
 template <typename T, enum_field_types TypeID>
 bind_result_arr<T, TypeID>::bind_result_arr(MYSQL_BIND& bind) : bind_result(bind), m_lenght(0)
 {
-  bind.buffer_type = TypeID;
-  bind.length = &m_lenght;
+  m_bind.buffer_type = TypeID;
+  m_bind.length = &m_lenght;
 }
 
 template <typename T, enum_field_types TypeID>
-void bind_result_arr<T, TypeID>::operator()(MYSQL_STMT* stmt, MYSQL_BIND& bind, unsigned int col, variant& var)
+int bind_result_arr<T, TypeID>::operator()(MYSQL_STMT* stmt, unsigned int col, variant& var)
 {
+  int r(0);
   if (m_is_null) var = null_t();
   else
   {
-    if (bind.buffer_length < m_lenght)
-    {
-      m_arr.resize(m_lenght);
-      bind.buffer = (void*)m_arr.data();
-      bind.buffer_length = m_lenght;
-    }
-    lib::singleton().p_mysql_stmt_fetch_column(stmt, &bind, col, 0);
+    if (m_bind.buffer_length < m_lenght) m_arr.resize(m_lenght);
+    m_bind.buffer = (void*)m_arr.data();
+    m_bind.buffer_length = m_lenght;
+    r = lib::singleton().p_mysql_stmt_fetch_column(stmt, &m_bind, col, 0);
+    m_bind.buffer = 0;
+    m_bind.buffer_length = 0;
 
-    var = T();
-    T& arr = ::boost::get<T>(var);
-    arr.resize(size_t(m_lenght));
-    if (!arr.empty()) memcpy((void*)arr.data(), m_arr.data(), arr.size());
+    if (r == 0)
+    {
+      var = T();
+      T& arr = ::boost::get<T>(var);
+      arr.resize(size_t(m_lenght));
+      if (!arr.empty()) memcpy((void*)arr.data(), m_arr.data(), arr.size());
+    }
   }
+  return r;
 } // bind_result_arr::
 
 } } } } // brig::database::mysql::detail

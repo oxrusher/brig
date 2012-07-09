@@ -28,10 +28,11 @@ class command : public brig::database::command {
 
   void check(bool r);
   void close_result();
+  void close_all();
 
 public:
   command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd);
-  virtual ~command();
+  virtual ~command()  { close_all(); }
   virtual DBMS system()  { return Postgres; }
   virtual std::string sql_parameter(size_t order, const column_definition& param);
   virtual std::string sql_column(const column_definition& col);
@@ -43,6 +44,14 @@ public:
   virtual void commit();
 }; // command
 
+inline void command::check(bool r)
+{
+  if (r) return;
+  std::string msg(lib::singleton().p_PQerrorMessage(m_con));
+  if (msg.empty()) msg = "Postgres error";
+  throw std::runtime_error(msg);
+}
+
 inline void command::close_result()
 {
   if (!m_res) return;
@@ -52,12 +61,10 @@ inline void command::close_result()
   lib::singleton().p_PQclear(res);
 }
 
-inline void command::check(bool r)
+inline void command::close_all()
 {
-  if (r) return;
-  std::string msg(lib::singleton().p_PQerrorMessage(m_con));
-  if (msg.empty()) msg = "Postgres error";
-  throw std::runtime_error(msg);
+  close_result();
+  lib::singleton().p_PQfinish(m_con);
 }
 
 inline command::command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd)
@@ -66,12 +73,8 @@ inline command::command(const std::string& host, int port, const std::string& db
   if (lib::singleton().empty()) throw std::runtime_error("Postgres error");
   m_con = lib::singleton().p_PQsetdbLogin((char*)host.c_str(), (char*)string_cast<char>(port).c_str(), 0, 0, (char*)db.c_str(), (char*)usr.c_str(), (char*)pwd.c_str());
   check(lib::singleton().p_PQstatus(m_con) == CONNECTION_OK);
-}
-
-inline command::~command()
-{
-  close_result();
-  lib::singleton().p_PQfinish(m_con);
+  try  { check(lib::singleton().p_PQsetClientEncoding(m_con, "UTF8") == 0); }
+  catch (const std::exception&)  { close_all(); throw; }
 }
 
 inline std::string command::sql_parameter(size_t order, const column_definition& param)

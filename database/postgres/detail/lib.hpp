@@ -26,6 +26,7 @@ public:
   decltype(PQnfields) *p_PQnfields;
   decltype(PQntuples) *p_PQntuples;
   decltype(PQresultStatus) *p_PQresultStatus;
+  decltype(PQsetClientEncoding) *p_PQsetClientEncoding;
   decltype(PQsetdbLogin) *p_PQsetdbLogin;
   decltype(PQstatus) *p_PQstatus;
 
@@ -51,6 +52,7 @@ inline lib::lib() : p_PQstatus(0)
     && (p_PQlibVersion = BRIG_DL_FUNCTION(handle, PQlibVersion))
     && (p_PQntuples = BRIG_DL_FUNCTION(handle, PQntuples))
     && (p_PQresultStatus = BRIG_DL_FUNCTION(handle, PQresultStatus))
+    && (p_PQsetClientEncoding = BRIG_DL_FUNCTION(handle, PQsetClientEncoding))
     && (p_PQsetdbLogin = BRIG_DL_FUNCTION(handle, PQsetdbLogin))
      )  p_PQstatus = BRIG_DL_FUNCTION(handle, PQstatus);
 } // lib::

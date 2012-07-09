@@ -22,6 +22,7 @@ class command : public brig::database::command {
   MYSQL_STMT* m_stmt;
   std::vector<MYSQL_BIND> m_binds;
   ::boost::ptr_vector<bind_result> m_cols;
+  bool m_autocommit;
 
   void check(bool r);
   void close_stmt();
@@ -58,6 +59,7 @@ inline void command::close_stmt()
 
 inline void command::close_all()
 {
+  m_autocommit = true;
   close_stmt();
   if (!m_con) return;
   MYSQL* con(0); std::swap(con, m_con);
@@ -65,7 +67,7 @@ inline void command::close_all()
 }
 
 inline command::command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd)
-  : m_con(0), m_stmt(0)
+  : m_con(0), m_stmt(0), m_autocommit(true)
 {
   if (lib::singleton().empty()) throw std::runtime_error("MySQL error");
   m_con = lib::singleton().p_mysql_init(0);
@@ -109,21 +111,21 @@ inline std::vector<std::string> command::columns()
 {
   std::vector<std::string> cols;
   if (!m_stmt) return cols;
-
   m_binds.clear();
   m_cols.clear();
-  
-  MYSQL_RES* result(lib::singleton().p_mysql_stmt_result_metadata(m_stmt));
-  check(result != 0);
-  const unsigned int count(lib::singleton().p_mysql_num_fields(result));
+
+  MYSQL_RES* res(lib::singleton().p_mysql_stmt_result_metadata(m_stmt));
+  check(res != 0);
+  const unsigned int count(lib::singleton().p_mysql_num_fields(res));
   m_binds.resize(count);
   memset(m_binds.data(), 0, m_binds.size() * sizeof(MYSQL_BIND));
   for (unsigned int i(0); i < count; ++i)
   {
-    MYSQL_FIELD* field(lib::singleton().p_mysql_fetch_field_direct(result, i));
+    MYSQL_FIELD* field(lib::singleton().p_mysql_fetch_field_direct(res, i));
     m_cols.push_back(bind_result_factory(field, m_binds[i]));
     cols.push_back(field->name);
   }
+  lib::singleton().p_mysql_free_result(res);
   check(lib::singleton().p_mysql_stmt_bind_result(m_stmt, m_binds.data()) == 0);
   return cols;
 }
@@ -139,18 +141,24 @@ inline bool command::fetch(std::vector<variant>& row)
 
   row.resize(m_cols.size());
   for (size_t i(0); i < m_cols.size(); ++i)
-    m_cols[i](m_stmt, m_binds[i], (unsigned int)i, row[i]);
+    check(m_cols[i](m_stmt, (unsigned int)i, row[i]) == 0);
   return true;
 }
 
 inline void command::set_autocommit(bool autocommit)
 {
-  // todo:
+  if (m_autocommit == autocommit) return;
+  close_stmt();
+  check(lib::singleton().p_mysql_query(m_con, autocommit? "ROLLBACK": "BEGIN") == 0);
+  m_autocommit = autocommit;
 }
 
 inline void command::commit()
 {
-  // todo:
+  if (m_autocommit) return;
+  close_stmt();
+  check(lib::singleton().p_mysql_query(m_con, "COMMIT") == 0);
+  check(lib::singleton().p_mysql_query(m_con, "BEGIN") == 0);
 } // command::
 
 } } } } // brig::database::mysql::detail

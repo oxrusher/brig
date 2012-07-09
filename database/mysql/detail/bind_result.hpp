@@ -11,11 +11,12 @@ namespace brig { namespace database { namespace mysql { namespace detail {
 
 class bind_result : public ::boost::noncopyable {
 protected:
-  my_bool m_is_null, m_error;
+  MYSQL_BIND& m_bind;
+  my_bool m_is_null;
 public:
-  explicit bind_result(MYSQL_BIND& bind) : m_is_null(0), m_error(0)  { bind.is_null = &m_is_null; bind.error = &m_error; }
+  explicit bind_result(MYSQL_BIND& bind) : m_bind(bind), m_is_null(0)  { m_bind.is_null = &m_is_null; }
   virtual ~bind_result()  {}
-  virtual void operator()(MYSQL_STMT* stmt, MYSQL_BIND& bind, unsigned int col, variant& var) = 0;
+  virtual int operator()(MYSQL_STMT* stmt, unsigned int col, variant& var) = 0;
 }; // bind_result
 
 } } } } // brig::database::mysql::detail
