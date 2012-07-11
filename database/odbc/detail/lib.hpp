@@ -20,6 +20,7 @@ public:
   decltype(SQLDataSourcesW) *p_SQLDataSourcesW;
   decltype(SQLDisconnect) *p_SQLDisconnect;
   decltype(SQLDriverConnectW) *p_SQLDriverConnectW;
+  decltype(SQLDriversW) *p_SQLDriversW;
   decltype(SQLEndTran) *p_SQLEndTran;
   decltype(SQLExecute) *p_SQLExecute;
   decltype(SQLFetch) *p_SQLFetch;
@@ -49,6 +50,7 @@ inline lib::lib() : p_SQLSetEnvAttr(0)
     && (p_SQLDataSourcesW = BRIG_DL_FUNCTION(handle, SQLDataSourcesW))
     && (p_SQLDisconnect = BRIG_DL_FUNCTION(handle, SQLDisconnect))
     && (p_SQLDriverConnectW = BRIG_DL_FUNCTION(handle, SQLDriverConnectW))
+    && (p_SQLDriversW = BRIG_DL_FUNCTION(handle, SQLDriversW))
     && (p_SQLEndTran = BRIG_DL_FUNCTION(handle, SQLEndTran))
     && (p_SQLExecute = BRIG_DL_FUNCTION(handle, SQLExecute))
     && (p_SQLFetch = BRIG_DL_FUNCTION(handle, SQLFetch))
