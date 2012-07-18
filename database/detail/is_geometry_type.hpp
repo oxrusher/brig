@@ -14,14 +14,15 @@ inline bool is_geometry_type(DBMS sys, const column_definition& col)
   switch (sys)
   {
   default: break;
-  case DB2: return "db2gse" == col.dbms_type_lcase.schema && is_ogc_type(col.dbms_type_lcase.name);
-  case MS_SQL: return "geometry" == col.dbms_type_lcase.name || "geography" == col.dbms_type_lcase.name;
+  case DB2: return col.dbms_type_lcase.schema.compare("db2gse") == 0 && is_ogc_type(col.dbms_type_lcase.name);
+  case Informix:
   case MySQL:
   case SQLite: return is_ogc_type(col.dbms_type_lcase.name);
-  case Oracle: return "mdsys" == col.dbms_type_lcase.schema && ("sdo_geometry" == col.dbms_type_lcase.name || is_ogc_type(col.dbms_type_lcase.name));
+  case MS_SQL: return col.dbms_type_lcase.name.compare("geometry") == 0 || col.dbms_type_lcase.name.compare("geography") == 0;
+  case Oracle: return col.dbms_type_lcase.schema.compare("mdsys") == 0 && (col.dbms_type_lcase.name.compare("sdo_geometry") == 0 || is_ogc_type(col.dbms_type_lcase.name));
   case Postgres:
-    return "user-defined" == col.dbms_type_lcase.schema
-       && ("raster" == col.dbms_type_lcase.name || "geography" == col.dbms_type_lcase.name || "geometry" == col.dbms_type_lcase.name)
+    return col.dbms_type_lcase.schema.compare("user-defined") == 0
+       && (col.dbms_type_lcase.name.compare("raster") == 0 || col.dbms_type_lcase.name.compare("geography") == 0 || col.dbms_type_lcase.name.compare("geometry") == 0)
        && (col.dbms_type_lcase.qualifier.empty() || is_ogc_type(col.dbms_type_lcase.qualifier));
   }
   return false;

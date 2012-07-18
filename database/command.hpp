@@ -44,6 +44,23 @@ inline std::string command::sql_parameter(size_t, const column_definition& param
       stream << sql_identifier(sys, param.dbms_type) << "(CAST(? AS BLOB (100M)), " << param.srid << ")";
       return stream.str();
 
+    case Informix:
+           if ( param.dbms_type_lcase.name.compare("st_geometry") == 0
+             || param.dbms_type_lcase.name.compare("st_geomcollection") == 0 ) stream << "ST_GeomFromWKB";
+      else if ( param.dbms_type_lcase.name.compare("st_point") == 0 ) stream << "ST_PointFromWKB";
+      else if ( param.dbms_type_lcase.name.compare("st_curve") == 0
+             || param.dbms_type_lcase.name.compare("st_linestring") == 0 ) stream << "ST_LineFromWKB";
+      else if ( param.dbms_type_lcase.name.compare("st_surface") == 0
+             || param.dbms_type_lcase.name.compare("st_polygon") == 0 ) stream << "ST_PolyFromWKB";
+      else if ( param.dbms_type_lcase.name.compare("st_multipoint") == 0 ) stream << "ST_MPointFromWKB";
+      else if ( param.dbms_type_lcase.name.compare("st_multicurve") == 0
+             || param.dbms_type_lcase.name.compare("st_multilinestring") == 0 ) stream << "ST_MLineFromWKB";
+      else if ( param.dbms_type_lcase.name.compare("st_multisurface") == 0
+             || param.dbms_type_lcase.name.compare("st_multipolygon") == 0 ) stream << "ST_MPolyFromWKB";
+      else throw std::runtime_error("type error");
+      stream << "(?, " << param.srid << ")";
+      return stream.str();
+
     case MS_SQL:
       stream << sql_identifier(sys, param.dbms_type) << "::STGeomFromWKB(?, " << param.srid << ")";
       return stream.str();
@@ -55,7 +72,7 @@ inline std::string command::sql_parameter(size_t, const column_definition& param
 
     case Oracle:
       {
-      const bool conv("sdo_geometry" != param.dbms_type_lcase.name);
+      const bool conv(param.dbms_type_lcase.name.compare("sdo_geometry") != 0);
       if (conv) stream << sql_identifier(sys, param.dbms_type) << "(";
       stream << "MDSYS.SDO_GEOMETRY(TO_BLOB(?), " << param.srid << ")";
       if (conv) stream << ")";
@@ -63,7 +80,7 @@ inline std::string command::sql_parameter(size_t, const column_definition& param
       return stream.str();
 
     case Postgres:
-      if ("geography" == param.dbms_type_lcase.name)
+      if (param.dbms_type_lcase.name.compare("geography") == 0)
       {
         if (param.srid != 4326) throw std::runtime_error("SRID error");
         stream << "ST_GeogFromWKB(?)";
@@ -113,9 +130,9 @@ inline std::string command::sql_column(const column_definition& col)
   if (Postgres == sys)
   {
     if (VoidColumn == col.type) return id;
-    else if ("raster" == col.dbms_type_lcase.name) return "ST_AsBinary(ST_Envelope(" + id + ")) as " + id;
-    else if ("geography" == col.dbms_type_lcase.name
-          || "geometry" == col.dbms_type_lcase.name) return "ST_AsBinary(" + id + ") as " + id;
+    else if (col.dbms_type_lcase.name.compare("raster") == 0) return "ST_AsBinary(ST_Envelope(" + id + ")) as " + id;
+    else if (col.dbms_type_lcase.name.compare("geography") == 0
+          || col.dbms_type_lcase.name.compare("geometry") == 0) return "ST_AsBinary(" + id + ") as " + id;
     else return id;
   }
 
@@ -124,6 +141,7 @@ inline std::string command::sql_column(const column_definition& col)
     {
     default: break;
     case DB2: return "DB2GSE.ST_AsBinary(" + id + ") as " + id;
+    case Informix: return "ST_AsBinary(" + id + ") as " + id;
     case MS_SQL: return id + ".STAsBinary() as " + id;
     case MySQL:
     case SQLite: return "AsBinary(" + id + ") as " + id;

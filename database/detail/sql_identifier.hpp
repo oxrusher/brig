@@ -11,7 +11,11 @@ namespace brig { namespace database { namespace detail {
 
 inline std::string sql_identifier(DBMS sys, const std::string& id)
 {
-  return (sys == MySQL? '`': '"') + id + (sys == MySQL? '`': '"');
+  switch (sys)
+  {
+  default: return '"' + id + '"';
+  case MySQL: return '`' + id + '`';
+  }
 }
 
 inline std::string sql_identifier(DBMS sys, const identifier& id)

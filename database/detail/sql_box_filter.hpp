@@ -3,10 +3,12 @@
 #ifndef BRIG_DATABASE_DETAIL_SQL_BOX_FILTER_HPP
 #define BRIG_DATABASE_DETAIL_SQL_BOX_FILTER_HPP
 
+#include <brig/boost/as_binary.hpp>
 #include <brig/boost/geometry.hpp>
 #include <brig/database/column_definition.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
+#include <brig/wkt/print.hpp>
 #include <ios>
 #include <locale>
 #include <stdexcept>
@@ -26,9 +28,9 @@ inline std::string sql_box_filter(DBMS sys, const column_definition& col, const 
     bool geography(false), raster(false);
 
     if (VoidColumn == col.type) throw std::runtime_error("SQL error");
-    else if ("raster" == col.dbms_type_lcase.name) raster = true;
-    else if ("geography" == col.dbms_type_lcase.name) geography = true;
-    else if ("geometry" != col.dbms_type_lcase.name) throw std::runtime_error("SQL error");
+    else if (col.dbms_type_lcase.name.compare("raster") == 0) raster = true;
+    else if (col.dbms_type_lcase.name.compare("geography") == 0) geography = true;
+    else if (col.dbms_type_lcase.name.compare("geometry") != 0) throw std::runtime_error("SQL error");
 
     if (raster) stream << "ST_Envelope(";
     stream << id;
@@ -51,9 +53,15 @@ inline std::string sql_box_filter(DBMS sys, const column_definition& col, const 
   case DB2:
     stream << "DB2GSE.EnvelopesIntersect(" << id << ", " << xmin << ", " << ymin << ", " << xmax << ", " << ymax << ", " << (0 < col.srid? col.srid: 0) << ") = 1";
     break;
+  case Informix:
+    {
+    const std::string wkt(brig::wkt::print(brig::boost::as_binary(box)));
+    stream << "SE_EnvelopesIntersect(" << id << ", ST_GeomFromText('" << wkt << "', " << (0 < col.srid? col.srid: 0) << "))";
+    }
+    break;
   case MS_SQL:
     {
-    const bool geography("geography" == col.dbms_type_lcase.name);
+    const bool geography(col.dbms_type_lcase.name.compare("geography") == 0);
     const int srid(0 < col.srid? col.srid: geography? 4326: 0);
     stream << "" << id << ".Filter(";
     if (geography) stream << "GEOGRAPHY::STGeomFromWKB(";

@@ -192,7 +192,7 @@ inline std::string command::sql_parameter(size_t order, const column_definition&
 {
   using namespace brig::database::detail;
   std::ostringstream stream; stream.imbue(std::locale::classic());
-  if (Geometry == param.type && "sdo_geometry" != param.dbms_type_lcase.name)
+  if (Geometry == param.type && param.dbms_type_lcase.name.compare("sdo_geometry") != 0)
     stream << sql_identifier(Oracle, param.dbms_type) << "(:" << (order + 1) << ")";
   else
     stream << ":" << (order + 1);
@@ -205,7 +205,7 @@ inline std::string command::sql_column(const column_definition& col)
   if (col.query_expression.empty() && Geometry == col.type)
   {
     const std::string id(sql_identifier(Oracle, col.name));
-    if ("sdo_geometry" == col.dbms_type_lcase.name) return id;
+    if (col.dbms_type_lcase.name.compare("sdo_geometry") == 0) return id;
     else return sql_identifier(Oracle, col.dbms_type) + ".GET_SDO_GEOM(" + id + ") as " + id;
   }
   return brig::database::command::sql_column(col);

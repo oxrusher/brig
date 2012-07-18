@@ -31,6 +31,12 @@ inline std::string sql_tables(DBMS sys, const std::string& tbl = std::string()) 
     else stream << "LOWER(TABNAME) = LOWER('" << tbl << "')";
     break;
 
+  case Informix:
+    stream << "SELECT RTRIM(owner), tabname FROM systables WHERE tabtype = 'T' AND tabname NOT LIKE 'sys%' AND ";
+    if (tbl.empty()) stream << sql_schema_filter(sys, "owner");
+    else stream << "LOWER(tabname) = LOWER('" << tbl << "')";
+    break;
+
   case MS_SQL: 
   case MySQL:
   case Postgres:

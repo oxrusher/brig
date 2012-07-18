@@ -15,12 +15,6 @@ namespace brig { namespace database { namespace odbc { namespace detail {
 
 inline get_data* get_data_factory(SQLSMALLINT sql_type)
 {
-  const SQLSMALLINT SQL_DB2_UNICODE_CHAR = -95;
-  const SQLSMALLINT SQL_DB2_UNICODE_VARCHAR = -96;
-  const SQLSMALLINT SQL_DB2_UNICODE_LONGVARCHAR = -97;
-  const SQLSMALLINT SQL_DB2_BLOB = -98;
-  const SQLSMALLINT SQL_DB2_CLOB = -99;
-
   switch (sql_type)
   {
   // numeric
@@ -28,6 +22,7 @@ inline get_data* get_data_factory(SQLSMALLINT sql_type)
   case SQL_TINYINT:
   case SQL_SMALLINT: return new get_data_impl<int16_t, SQL_C_SSHORT>();
   case SQL_INTEGER: return new get_data_impl<int32_t, SQL_C_SLONG>();
+  case SQL_INFX_BIGINT:
   case SQL_BIGINT: return new get_data_impl<int64_t, SQL_C_SBIGINT>();
   case SQL_REAL: return new get_data_impl<float, SQL_C_FLOAT>();
   case SQL_DECIMAL:
@@ -58,7 +53,8 @@ inline get_data* get_data_factory(SQLSMALLINT sql_type)
   case SQL_BINARY:
   case SQL_VARBINARY:
   case SQL_LONGVARBINARY:
-  case SQL_DB2_BLOB: return new get_data_blob();
+  case SQL_DB2_BLOB:
+  case SQL_INFX_UDT_VARYING: return new get_data_blob();
 
   // SQL_UNKNOWN_TYPE
   default: throw std::runtime_error("ODBC type error");

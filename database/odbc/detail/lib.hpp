@@ -67,6 +67,18 @@ inline lib::lib() : p_SQLSetEnvAttr(0)
      )  p_SQLSetEnvAttr = BRIG_DL_FUNCTION(handle, SQLSetEnvAttr);
 } // lib::
 
+enum ext {
+  SQL_DB2_UNICODE_CHAR = -95,
+  SQL_DB2_UNICODE_VARCHAR = -96,
+  SQL_DB2_UNICODE_LONGVARCHAR = -97,
+  SQL_DB2_BLOB = -98,
+  SQL_DB2_CLOB = -99,
+  SQL_INFX_UDT_VARYING = -101,
+  SQL_INFX_UDT_LVARCHAR = -104,
+  SQL_INFX_BIGINT = -114,
+  SQL_INFX_ATTR_DELIMIDENT = 2273,
+}; // ext
+
 } } } } // brig::database::odbc::detail
 
 #endif // BRIG_DATABASE_ODBC_DETAIL_LIB_HPP

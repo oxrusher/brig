@@ -17,38 +17,42 @@ inline column_type get_type(DBMS sys, const column_definition& col)
     switch (sys)
     {
     default: return VoidColumn;
-    case DB2: if ("sysibm" != col.dbms_type_lcase.schema) return VoidColumn; break;
-    case Postgres: if ("user-defined" == col.dbms_type_lcase.schema) return VoidColumn; break;
+    case DB2: if (col.dbms_type_lcase.schema.compare("sysibm") != 0) return VoidColumn; break;
+    case Postgres: if (col.dbms_type_lcase.schema.compare("user-defined") == 0) return VoidColumn; break;
     }
 
   switch (sys)
   {
   default: break;
   case CUBRID:
-    if ("short" == col.dbms_type_lcase.name) return Integer;
-    if (col.dbms_type_lcase.name.find("bit") != std::string::npos) return Blob;
-    if ("string" == col.dbms_type_lcase.name) return String;
+    if (col.dbms_type_lcase.name.compare("short") == 0) return Integer;
+    else if (col.dbms_type_lcase.name.find("bit") != std::string::npos) return Blob;
+    else if (col.dbms_type_lcase.name.compare("string") == 0) return String;
     break;
   case DB2:
     if (col.dbms_type_lcase.name.find("graphic") != std::string::npos) return String;
     break;
+  case Informix:
+    if (col.dbms_type_lcase.name.find("serial") != std::string::npos) return Integer;
+    else if (col.dbms_type_lcase.name.compare("byte") == 0) return Blob;
+    break;
   case MS_SQL:
-    if ("bit" == col.dbms_type_lcase.name) return Integer;
-    else if ("image" == col.dbms_type_lcase.name) return Blob;
+    if (col.dbms_type_lcase.name.compare("bit") == 0) return Integer;
+    else if (col.dbms_type_lcase.name.compare("image") == 0) return Blob;
     break;
   case MySQL:
-    if ("fixed" == col.dbms_type_lcase.name) return col.scale == 0? Integer: Double;
+    if (col.dbms_type_lcase.name.compare("fixed") == 0) return col.scale == 0? Integer: Double;
     break;
   case Oracle:
-    if ("long" == col.dbms_type_lcase.name) return String;
-    else if ("binary_float" == col.dbms_type_lcase.name
-          || "binary_double" == col.dbms_type_lcase.name) return Double;
-    else if ("bfile" == col.dbms_type_lcase.name
+    if (col.dbms_type_lcase.name.compare("long") == 0) return String;
+    else if (col.dbms_type_lcase.name.compare("binary_float") == 0
+          || col.dbms_type_lcase.name.compare("binary_double") == 0) return Double;
+    else if (col.dbms_type_lcase.name.compare("bfile") == 0
           || col.dbms_type_lcase.name.find("raw") != std::string::npos) return Blob;
     break;
   case Postgres:
     if (col.dbms_type_lcase.name.find("serial") != std::string::npos) return Integer;
-    else if ("bytea" == col.dbms_type_lcase.name) return Blob;
+    else if (col.dbms_type_lcase.name.compare("bytea") == 0) return Blob;
     else if (col.dbms_type_lcase.name.find("array") != std::string::npos
           && col.dbms_type_lcase.name.find("char") == std::string::npos
           && col.dbms_type_lcase.name.find("text") == std::string::npos) return VoidColumn;

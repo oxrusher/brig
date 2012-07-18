@@ -9,6 +9,7 @@ enum DBMS {
   VoidSystem,
   CUBRID,
   DB2,
+  Informix,
   MS_SQL,
   MySQL,
   Oracle,

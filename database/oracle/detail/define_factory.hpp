@@ -85,7 +85,7 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 siz
 
   // named data type
   case SQLT_NTY:
-    if ("mdsys" == dbms_type_lcase.schema && "sdo_geometry" == dbms_type_lcase.name) return new define_geometry(hnd, order);
+    if (dbms_type_lcase.schema.compare("mdsys") == 0 && dbms_type_lcase.name.compare("sdo_geometry") == 0) return new define_geometry(hnd, order);
     break;
   }
 

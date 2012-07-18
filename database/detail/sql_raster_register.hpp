@@ -118,15 +118,15 @@ inline void sql_raster_register(std::shared_ptr<command> cmd, raster_pyramid& ra
     for (size_t col(0); col < tbl.columns.size(); ++col)
     {
       if (col > 0) stream << ", ";
-      if ("schema" == tbl.columns[col].name) stream << "'" << schema << "'";
-      else if ("table" == tbl.columns[col].name) stream << "'" << lvl->geometry.name << "'";
-      else if ("raster" == tbl.columns[col].name) stream << "'" << lvl->raster.name << "'";
-      else if ("base_schema" == tbl.columns[col].name) stream << "'" << schema << "'";
-      else if ("base_table" == tbl.columns[col].name) stream << "'" << raster.id.name << "'";
-      else if ("base_raster" == tbl.columns[col].name) stream << "'" << raster.id.qualifier << "'";
-      else if ("geometry" == tbl.columns[col].name) stream << "'" << lvl->geometry.qualifier << "'";
-      else if ("resolution_x" == tbl.columns[col].name) stream << lvl->resolution.get<0>();
-      else if ("resolution_y" == tbl.columns[col].name) stream << lvl->resolution.get<1>();
+      if (tbl.columns[col].name.compare("schema") == 0) stream << "'" << schema << "'";
+      else if (tbl.columns[col].name.compare("table") == 0) stream << "'" << lvl->geometry.name << "'";
+      else if (tbl.columns[col].name.compare("raster") == 0) stream << "'" << lvl->raster.name << "'";
+      else if (tbl.columns[col].name.compare("base_schema") == 0) stream << "'" << schema << "'";
+      else if (tbl.columns[col].name.compare("base_table") == 0) stream << "'" << raster.id.name << "'";
+      else if (tbl.columns[col].name.compare("base_raster") == 0) stream << "'" << raster.id.qualifier << "'";
+      else if (tbl.columns[col].name.compare("geometry") == 0) stream << "'" << lvl->geometry.qualifier << "'";
+      else if (tbl.columns[col].name.compare("resolution_x") == 0) stream << lvl->resolution.get<0>();
+      else if (tbl.columns[col].name.compare("resolution_y") == 0) stream << lvl->resolution.get<1>();
     }
     stream << ")";
     reg.push_back(stream.str());

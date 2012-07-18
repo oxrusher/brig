@@ -20,7 +20,8 @@ inline void sql_limit(DBMS sys, int rows, std::string& sql_infix, std::string& s
   case MySQL:
   case SQLite: sql_suffix = "LIMIT " + sql_rows; break;
   case DB2: sql_suffix = "FETCH FIRST " + sql_rows + " ROWS ONLY OPTIMIZE FOR " + sql_rows + " ROWS"; break;
-  case MS_SQL: sql_infix = "TOP (" + sql_rows + ')'; break;
+  case Informix: sql_infix = "FIRST " + sql_rows; break;
+  case MS_SQL: sql_infix = "TOP " + sql_rows; break;
   case Oracle:
     sql_infix = "/*+ FIRST_ROWS(" + sql_rows + ") */";
     sql_counter = "ROWNUM <= " + sql_rows;

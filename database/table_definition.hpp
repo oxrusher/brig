@@ -27,7 +27,7 @@ struct table_definition {
 inline column_definition* table_definition::operator [](const std::string& col_name)
 {
   for (size_t i(0); i < columns.size(); ++i)
-    if (col_name == columns[i].name) return &columns[i];
+    if (col_name.compare(columns[i].name) == 0) return &columns[i];
   throw std::runtime_error("table error");
 } // table_definition::
 

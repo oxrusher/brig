@@ -117,6 +117,7 @@ inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(
     const std::string sys(transform<std::string>(buf, lower_case));
          if (sys.find("cubrid") != std::string::npos) m_sys = CUBRID;
     else if (sys.find("db2") != std::string::npos) m_sys = DB2;
+    else if (sys.find("informix") != std::string::npos) m_sys = Informix;
     else if (sys.find("microsoft") != std::string::npos
           && sys.find("sql") != std::string::npos
           && sys.find("server") != std::string::npos) m_sys = MS_SQL;
@@ -125,11 +126,24 @@ inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(
     else if (sys.find("postgres") != std::string::npos) m_sys = Postgres;
     else if (sys.find("sqlite") != std::string::npos) m_sys = SQLite;
   }
+
+  // http://www.ibm.com/Search/?q=Delimited+Identifiers+in+ODBC
+  if (Informix == m_sys)
+  {
+    try
+    {
+      SQLINTEGER attr(0);
+      SQLINTEGER len(sizeof(attr));
+      check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLGetConnectAttr(m_dbc, SQL_INFX_ATTR_DELIMIDENT, &attr, sizeof(attr), &len));
+      if (SQL_TRUE != attr) throw std::runtime_error("Enable delimited identifiers (DELIMIDENT=y)");
+    }
+    catch (const std::exception&)  { close_all(); throw; }
+  }
 }
 
 inline void command::exec(const std::string& sql, const std::vector<column_definition>& params)
 {
-  if (SQL_NULL_HANDLE == m_stmt || sql != m_sql)
+  if (SQL_NULL_HANDLE == m_stmt || sql != m_sql || sql.empty())
   {
     close_stmt();
     SQLHANDLE stmt(SQL_NULL_HANDLE);
@@ -228,7 +242,7 @@ inline void command::set_autocommit(bool autocommit)
   if (get_autocommit() == autocommit) return;
   close_stmt();
   if (autocommit) check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLEndTran(SQL_HANDLE_DBC, m_dbc, SQL_ROLLBACK));
-  check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLSetConnectAttr(m_dbc,  SQL_ATTR_AUTOCOMMIT, SQLPOINTER(autocommit? SQL_AUTOCOMMIT_ON: SQL_AUTOCOMMIT_OFF), 0));
+  check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLSetConnectAttr(m_dbc, SQL_ATTR_AUTOCOMMIT, SQLPOINTER(autocommit? SQL_AUTOCOMMIT_ON: SQL_AUTOCOMMIT_OFF), 0));
 }
 
 inline void command::commit()

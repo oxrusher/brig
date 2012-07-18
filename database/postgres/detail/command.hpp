@@ -83,7 +83,7 @@ inline std::string command::sql_parameter(size_t order, const column_definition&
   std::ostringstream stream; stream.imbue(std::locale::classic());
   if (Geometry == param.type)
   {
-    if ("geography" == param.dbms_type_lcase.name)
+    if (param.dbms_type_lcase.name.compare("geography") == 0)
     {
       if (param.srid != 4326) throw std::runtime_error("SRID error");
       stream << "ST_GeogFromWKB($" << (order + 1) << ")";

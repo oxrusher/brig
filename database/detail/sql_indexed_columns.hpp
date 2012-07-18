@@ -5,7 +5,9 @@
 
 #include <brig/database/global.hpp>
 #include <brig/database/identifier.hpp>
+#include <locale>
 #include <stdexcept>
+#include <sstream>
 #include <string>
 
 namespace brig { namespace database { namespace detail {
@@ -17,6 +19,20 @@ inline std::string sql_indexed_columns(DBMS sys, const identifier& tbl)
   default: throw std::runtime_error("SQL error");
   case CUBRID: return "SELECT '', i.index_name, i.is_primary_key, i.is_unique, 0, k.key_attr_name, k.asc_desc FROM _db_class c, _db_index i, _db_index_key k WHERE c.owner.name = '" + tbl.schema + "' AND c.class_name = '" + tbl.name + "' AND i.class_of = c AND k.index_of = i ORDER BY i.is_primary_key DESC, i.index_name, k.key_order";
   case DB2: return "SELECT RTRIM(i.INDSCHEMA), i.INDNAME, (CASE i.UNIQUERULE WHEN 'P' THEN 1 ELSE 0 END) pri, (CASE i.UNIQUERULE WHEN 'D' THEN 0 ELSE 1 END) unq, (CASE RTRIM(i.IESCHEMA) || '.' || i.IENAME WHEN 'DB2GSE.SPATIAL_INDEX' THEN 1 ELSE 0 END) sp, c.COLNAME, (CASE c.COLORDER WHEN 'D' THEN 1 ELSE 0 END) dsc FROM SYSCAT.INDEXES i, SYSCAT.INDEXCOLUSE c WHERE i.INDSCHEMA = c.INDSCHEMA AND i.INDNAME = c.INDNAME AND i.TABSCHEMA = '" + tbl.schema + "' AND i.TABNAME = '" + tbl.name + "' ORDER BY pri DESC, i.INDSCHEMA, i.INDNAME, c.COLSEQ";
+  case Informix:
+    {
+    auto loc = std::locale::classic();
+    std::ostringstream stream; stream.imbue(loc);
+    for (int i(0); i < 16; ++i)
+    {
+      if (i > 0) stream << " UNION ALL ";
+      stream << "SELECT RTRIM(i.owner), i.idxname, (CASE cs.constrtype WHEN 'P' THEN 1 ELSE 0 END) pri, (CASE i.idxtype WHEN 'U' THEN 1 ELSE 0 END) unq, 0 sp, c.colname, i.dsc, " << i << " keyno FROM (SELECT idxname, owner, tabid, idxtype, ABS(ikeyextractcolno(indexkeys, " << i << ")) colno, (CASE WHEN ikeyextractcolno(indexkeys, " << i << ") < 0 THEN 1 ELSE 0 END) dsc FROM sysindices) i JOIN (SELECT tabid FROM systables WHERE owner ='" + tbl.schema + "' AND tabname = '" + tbl.name + "') t ON i.tabid = t.tabid JOIN (SELECT tabid, colno, colname FROM syscolumns) c ON (i.tabid = c.tabid AND i.colno = c.colno) LEFT JOIN (SELECT tabid, idxname, constrtype FROM sysconstraints) cs ON (i.tabid = cs.tabid AND i.idxname = cs.idxname)";
+    }
+    stream << " UNION ALL ";
+    stream << "SELECT RTRIM(i.owner), i.idxname, 0 pri, 0 unq, 1 sp, c.colname, 0 dsc, 0 keyno FROM (SELECT idxname, owner, tabid, CAST(SUBSTRING(CAST(indexkeys AS lvarchar) FROM 1 FOR 2) AS SMALLINT) colno, amid FROM sysindices) i, (SELECT tabid FROM systables WHERE owner = 'informix' AND tabname = 't') t, (SELECT am_id FROM sysams WHERE am_name = 'rtree') m, syscolumns c WHERE i.tabid = t.tabid AND i.amid = m.am_id AND i.tabid = c.tabid AND i.colno = c.colno";
+    stream << " ORDER BY 3 DESC, 1, 2, 7";
+    return stream.str();
+    }
   // index name is unique only within the table
   case MS_SQL: return "SELECT '', i.name, i.is_primary_key, i.is_unique, (CASE i.type WHEN 4 THEN 1 ELSE 0 END) sp, COL_NAME(c.object_id, c.column_id) col, c.is_descending_key FROM sys.indexes i, sys.index_columns c WHERE i.object_id = OBJECT_ID('\"" + tbl.schema + "\".\"" + tbl.name + "\"') AND i.object_id = c.object_id AND i.index_id = c.index_id ORDER BY i.is_primary_key DESC, i.name, c.key_ordinal";
   // index name is unique only within the table; ASC or DESC are permitted for future extensions - currently (5.6) they are ignored

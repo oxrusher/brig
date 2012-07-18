@@ -33,8 +33,8 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
   if (VoidSystem == sys) throw std::runtime_error("SQL error");
   auto col_end( std::remove_if(std::begin(tbl.columns), std::end(tbl.columns), [](const column_definition& c){ return VoidColumn == c.type; }) );
   for (auto idx(std::begin(tbl.indexes)); idx != std::end(tbl.indexes); ++idx)
-    for (auto col_name(std::begin(idx->columns)); col_name != std::end(idx->columns); ++col_name)
-      if (std::find_if(std::begin(tbl.columns), col_end, [&](const column_definition& c){ return c.name == *col_name; }) == col_end)
+    for (auto idx_col(std::begin(idx->columns)); idx_col != std::end(idx->columns); ++idx_col)
+      if (std::find_if(std::begin(tbl.columns), col_end, [&](const column_definition& c){ return c.name == *idx_col; }) == col_end)
         idx->type = VoidIndex;
   auto idx_end( std::remove_if(std::begin(tbl.indexes), std::end(tbl.indexes), [](const index_definition& i){ return VoidIndex == i.type; }) );
   normalize_identifier(sys, tbl.id);
@@ -83,9 +83,9 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       case Oracle:
         // The TABLE_NAME and COLUMN_NAME values are always converted to uppercase when you insert them into the USER_SDO_GEOM_METADATA view
         for (auto idx(std::begin(tbl.indexes)); idx != idx_end; ++idx)
-          for (auto col_name(std::begin(idx->columns)); col_name != std::end(idx->columns); ++col_name)
-            if (*col_name == col->name)
-              normalize_identifier(sys, *col_name);
+          for (auto idx_col(std::begin(idx->columns)); idx_col != std::end(idx->columns); ++idx_col)
+            if (*idx_col == col->name)
+              normalize_identifier(sys, *idx_col);
         normalize_identifier(sys, col->name);
         break; 
       }
@@ -125,8 +125,25 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       // When UNIQUE is used, null values are treated as any other values. For example, if the key is a single column that may contain null values, that column may contain no more than one null value.
       for (auto idx(std::begin(tbl.indexes)); idx != idx_end; ++idx)
         if (Primary == idx->type || Unique == idx->type)
-          for (auto col_name(std::begin(idx->columns)); col_name != std::end(idx->columns); ++col_name)
-            if (*col_name == col->name)
+          for (auto idx_col(std::begin(idx->columns)); idx_col != std::end(idx->columns); ++idx_col)
+            if (*idx_col == col->name)
+              col->not_null = true;
+      break;
+
+   case Informix:
+      switch (col->type)
+      {
+      case VoidColumn: throw std::runtime_error("SQL error");
+      case Blob: stream << "BYTE"; break;
+      case Double: stream << "DOUBLE PRECISION"; break;
+      case Geometry: stream << "ST_GEOMETRY"; break;
+      case Integer: stream << "INT8"; break;
+      case String: stream << "VARCHAR(" << chars << ")"; break;
+      }
+      for (auto idx(std::begin(tbl.indexes)); idx != idx_end; ++idx)
+        if (Primary == idx->type)
+          for (auto idx_col(std::begin(idx->columns)); idx_col != std::end(idx->columns); ++idx_col)
+            if (*idx_col == col->name)
               col->not_null = true;
       break;
 
@@ -210,11 +227,11 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
     idx->id = identifier();
     stream << ", PRIMARY KEY (";
     bool first(true);
-    for (auto col_name(std::begin(idx->columns)); col_name != std::end(idx->columns); ++col_name)
+    for (auto idx_col(std::begin(idx->columns)); idx_col != std::end(idx->columns); ++idx_col)
     {
       if (first) first = false;
       else stream << ", ";
-      stream << sql_identifier(sys, *col_name);
+      stream << sql_identifier(sys, *idx_col);
     }
     stream << ")";
   }
@@ -234,6 +251,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       case VoidSystem:
       case CUBRID: throw std::runtime_error("SQL error");
       case DB2: stream << "BEGIN ATOMIC DECLARE msg_code INTEGER; DECLARE msg_text VARCHAR(1024); call DB2GSE.ST_register_spatial_column(NULL, '" << sql_identifier(sys, tbl.id.name) << "', '" << sql_identifier(sys, col->name) << "', (SELECT SRS_NAME FROM DB2GSE.ST_SPATIAL_REFERENCE_SYSTEMS WHERE ORGANIZATION LIKE 'EPSG' AND ORGANIZATION_COORDSYS_ID = " << col->epsg << " ORDER BY SRS_ID FETCH FIRST 1 ROWS ONLY), msg_code, msg_text); END"; break;
+      case Informix: stream << "INSERT INTO sde.geometry_columns (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, geometry_type, coord_dimension, srid) VALUES ((SELECT RTRIM(ODB_DBName) DB FROM sysmaster:SysOpenDB WHERE CAST(ODB_SessionID AS INT) = CAST(DBINFO('sessionid') AS INT) AND ODB_IsCurrent = 'Y'), RTRIM(USER), '" << tbl.id.name << "', '" << col->name << "', 0, 2, (SELECT srid FROM sde.spatial_ref_sys WHERE auth_name = 'EPSG' AND auth_srid = " << col->epsg << "))"; break;
       case MS_SQL:
       case MySQL: break;
       case Oracle:
@@ -269,6 +287,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       case VoidSystem:
       case CUBRID: throw std::runtime_error("SQL error");
       case DB2: stream << "CREATE INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (" << sql_identifier(sys, idx->columns.front()) << ") EXTEND USING DB2GSE.SPATIAL_INDEX (1, 0, 0)"; break;
+      case Informix: stream << "CREATE INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (" << sql_identifier(sys, idx->columns.front()) << " ST_Geometry_Ops) USING RTREE"; break;
       case MS_SQL:
         {
         auto col(tbl[idx->columns.front()]);
@@ -292,11 +311,11 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       if (Unique == idx->type) stream << "UNIQUE ";
       stream << "INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (";
       bool first(true);
-      for (auto col_name(std::begin(idx->columns)); col_name != std::end(idx->columns); ++col_name)
+      for (auto idx_col(std::begin(idx->columns)); idx_col != std::end(idx->columns); ++idx_col)
       {
         if (first) first = false;
         else stream << ", ";
-        stream << sql_identifier(sys, *col_name);
+        stream << sql_identifier(sys, *idx_col);
       }
       stream << ")";
     }

@@ -12,23 +12,24 @@ namespace brig { namespace database { namespace detail {
 inline bool is_ogc_type(const std::string& dbms_type_lcase)
 {
   static const char* types[] =
-  { "collection", "st_collection" // synonym
-  , "curve", "st_curve" // non-instantiable
-  , "geomcollection", "st_geomcollection" // synonym
-  , "geometry", "st_geometry" // non-instantiable
-  , "geometrycollection", "st_geometrycollection"
-  , "linestring", "st_linestring"
-  , "multicurve", "st_multicurve" // non-instantiable
-  , "multilinestring", "st_multilinestring"
-  , "multipoint", "st_multipoint"
-  , "multipolygon", "st_multipolygon"
-  , "multisurface", "st_multisurface" // non-instantiable
-  , "point", "st_point"
-  , "polygon", "st_polygon"
-  , "surface", "st_surface" // non-instantiable
+  { "collection" // synonym
+  , "curve" // non-instantiable
+  , "geomcollection" // synonym
+  , "geometry" // non-instantiable
+  , "geometrycollection"
+  , "linestring"
+  , "multicurve" // non-instantiable
+  , "multilinestring"
+  , "multipoint"
+  , "multipolygon"
+  , "multisurface" // non-instantiable
+  , "point"
+  , "polygon"
+  , "surface" // non-instantiable
   };
-  auto iter(std::find_if(std::begin(types), std::end(types), [&](const char* type){ return dbms_type_lcase.compare(type) == 0; }));
-  return iter != std::end(types) && dbms_type_lcase.compare(*iter) == 0;
+  const std::string prefix("st_");
+  auto iter(std::find_if(std::begin(types), std::end(types), [&](const char* type){ return dbms_type_lcase.compare(type) == 0 || dbms_type_lcase.compare(prefix + type) == 0; }));
+  return iter != std::end(types);
 }
 
 } } } // brig::database::detail
