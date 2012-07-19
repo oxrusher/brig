@@ -251,7 +251,7 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       case VoidSystem:
       case CUBRID: throw std::runtime_error("SQL error");
       case DB2: stream << "BEGIN ATOMIC DECLARE msg_code INTEGER; DECLARE msg_text VARCHAR(1024); call DB2GSE.ST_register_spatial_column(NULL, '" << sql_identifier(sys, tbl.id.name) << "', '" << sql_identifier(sys, col->name) << "', (SELECT SRS_NAME FROM DB2GSE.ST_SPATIAL_REFERENCE_SYSTEMS WHERE ORGANIZATION LIKE 'EPSG' AND ORGANIZATION_COORDSYS_ID = " << col->epsg << " ORDER BY SRS_ID FETCH FIRST 1 ROWS ONLY), msg_code, msg_text); END"; break;
-      case Informix: stream << "INSERT INTO sde.geometry_columns (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, geometry_type, coord_dimension, srid) VALUES ((SELECT RTRIM(ODB_DBName) DB FROM sysmaster:SysOpenDB WHERE CAST(ODB_SessionID AS INT) = CAST(DBINFO('sessionid') AS INT) AND ODB_IsCurrent = 'Y'), RTRIM(USER), '" << tbl.id.name << "', '" << col->name << "', 0, 2, (SELECT srid FROM sde.spatial_ref_sys WHERE auth_name = 'EPSG' AND auth_srid = " << col->epsg << "))"; break;
+      case Informix: stream << "INSERT INTO sde.geometry_columns (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, geometry_type, coord_dimension, srid) VALUES ((SELECT RTRIM(ODB_DBName) DB FROM sysmaster:SysOpenDB WHERE CAST(ODB_SessionID AS INT) = CAST(DBINFO('sessionid') AS INT) AND ODB_IsCurrent = 'Y'), RTRIM(USER), '" << tbl.id.name << "', '" << col->name << "', 0, 2, (SELECT srid FROM sde.spatial_references WHERE auth_name = 'EPSG' AND auth_srid = " << col->epsg << "))"; break;
       case MS_SQL:
       case MySQL: break;
       case Oracle:
