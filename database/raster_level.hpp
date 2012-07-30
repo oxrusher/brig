@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_RASTER_LEVLEL_HPP
-#define BRIG_DATABASE_RASTER_LEVLEL_HPP
+#ifndef BRIG_DATABASE_RASTER_LEVEL_HPP
+#define BRIG_DATABASE_RASTER_LEVEL_HPP
 
 #include <brig/boost/geometry.hpp>
 #include <brig/database/column_definition.hpp>
@@ -22,4 +22,4 @@ struct raster_level {
 
 } } // brig::database
 
-#endif // BRIG_DATABASE_RASTER_LEVLEL_HPP
+#endif // BRIG_DATABASE_RASTER_LEVEL_HPP
