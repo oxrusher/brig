@@ -3,7 +3,7 @@
 #ifndef BRIG_BOOST_AS_BINARY_HPP
 #define BRIG_BOOST_AS_BINARY_HPP
 
-#include <boost/geometry/algorithms/convert.hpp>
+#include <boost/geometry/geometry.hpp>
 #include <brig/blob_t.hpp>
 #include <brig/detail/back_insert_iterator.hpp>
 #include <brig/boost/detail/write_geometry.hpp>

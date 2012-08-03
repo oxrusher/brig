@@ -62,7 +62,7 @@ inline std::string command::sql_parameter(size_t, const column_definition& param
       return stream.str();
 
     case MS_SQL:
-      stream << sql_identifier(sys, param.dbms_type) << "::STGeomFromWKB(?, " << param.srid << ")";
+      stream << sql_identifier(sys, param.dbms_type) << "::STGeomFromWKB(?, " << param.srid << ").MakeValid()";
       return stream.str();
 
     case MySQL:

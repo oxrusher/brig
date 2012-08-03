@@ -11,7 +11,8 @@ namespace brig { namespace boost {
 
 inline box envelope(const geometry& geom)
 {
-  return ::boost::apply_visitor(detail::envelope_visitor(), geom);
+  detail::envelope_visitor visitor;
+  return ::boost::apply_visitor(visitor, geom);
 }
 
 } } // brig::boost

@@ -11,8 +11,8 @@
 #include <brig/database/detail/get_columns.hpp>
 #include <brig/database/detail/is_geodetic_type.hpp>
 #include <brig/database/detail/normalize_hemisphere.hpp>
-#include <brig/database/detail/sql_box_filter.hpp>
 #include <brig/database/detail/sql_identifier.hpp>
+#include <brig/database/detail/sql_intersect.hpp>
 #include <brig/database/detail/sql_limit.hpp>
 #include <brig/database/detail/sql_select_list.hpp>
 #include <brig/database/global.hpp>
@@ -83,7 +83,7 @@ void sql_select
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql_key_tbl += " UNION ";
-      sql_key_tbl += "(SELECT " + sql_select_list(dct, unique_cols) + " FROM " + sql_tbl + " " + sql_hint + " WHERE " + sql_box_filter(sys, *geom_col, boxes[i]) + ")";
+      sql_key_tbl += "(SELECT " + sql_select_list(dct, unique_cols) + " FROM " + sql_tbl + " " + sql_hint + " WHERE " + sql_intersect(sys, *geom_col, boxes[i]) + ")";
     }
   }
   else if (Oracle == sys && boxes.size() > 1)
@@ -93,7 +93,7 @@ void sql_select
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql_key_tbl += " UNION ALL ";
-      sql_key_tbl += "(SELECT " + sql_infix + " " + sql_select_list(dct, unique_cols) + " FROM " + sql_tbl + " WHERE " + sql_box_filter(sys, *geom_col, boxes[i]);
+      sql_key_tbl += "(SELECT " + sql_infix + " " + sql_select_list(dct, unique_cols) + " FROM " + sql_tbl + " WHERE " + sql_intersect(sys, *geom_col, boxes[i]);
       if (!sql_counter.empty()) sql_key_tbl += " AND " + sql_counter;
       sql_key_tbl += ")";
     }
@@ -115,7 +115,7 @@ void sql_select
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql_key_tbl += " OR ";
-      sql_key_tbl += sql_box_filter(sys, *geom_col, boxes[i]);
+      sql_key_tbl += sql_intersect(sys, *geom_col, boxes[i]);
     }
   }
 
@@ -128,7 +128,7 @@ void sql_select
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql += " OR ";
-      sql += sql_box_filter(sys, *geom_col, boxes[i]);
+      sql += sql_intersect(sys, *geom_col, boxes[i]);
     }
     sql += ")";
     if (!sql_conditions.empty()) sql += " AND " + sql_conditions;

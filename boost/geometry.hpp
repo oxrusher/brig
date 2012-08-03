@@ -20,9 +20,9 @@ namespace brig { namespace boost {
 
 typedef ::boost::geometry::model::d2::point_xy<double> point;
 typedef ::boost::geometry::model::box<point> box;
-typedef ::boost::geometry::model::ring<point> linearring;
+typedef ::boost::geometry::model::ring<point, false, true> linearring;
 typedef ::boost::geometry::model::linestring<point> linestring;
-typedef ::boost::geometry::model::polygon<point> polygon;
+typedef ::boost::geometry::model::polygon<point, false, true> polygon;
 typedef ::boost::geometry::model::multi_point<point> multi_point;
 typedef ::boost::geometry::model::multi_linestring<linestring> multi_linestring;
 typedef ::boost::geometry::model::multi_polygon<polygon> multi_polygon;
