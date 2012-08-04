@@ -15,8 +15,8 @@ inline std::string sql_columns(DBMS sys, const identifier& tbl)
   switch (sys)
   {
   default: throw std::runtime_error("SQL error");
-  case CUBRID: return "SELECT a.attr_name, '', t.type_name, d.prec, d.prec, d.scale, (CASE a.is_nullable WHEN 0 THEN 1 ELSE 0 END) FROM _db_class c, _db_attribute a, _db_domain d, _db_data_type t WHERE c.owner.name = '" + tbl.schema + "' AND c.class_name = '" + tbl.name + "' AND a.class_of = c AND d.object_of = a AND d.data_type = t.type_id ORDER BY a.def_order";
-  case DB2: return "SELECT COLNAME, RTRIM(TYPESCHEMA), TYPENAME, LENGTH, LENGTH, SCALE, (CASE NULLS WHEN 'N' THEN 1 ELSE 0 END) FROM SYSCAT.COLUMNS WHERE TABSCHEMA = '" + tbl.schema + "' AND TABNAME = '" + tbl.name + "' ORDER BY COLNO";
+  case CUBRID: return "SELECT a.attr_name, '', t.type_name, d.prec, d.scale, (CASE a.is_nullable WHEN 0 THEN 1 ELSE 0 END) FROM _db_class c, _db_attribute a, _db_domain d, _db_data_type t WHERE c.owner.name = '" + tbl.schema + "' AND c.class_name = '" + tbl.name + "' AND a.class_of = c AND d.object_of = a AND d.data_type = t.type_id ORDER BY a.def_order";
+  case DB2: return "SELECT COLNAME, RTRIM(TYPESCHEMA), TYPENAME, LENGTH, SCALE, (CASE NULLS WHEN 'N' THEN 1 ELSE 0 END) FROM SYSCAT.COLUMNS WHERE TABSCHEMA = '" + tbl.schema + "' AND TABNAME = '" + tbl.name + "' ORDER BY COLNO";
   // xpg4_is.sql file in the $INFORMIXDIR/etc directory
   case Informix: return
 "SELECT colname, '', CASE WHEN (syscolumns.extended_id == 0) THEN CASE MOD(coltype, 256)\
@@ -58,10 +58,6 @@ END ELSE name END AS t, CASE MOD(coltype, 256)\
   WHEN 16 THEN (collength - (trunc(collength / 256))*256)\
   ELSE NULL \
 END AS l, CASE MOD(coltype, 256)\
-  WHEN  5 THEN trunc(collength / 256)\
-  WHEN  8 THEN trunc(collength / 256)\
-  ELSE NULL \
-END AS p, CASE MOD(coltype, 256)\
   WHEN  5 THEN (collength - ((trunc(collength / 256))*256))\
   WHEN  8 THEN (collength - ((trunc(collength / 256))*256))\
   ELSE NULL \
@@ -70,9 +66,9 @@ END AS s, CASE\
   ELSE 1 \
 END AS nn FROM systables JOIN syscolumns ON systables.tabid = syscolumns.tabid LEFT JOIN sysxtdtypes ON syscolumns.extended_id = sysxtdtypes.extended_id WHERE systables.owner = '" + tbl.schema + "' AND tabname = '" + tbl.name + "' ORDER BY colno";
   case MS_SQL:
-  case MySQL: return "SELECT COLUMN_NAME, '', DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, (CASE IS_NULLABLE WHEN 'NO' THEN 1 ELSE 0 END) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + tbl.schema + "' AND TABLE_NAME = '" + tbl.name + "' ORDER BY ORDINAL_POSITION";
-  case Oracle: return "SELECT COLUMN_NAME, DATA_TYPE_OWNER, DATA_TYPE, CHAR_LENGTH, DATA_PRECISION, DATA_SCALE, (CASE NULLABLE WHEN 'N' THEN 1 ELSE 0 END) FROM ALL_TAB_COLUMNS WHERE OWNER = '" + tbl.schema + "' AND TABLE_NAME = '" + tbl.name + "' ORDER BY COLUMN_ID";
-  case Postgres: return "SELECT COLUMN_NAME, (CASE DATA_TYPE WHEN 'USER-DEFINED' THEN DATA_TYPE ELSE '' END), (CASE DATA_TYPE WHEN 'USER-DEFINED' THEN UDT_NAME ELSE DATA_TYPE END), CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, (CASE IS_NULLABLE WHEN 'NO' THEN 1 ELSE 0 END) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + tbl.schema + "' AND TABLE_NAME = '" + tbl.name + "' ORDER BY ORDINAL_POSITION";
+  case MySQL: return "SELECT COLUMN_NAME, '', DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_SCALE, (CASE IS_NULLABLE WHEN 'NO' THEN 1 ELSE 0 END) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + tbl.schema + "' AND TABLE_NAME = '" + tbl.name + "' ORDER BY ORDINAL_POSITION";
+  case Oracle: return "SELECT COLUMN_NAME, DATA_TYPE_OWNER, DATA_TYPE, CHAR_LENGTH, DATA_SCALE, (CASE NULLABLE WHEN 'N' THEN 1 ELSE 0 END) FROM ALL_TAB_COLUMNS WHERE OWNER = '" + tbl.schema + "' AND TABLE_NAME = '" + tbl.name + "' ORDER BY COLUMN_ID";
+  case Postgres: return "SELECT COLUMN_NAME, (CASE DATA_TYPE WHEN 'USER-DEFINED' THEN DATA_TYPE ELSE '' END), (CASE DATA_TYPE WHEN 'USER-DEFINED' THEN UDT_NAME ELSE DATA_TYPE END), CHARACTER_MAXIMUM_LENGTH, NUMERIC_SCALE, (CASE IS_NULLABLE WHEN 'NO' THEN 1 ELSE 0 END) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + tbl.schema + "' AND TABLE_NAME = '" + tbl.name + "' ORDER BY ORDINAL_POSITION";
   }
   return "";
 }

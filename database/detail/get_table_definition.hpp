@@ -48,10 +48,11 @@ inline table_definition get_table_definition(std::shared_ptr<command> cmd, const
     col.dbms_type_lcase.schema = transform<std::string>(col.dbms_type.schema, lower_case);
     col.dbms_type_lcase.name = transform<std::string>(col.dbms_type.name, lower_case);
     numeric_cast(row[3], col.chars);
-    int precision(-1), scale(-1);
-    numeric_cast(row[4], precision);
-    numeric_cast(row[5], scale);
-    col.type = get_type(sys, col.dbms_type_lcase, precision, scale);
+    int scale(-1);
+    numeric_cast(row[4], scale);
+    col.type = get_type(sys, col.dbms_type_lcase, scale);
+    int not_null(0);
+    col.not_null = (numeric_cast(row[5], not_null) && not_null);
     res.columns.push_back(col);
   }
   if (res.columns.empty()) throw std::runtime_error("table error");

@@ -9,7 +9,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline column_type get_type(DBMS sys, const identifier& dbms_type_lcase, int precision, int scale)
+inline column_type get_type(DBMS sys, const identifier& dbms_type_lcase, int scale)
 {
   if (is_geometry_type(sys, dbms_type_lcase)) return Geometry;
 

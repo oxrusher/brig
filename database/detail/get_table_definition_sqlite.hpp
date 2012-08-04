@@ -41,8 +41,7 @@ inline table_definition get_table_definition_sqlite(std::shared_ptr<command> cmd
     col.name = string_cast<char>(row[1]);
     col.dbms_type.name = string_cast<char>(row[2]);
     col.dbms_type_lcase.name = transform<std::string>(col.dbms_type.name, lower_case);
-    col.type = get_type(SQLite, col.dbms_type_lcase, -1, -1);
-
+    col.type = get_type(SQLite, col.dbms_type_lcase, -1);
     int not_null(0);
     col.not_null = (numeric_cast(row[3], not_null) && not_null);
     res.columns.push_back(col);
