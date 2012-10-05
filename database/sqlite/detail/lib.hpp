@@ -8,7 +8,7 @@
 
 namespace brig { namespace database { namespace sqlite { namespace detail {
 
-int sqlite3_extension_init(sqlite3 *db,const char **pzErrMsg, const struct sqlite3_api_routines *pThunk);
+int sqlite3_extension_init(sqlite3 *db, const char **pzErrMsg, const struct sqlite3_api_routines *pThunk);
 char* spatialite_version(void);
 
 class lib {
@@ -52,7 +52,8 @@ public:
 
 inline lib::lib() : p_sqlite3_step(0), p_spatialite_version(0)
 {
-  auto handle = BRIG_DL_LIBRARY("libspatialite-2.dll", "libspatialite.so.2");
+  // SQLite
+  auto handle = BRIG_DL_LIBRARY("libsqlite3-0.dll", "libsqlite3.so.0");
   if (  handle
 	&& (p_sqlite3_auto_extension = BRIG_DL_FUNCTION(handle, sqlite3_auto_extension))
 	&& (p_sqlite3_backup_finish = BRIG_DL_FUNCTION(handle, sqlite3_backup_finish))
@@ -83,11 +84,16 @@ inline lib::lib() : p_sqlite3_step(0), p_spatialite_version(0)
     && (p_sqlite3_reset = BRIG_DL_FUNCTION(handle, sqlite3_reset))
      )  p_sqlite3_step = BRIG_DL_FUNCTION(handle, sqlite3_step);
 
+   // SpatiaLite (optional)
    if (!empty())
    {
-     p_spatialite_version = BRIG_DL_FUNCTION(handle, spatialite_version);
-     decltype(sqlite3_extension_init) *p_sqlite3_extension_init = BRIG_DL_FUNCTION(handle, sqlite3_extension_init);
-     if (p_sqlite3_extension_init) p_sqlite3_auto_extension((void(*)(void))p_sqlite3_extension_init);
+     handle = BRIG_DL_LIBRARY("libspatialite-2.dll", "libspatialite.so.2");
+     if (handle)
+     {
+       p_spatialite_version = BRIG_DL_FUNCTION(handle, spatialite_version);
+       decltype(sqlite3_extension_init) *p_sqlite3_extension_init = BRIG_DL_FUNCTION(handle, sqlite3_extension_init);
+       if (p_sqlite3_extension_init) p_sqlite3_auto_extension((void(*)(void))p_sqlite3_extension_init);
+     }
    }
 } // lib::
 
