@@ -16,9 +16,6 @@ class lib {
 
 public:
   decltype(sqlite3_auto_extension) *p_sqlite3_auto_extension;
-  decltype(sqlite3_backup_finish) *p_sqlite3_backup_finish;
-  decltype(sqlite3_backup_init) *p_sqlite3_backup_init;
-  decltype(sqlite3_backup_step) *p_sqlite3_backup_step;
   decltype(sqlite3_bind_blob) *p_sqlite3_bind_blob;
   decltype(sqlite3_bind_double) *p_sqlite3_bind_double;
   decltype(sqlite3_bind_int64) *p_sqlite3_bind_int64;
@@ -55,10 +52,7 @@ inline lib::lib() : p_sqlite3_step(0), p_spatialite_version(0)
   // SQLite
   auto handle = BRIG_DL_LIBRARY("libsqlite3-0.dll", "libsqlite3.so.0");
   if (  handle
-	&& (p_sqlite3_auto_extension = BRIG_DL_FUNCTION(handle, sqlite3_auto_extension))
-	&& (p_sqlite3_backup_finish = BRIG_DL_FUNCTION(handle, sqlite3_backup_finish))
-	&& (p_sqlite3_backup_init = BRIG_DL_FUNCTION(handle, sqlite3_backup_init))
-    && (p_sqlite3_backup_step = BRIG_DL_FUNCTION(handle, sqlite3_backup_step))
+    && (p_sqlite3_auto_extension = BRIG_DL_FUNCTION(handle, sqlite3_auto_extension))
     && (p_sqlite3_bind_blob = BRIG_DL_FUNCTION(handle, sqlite3_bind_blob))
     && (p_sqlite3_bind_double = BRIG_DL_FUNCTION(handle, sqlite3_bind_double))
     && (p_sqlite3_bind_int64 = BRIG_DL_FUNCTION(handle, sqlite3_bind_int64))
