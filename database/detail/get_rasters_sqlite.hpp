@@ -19,7 +19,7 @@ inline std::vector<raster_pyramid> get_rasters_sqlite(std::shared_ptr<command> c
 {
   using namespace brig::database::detail;
   std::vector<variant> row;
-  cmd->exec(sql_tables(SQLite, "raster_pyramids"));
+  cmd->exec(sql_tables(SQLite, "raster_pyramids", false));
   if (cmd->fetch(row))
   {
     cmd->exec("SELECT '', (r.table_prefix || '_rasters') base_tbl, 'raster' base_col, r.pixel_x_size res_x, r.pixel_y_size res_y, '', (r.table_prefix || '_metadata'), 'geometry', 'raster' FROM raster_pyramids r JOIN (" + sql_geometries(SQLite, false) + ") g ON g.tbl = (r.table_prefix || '_metadata') ORDER BY base_tbl, base_col, res_x, res_y");

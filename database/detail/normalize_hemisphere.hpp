@@ -19,6 +19,7 @@ inline void normalize_hemisphere(std::vector<brig::boost::box>& boxes, DBMS sys,
   default: throw std::runtime_error("box error");
   case DB2:
   case Informix:
+  case Ingres:
   case MySQL:
   case SQLite: return;
   case MS_SQL:

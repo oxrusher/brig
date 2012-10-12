@@ -19,52 +19,53 @@ inline std::string sql_columns(DBMS sys, const identifier& tbl)
   case DB2: return "SELECT COLNAME, RTRIM(TYPESCHEMA), TYPENAME, LENGTH, SCALE, (CASE NULLS WHEN 'N' THEN 1 ELSE 0 END) FROM SYSCAT.COLUMNS WHERE TABSCHEMA = '" + tbl.schema + "' AND TABNAME = '" + tbl.name + "' ORDER BY COLNO";
   // xpg4_is.sql file in the $INFORMIXDIR/etc directory
   case Informix: return
-"SELECT colname, '', CASE WHEN (syscolumns.extended_id == 0) THEN CASE MOD(coltype, 256)\
-  WHEN 0 THEN 'CHAR'\
-  WHEN 1 THEN 'SMALLINT'\
-  WHEN 2 THEN 'INTEGER'\
-  WHEN 3 THEN 'FLOAT'\
-  WHEN 4 THEN 'SMALLFLOAT'\
-  WHEN 5 THEN 'DECIMAL'\
-  WHEN 6 THEN 'SERIAL'\
-  WHEN 7 THEN 'DATE'\
-  WHEN 8 THEN 'MONEY'\
-  WHEN 10 THEN 'DATETIME'\
-  WHEN 11 THEN 'BYTE'\
-  WHEN 12 THEN 'TEXT'\
-  WHEN 13 THEN 'VARCHAR'\
-  WHEN 14 THEN 'INTERVAL'\
-  WHEN 15 THEN 'NCHAR'\
-  WHEN 16 THEN 'VNCHAR'\
-  WHEN 17 THEN 'INT8'\
-  WHEN 18 THEN 'SERIAL8'\
-  WHEN 19 THEN 'SET'\
-  WHEN 20 THEN 'MULTISET'\
-  WHEN 21 THEN 'LIST'\
-  WHEN 22 THEN 'ROW'\
-  WHEN 23 THEN 'COLLECTION'\
-  WHEN 24 THEN 'ROWREF'\
-  WHEN 40 THEN 'UDTVAR'\
-  WHEN 41 THEN 'UDTFIXED'\
-  WHEN 42 THEN 'REFSER8'\
-  WHEN 52 THEN 'BIGINT'\
-  WHEN 53 THEN 'BIGSERIAL'\
+"SELECT colname, '', CASE WHEN (syscolumns.extended_id == 0) THEN CASE MOD(coltype, 256) \
+  WHEN 0 THEN 'CHAR' \
+  WHEN 1 THEN 'SMALLINT' \
+  WHEN 2 THEN 'INTEGER' \
+  WHEN 3 THEN 'FLOAT' \
+  WHEN 4 THEN 'SMALLFLOAT' \
+  WHEN 5 THEN 'DECIMAL' \
+  WHEN 6 THEN 'SERIAL' \
+  WHEN 7 THEN 'DATE' \
+  WHEN 8 THEN 'MONEY' \
+  WHEN 10 THEN 'DATETIME' \
+  WHEN 11 THEN 'BYTE' \
+  WHEN 12 THEN 'TEXT' \
+  WHEN 13 THEN 'VARCHAR' \
+  WHEN 14 THEN 'INTERVAL' \
+  WHEN 15 THEN 'NCHAR' \
+  WHEN 16 THEN 'VNCHAR' \
+  WHEN 17 THEN 'INT8' \
+  WHEN 18 THEN 'SERIAL8' \
+  WHEN 19 THEN 'SET' \
+  WHEN 20 THEN 'MULTISET' \
+  WHEN 21 THEN 'LIST' \
+  WHEN 22 THEN 'ROW' \
+  WHEN 23 THEN 'COLLECTION' \
+  WHEN 24 THEN 'ROWREF' \
+  WHEN 40 THEN 'UDTVAR' \
+  WHEN 41 THEN 'UDTFIXED' \
+  WHEN 42 THEN 'REFSER8' \
+  WHEN 52 THEN 'BIGINT' \
+  WHEN 53 THEN 'BIGSERIAL' \
   ELSE NULL \
-END ELSE name END AS t, CASE MOD(coltype, 256)\
-  WHEN  0 THEN collength\
-  WHEN 12 THEN collength\
-  WHEN 13 THEN (collength - (trunc(collength / 256))*256)\
-  WHEN 15 THEN collength\
-  WHEN 16 THEN (collength - (trunc(collength / 256))*256)\
+END ELSE name END AS t, CASE MOD(coltype, 256) \
+  WHEN  0 THEN collength \
+  WHEN 12 THEN collength \
+  WHEN 13 THEN (collength - (trunc(collength / 256))*256) \
+  WHEN 15 THEN collength \
+  WHEN 16 THEN (collength - (trunc(collength / 256))*256) \
   ELSE NULL \
-END AS l, CASE MOD(coltype, 256)\
-  WHEN  5 THEN (collength - ((trunc(collength / 256))*256))\
-  WHEN  8 THEN (collength - ((trunc(collength / 256))*256))\
+END AS l, CASE MOD(coltype, 256) \
+  WHEN  5 THEN (collength - ((trunc(collength / 256))*256)) \
+  WHEN  8 THEN (collength - ((trunc(collength / 256))*256)) \
   ELSE NULL \
-END AS s, CASE\
-  WHEN (coltype-256) < 0 THEN 0\
+END AS s, CASE \
+  WHEN (coltype-256) < 0 THEN 0 \
   ELSE 1 \
 END AS nn FROM systables JOIN syscolumns ON systables.tabid = syscolumns.tabid LEFT JOIN sysxtdtypes ON syscolumns.extended_id = sysxtdtypes.extended_id WHERE systables.owner = '" + tbl.schema + "' AND tabname = '" + tbl.name + "' ORDER BY colno";
+  case Ingres: return "SELECT RTRIM(column_name), '',  RTRIM(column_datatype), column_length, column_scale, (CASE column_nulls WHEN 'N' THEN 1 ELSE 0 END) FROM iicolumns WHERE table_owner = '" + tbl.schema + "' AND table_name = '" + tbl.name + "' ORDER BY column_sequence";
   case MS_SQL:
   case MySQL: return "SELECT COLUMN_NAME, '', DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_SCALE, (CASE IS_NULLABLE WHEN 'NO' THEN 1 ELSE 0 END) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + tbl.schema + "' AND TABLE_NAME = '" + tbl.name + "' ORDER BY ORDINAL_POSITION";
   case Oracle: return "SELECT COLUMN_NAME, DATA_TYPE_OWNER, DATA_TYPE, CHAR_LENGTH, DATA_SCALE, (CASE NULLABLE WHEN 'N' THEN 1 ELSE 0 END) FROM ALL_TAB_COLUMNS WHERE OWNER = '" + tbl.schema + "' AND TABLE_NAME = '" + tbl.name + "' ORDER BY COLUMN_ID";

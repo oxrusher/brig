@@ -36,6 +36,10 @@ inline column_type get_type(DBMS sys, const identifier& dbms_type_lcase, int sca
     if (dbms_type_lcase.name.find("serial") != std::string::npos) return Integer;
     else if (dbms_type_lcase.name.compare("byte") == 0) return Blob;
     break;
+  case Ingres:
+    if (dbms_type_lcase.name.find("byte") != std::string::npos) return Blob;
+    else if (dbms_type_lcase.name.compare("c") == 0) return String;
+    break;
   case MS_SQL:
     if (dbms_type_lcase.name.compare("bit") == 0) return Integer;
     else if (dbms_type_lcase.name.compare("image") == 0) return Blob;

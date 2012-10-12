@@ -21,7 +21,7 @@ inline std::vector<raster_pyramid> get_rasters_postgres(std::shared_ptr<command>
 {
   using namespace brig::database::detail;
   std::vector<variant> row;
-  cmd->exec(sql_tables(Postgres, "raster_columns"));
+  cmd->exec(sql_tables(Postgres, "raster_columns", false));
   while (cmd->fetch(row))
     if (string_cast<char>(row[0]) == "public" && string_cast<char>(row[1]) == "raster_columns")
     {

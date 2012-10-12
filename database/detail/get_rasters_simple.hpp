@@ -23,7 +23,7 @@ namespace brig { namespace database { namespace detail {
 inline std::vector<raster_pyramid> get_rasters_simple(std::shared_ptr<command> cmd)
 {
   const DBMS sys(cmd->system());
-  cmd->exec(sql_tables(sys, "simple_rasters"));
+  cmd->exec(sql_tables(sys, "simple_rasters", false));
   std::vector<variant> row;
   if (cmd->fetch(row))
   {

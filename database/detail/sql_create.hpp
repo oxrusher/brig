@@ -26,7 +26,6 @@ namespace brig { namespace database { namespace detail {
 inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>& sql)
 {
   using namespace brig::boost;
-  static const int CharsLimit = 250;
   auto loc = std::locale::classic();
 
   // unknown column type
@@ -140,8 +139,27 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       case Integer: stream << "INT8"; break;
       case String: stream << "VARCHAR(" << chars << ")"; break;
       }
+      // Null values are never allowed in a primary-key column
       for (auto idx(std::begin(tbl.indexes)); idx != idx_end; ++idx)
         if (Primary == idx->type)
+          for (auto idx_col(std::begin(idx->columns)); idx_col != std::end(idx->columns); ++idx_col)
+            if (*idx_col == col->name)
+              col->not_null = true;
+      break;
+
+    case Ingres:
+      switch (col->type)
+      {
+      case VoidColumn: throw std::runtime_error("SQL error");
+      case Blob: stream << "BLOB"; break;
+      case Double: stream << "DOUBLE PRECISION"; break;
+      case Geometry: stream << "GEOMETRY SRID " << col->epsg; break; // todo: An SRID is used internally by Ingres and is not guaranteed to be the same as the EPSG designator
+      case Integer: stream << "BIGINT"; break;
+      case String: stream << "NVARCHAR(" << chars << ")"; break;
+      }
+      // All columns in a UNIQUE constraint MUST be created as NOT NULL
+      for (auto idx(std::begin(tbl.indexes)); idx != idx_end; ++idx)
+        if (Primary == idx->type || Unique == idx->type)
           for (auto idx_col(std::begin(idx->columns)); idx_col != std::end(idx->columns); ++idx_col)
             if (*idx_col == col->name)
               col->not_null = true;
@@ -252,16 +270,14 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       case CUBRID: throw std::runtime_error("SQL error");
       case DB2: stream << "BEGIN ATOMIC DECLARE msg_code INTEGER; DECLARE msg_text VARCHAR(1024); call DB2GSE.ST_register_spatial_column(NULL, '" << sql_identifier(sys, tbl.id.name) << "', '" << sql_identifier(sys, col->name) << "', (SELECT SRS_NAME FROM DB2GSE.ST_SPATIAL_REFERENCE_SYSTEMS WHERE ORGANIZATION LIKE 'EPSG' AND ORGANIZATION_COORDSYS_ID = " << col->epsg << " ORDER BY SRS_ID FETCH FIRST 1 ROWS ONLY), msg_code, msg_text); END"; break;
       case Informix: stream << "INSERT INTO sde.geometry_columns (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, geometry_type, coord_dimension, srid) VALUES ((SELECT RTRIM(ODB_DBName) DB FROM sysmaster:SysOpenDB WHERE CAST(ODB_SessionID AS INT) = CAST(DBINFO('sessionid') AS INT) AND ODB_IsCurrent = 'Y'), RTRIM(USER), '" << tbl.id.name << "', '" << col->name << "', 0, 2, (SELECT srid FROM sde.spatial_references WHERE auth_name = 'EPSG' AND auth_srid = " << col->epsg << "))"; break;
+      case Ingres:
       case MS_SQL:
       case MySQL: break;
       case Oracle:
         {
-        if (typeid(blob_t) != col->query_value.type()) throw std::runtime_error("SQL error");
-        const blob_t& blob(::boost::get<blob_t>(col->query_value));
-        if (blob.empty()) throw std::runtime_error("SQL error");
-        auto box(envelope(geom_from_wkb(blob)));
-        const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>()), eps(0.000001);
-        stream << "BEGIN DELETE FROM MDSYS.USER_SDO_GEOM_METADATA WHERE TABLE_NAME = '" << tbl.id.name << "' AND COLUMN_NAME = '" << col->name << "'; INSERT INTO MDSYS.USER_SDO_GEOM_METADATA (TABLE_NAME, COLUMN_NAME, DIMINFO, SRID) VALUES ('" << tbl.id.name << "', '" << col->name << "', MDSYS.SDO_DIM_ARRAY(MDSYS.SDO_DIM_ELEMENT('X', " << xmin << ", " << xmax << ", " << eps << "), MDSYS.SDO_DIM_ELEMENT('Y', " << ymin << ", " << ymax << ", " << eps << ")), (SELECT SRID FROM MDSYS.SDO_COORD_REF_SYS WHERE DATA_SOURCE LIKE 'EPSG' AND SRID = " << col->epsg << " AND ROWNUM <= 1)); END;";
+        auto box(envelope(geom_from_wkb(::boost::get<blob_t>(col->query_value))));
+        const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>());
+        stream << "BEGIN DELETE FROM MDSYS.USER_SDO_GEOM_METADATA WHERE TABLE_NAME = '" << tbl.id.name << "' AND COLUMN_NAME = '" << col->name << "'; INSERT INTO MDSYS.USER_SDO_GEOM_METADATA (TABLE_NAME, COLUMN_NAME, DIMINFO, SRID) VALUES ('" << tbl.id.name << "', '" << col->name << "', MDSYS.SDO_DIM_ARRAY(MDSYS.SDO_DIM_ELEMENT('X', " << xmin << ", " << xmax << ", 0.000001), MDSYS.SDO_DIM_ELEMENT('Y', " << ymin << ", " << ymax << ", 0.000001)), (SELECT SRID FROM MDSYS.SDO_COORD_REF_SYS WHERE DATA_SOURCE LIKE 'EPSG' AND SRID = " << col->epsg << " AND ROWNUM <= 1)); END;";
         }
         break;
       case Postgres: stream << "SELECT AddGeometryColumn('" << tbl.id.name << "', '" << col->name << "', (SELECT SRID FROM PUBLIC.SPATIAL_REF_SYS WHERE AUTH_NAME LIKE 'EPSG' AND AUTH_SRID = " << col->epsg << " ORDER BY SRID FETCH FIRST 1 ROWS ONLY), 'GEOMETRY', 2)"; break;
@@ -288,13 +304,18 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       case CUBRID: throw std::runtime_error("SQL error");
       case DB2: stream << "CREATE INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (" << sql_identifier(sys, idx->columns.front()) << ") EXTEND USING DB2GSE.SPATIAL_INDEX (1, 0, 0)"; break;
       case Informix: stream << "CREATE INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (" << sql_identifier(sys, idx->columns.front()) << " ST_Geometry_Ops) USING RTREE"; break;
+      case Ingres:
+        /* todo: {
+        auto col(tbl[idx->columns.front()]);
+        auto box(envelope(geom_from_wkb(::boost::get<blob_t>(col->query_value))));
+        const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>());
+        stream << "CREATE INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (" << sql_identifier(sys, idx->columns.front()) << ") WITH STRUCTURE=RTREE, RANGE=((" << xmin << ", " << ymin << "), (" << xmax << ", " << ymax << "))";
+        }*/
+        break;
       case MS_SQL:
         {
         auto col(tbl[idx->columns.front()]);
-        if (typeid(blob_t) != col->query_value.type()) throw std::runtime_error("SQL error");
-        const blob_t& blob(::boost::get<blob_t>(col->query_value));
-        if (blob.empty()) throw std::runtime_error("SQL error");
-        auto box(envelope(geom_from_wkb(blob)));
+        auto box(envelope(geom_from_wkb(::boost::get<blob_t>(col->query_value))));
         const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>());
         stream << "CREATE SPATIAL INDEX " << sql_identifier(sys, idx->id.name) << " ON " << sql_identifier(sys, tbl.id.name) << " (" << sql_identifier(sys, idx->columns.front()) << ") USING GEOMETRY_GRID WITH (BOUNDING_BOX = (" << xmin << ", " << ymin << ", " << xmax << ", " << ymax << "))";
         }
@@ -319,7 +340,8 @@ inline void sql_create(DBMS sys, table_definition tbl, std::vector<std::string>&
       }
       stream << ")";
     }
-    sql.push_back(stream.str());
+    const std::string str(stream.str());
+    if (!str.empty()) sql.push_back(stream.str());
   }
 }
 

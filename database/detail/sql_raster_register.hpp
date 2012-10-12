@@ -72,7 +72,7 @@ inline void sql_raster_register(std::shared_ptr<command> cmd, raster_pyramid& ra
   const DBMS sys(cmd->system());
   const std::string schema(get_schema(cmd));
 
-  cmd->exec(sql_tables(sys, "simple_rasters"));
+  cmd->exec(sql_tables(sys, "simple_rasters", false));
   identifier simple_rasters;
   std::vector<variant> row;
   if (cmd->fetch(row))

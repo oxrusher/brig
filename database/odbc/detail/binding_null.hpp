@@ -11,13 +11,11 @@ namespace brig { namespace database { namespace odbc { namespace detail {
 
 class binding_null : public binding {
   SQLSMALLINT m_c_type, m_sql_type;
-  SQLULEN m_precision;
   SQLLEN m_ind;
 public:
-  binding_null(SQLSMALLINT c_type, SQLSMALLINT sql_type, SQLULEN precision) : m_c_type(c_type), m_sql_type(sql_type), m_precision(precision), m_ind(SQL_NULL_DATA)  {}
+  binding_null(SQLSMALLINT c_type, SQLSMALLINT sql_type) : m_c_type(c_type), m_sql_type(sql_type), m_ind(SQL_NULL_DATA)  {}
   virtual SQLSMALLINT c_type()  { return m_c_type; }
   virtual SQLSMALLINT sql_type()  { return m_sql_type; }
-  virtual SQLULEN precision()  { return m_precision; }
   virtual SQLPOINTER val_ptr()  { return 0; }
   virtual SQLLEN* ind()  { return &m_ind; }
 }; // binding_null

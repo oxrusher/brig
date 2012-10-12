@@ -75,7 +75,7 @@ std::vector<identifier> connection<Threading>::get_tables()
 
   std::vector<identifier> res;
   auto cmd(get_command());
-  cmd->exec(sql_tables(cmd->system()));
+  cmd->exec(sql_tables(cmd->system(), std::string(), true));
   std::vector<variant> row;
   while (cmd->fetch(row))
   {
@@ -102,7 +102,7 @@ std::vector<identifier> connection<Threading>::get_geometry_layers()
     default: break;
     case CUBRID: return res;
     case SQLite:
-      cmd->exec(sql_tables(sys, "geometry_columns"));
+      cmd->exec(sql_tables(sys, "geometry_columns", false));
       if (!cmd->fetch(row)) return res;
       break;
   }
@@ -184,11 +184,7 @@ void connection<Threading>::create_check_mbr(table_definition& tbl)
   {
   default: break;
 
-  case Oracle:
-    for (auto col(std::begin(tbl.columns)); col != std::end(tbl.columns); ++col)
-      if (Geometry == col->type && typeid(blob_t) != col->query_value.type()) col->query_value = blob_t();
-    break;
-
+  case Ingres:
   case MS_SQL:
     for (auto idx(std::begin(tbl.indexes)); idx != std::end(tbl.indexes); ++idx)
       if (Spatial == idx->type)
@@ -196,6 +192,11 @@ void connection<Threading>::create_check_mbr(table_definition& tbl)
         auto col(tbl[idx->columns.front()]);
         if (Geometry == col->type && typeid(blob_t) != col->query_value.type()) col->query_value = blob_t();
       }
+    break;
+
+  case Oracle:
+    for (auto col(std::begin(tbl.columns)); col != std::end(tbl.columns); ++col)
+      if (Geometry == col->type && typeid(blob_t) != col->query_value.type()) col->query_value = blob_t();
     break;
   }
 }

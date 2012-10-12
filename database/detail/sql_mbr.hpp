@@ -40,6 +40,8 @@ inline std::string sql_mbr(const DBMS sys, const identifier& tbl, const column_d
     else return "SELECT Min(DB2GSE.ST_MinX(" + sql_identifier(sys, col.name) + ")), Min(DB2GSE.ST_MinY(" + sql_identifier(sys, col.name) + ")), Max(DB2GSE.ST_MaxX(" + sql_identifier(sys, col.name) + ")), Max(DB2GSE.ST_MaxY(" + sql_identifier(sys, col.name) + ")) FROM " + sql_identifier(sys, tbl);
   case Informix:
     return "SELECT Min(SE_Xmin(" + sql_identifier(sys, col.name) + ")), Min(SE_Ymin(" + sql_identifier(sys, col.name) + ")), Max(SE_Xmax(" + sql_identifier(sys, col.name) + ")), Max(SE_Ymax(" + sql_identifier(sys, col.name) + ")) FROM " + sql_identifier(sys, tbl);
+  case Ingres:
+    return "SELECT X(PointN(t.r, 1)), Y(PointN(t.r, 1)), X(PointN(t.r, 3)), Y(PointN(t.r, 3)) FROM (SELECT ExteriorRing(Extent(" + sql_identifier(sys, col.name) + ")) r FROM " + sql_identifier(sys, tbl) + ") t";
   case MS_SQL:
     if (is_geodetic_type(sys, col)) return "";
     else return "SELECT a.bounding_box_xmin, a.bounding_box_ymin, a.bounding_box_xmax, a.bounding_box_ymax FROM sys.spatial_index_tessellations a, sys.index_columns b WHERE a.object_id = OBJECT_ID('" + sql_identifier(sys, tbl) + "') AND COL_NAME(a.object_id, b.column_id) = '" + col.name + "' AND a.index_id = b.index_id";

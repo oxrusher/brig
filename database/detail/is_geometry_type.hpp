@@ -16,6 +16,7 @@ inline bool is_geometry_type(DBMS sys, const identifier& dbms_type_lcase)
   default: break;
   case DB2: return dbms_type_lcase.schema.compare("db2gse") == 0 && is_ogc_type(dbms_type_lcase.name);
   case Informix:
+  case Ingres:
   case MySQL:
   case SQLite: return is_ogc_type(dbms_type_lcase.name);
   case MS_SQL: return dbms_type_lcase.name.compare("geometry") == 0 || dbms_type_lcase.name.compare("geography") == 0;

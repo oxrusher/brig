@@ -23,10 +23,11 @@ inline std::string get_schema(std::shared_ptr<command> cmd)
   case CUBRID: sql = "SELECT CURRENT_USER"; break;
   case DB2: sql = "VALUES RTRIM(CURRENT_SCHEMA)"; break;
   case Informix: sql = "SELECT RTRIM(USER) FROM sysmaster:systables WHERE tabid = 1"; break;
+  case Ingres: sql = "SELECT dbmsinfo('session_user')"; break;
   case MS_SQL: sql = "SELECT SCHEMA_NAME()"; break;
-  case MySQL: sql = "select schema()"; break;
+  case MySQL: sql = "SELECT schema()"; break;
   case Oracle: sql = "SELECT SYS_CONTEXT('USERENV','SESSION_SCHEMA') FROM DUAL"; break;
-  case Postgres: sql = "select current_schema()"; break;
+  case Postgres: sql = "SELECT current_schema()"; break;
   case SQLite: return "";
   }
 

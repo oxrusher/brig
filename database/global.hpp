@@ -10,6 +10,7 @@ enum DBMS {
   CUBRID,
   DB2,
   Informix,
+  Ingres,
   MS_SQL,
   MySQL,
   Oracle,
@@ -34,8 +35,9 @@ enum index_type {
   Spatial
 }; // index_type
 
-static const size_t PageSize = 250; // DB2 PUERTO_ROADS is slowdown after 447
-static const size_t PoolSize = 5;
+const int CharsLimit = 250;
+const size_t PageSize = 250; // DB2 PUERTO_ROADS is slowdown after 447
+const size_t PoolSize = 5;
 
 } } // brig::database
 

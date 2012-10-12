@@ -24,7 +24,7 @@ inline void sql_raster_unregister(std::shared_ptr<command> cmd, const raster_pyr
     if (!lvl->raster.query_expression.empty()) throw std::runtime_error("raster error");
 
   const DBMS sys(cmd->system());
-  cmd->exec(sql_tables(sys, "simple_rasters"));
+  cmd->exec(sql_tables(sys, "simple_rasters", false));
   std::vector<variant> row;
   if (!cmd->fetch(row)) throw std::runtime_error("simple_rasters error");
   identifier simple_rasters;

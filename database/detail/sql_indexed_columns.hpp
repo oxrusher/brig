@@ -33,6 +33,47 @@ inline std::string sql_indexed_columns(DBMS sys, const identifier& tbl)
     stream << " ORDER BY 3 DESC, 1, 2, 7";
     return stream.str();
     }
+  case Ingres: return
+"SELECT \
+  RTRIM(csi.schema_name) scm \
+, RTRIM(csi.index_name) idx \
+, 1 pri \
+, 1 unq \
+, 0 sp \
+, RTRIM(c.column_name) col \
+, 0 dsc \
+, c.key_position pos \
+FROM \
+  (SELECT * FROM iiconstraints WHERE constraint_type = 'P' AND schema_name = '" + tbl.schema + "' AND table_name = '" + tbl.name + "') cs \
+JOIN \
+  iiconstraint_indexes csi \
+ON cs.schema_name = csi.schema_name AND cs.constraint_name = csi.constraint_name \
+JOIN \
+  iikeys c \
+ON cs.schema_name = c.schema_name AND cs.constraint_name = c.constraint_name \
+UNION ALL \
+SELECT \
+  RTRIM(i.index_owner) scm \
+, RTRIM(i.index_name) idx \
+, 0 pri \
+, (CASE i.unique_rule WHEN 'U' THEN 1 ELSE 0 END) unq \
+, (CASE i.storage_structure WHEN 'RTREE' THEN 1 ELSE 0 END) sp \
+, RTRIM(c.column_name) \
+, (CASE ic.sort_direction WHEN 'A' THEN 0 ELSE 1 END) dsc \
+, ic.key_sequence pos \
+FROM \
+  (SELECT * FROM iiindexes WHERE base_owner = '" + tbl.schema + "' AND base_name = '" + tbl.name + "') i \
+JOIN \
+  iiindex_columns ic \
+ON i.index_owner = ic.index_owner AND i.index_name = ic.index_name \
+JOIN \
+  iicolumns c \
+ON i.base_owner = c.table_owner AND i.base_name = c.table_name AND ic.column_name = c.column_name \
+ORDER BY \
+  pri DESC \
+, scm \
+, idx \
+, pos";
   // index name is unique only within the table
   case MS_SQL: return "SELECT '', i.name, i.is_primary_key, i.is_unique, (CASE i.type WHEN 4 THEN 1 ELSE 0 END) sp, COL_NAME(c.object_id, c.column_id) col, c.is_descending_key FROM sys.indexes i, sys.index_columns c WHERE i.object_id = OBJECT_ID('\"" + tbl.schema + "\".\"" + tbl.name + "\"') AND i.object_id = c.object_id AND i.index_id = c.index_id ORDER BY i.is_primary_key DESC, i.name, c.key_ordinal";
   // index name is unique only within the table; ASC or DESC are permitted for future extensions - currently (5.6) they are ignored

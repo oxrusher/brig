@@ -47,6 +47,7 @@ inline std::string sql_intersect(DBMS sys, const column_definition& col, const b
   default: throw std::runtime_error("SQL error");
   case DB2: stream << "DB2GSE.EnvelopesIntersect(" << id << ", " << xmin << ", " << ymin << ", " << xmax << ", " << ymax << ", " << col.srid << ") = 1"; break;
   case Informix: stream << "SE_EnvelopesIntersect(" << id << ", ST_Envelope(ST_Union(ST_Point(" << xmin << ", " << ymin << ", " << col.srid << "), ST_Point(" << xmax << ", " << ymax << ", " << col.srid << "))))"; break;
+  case Ingres: stream << "Intersects(" << id << ", Envelope(LineFromText('LINESTRING (" << xmin << " " << ymin << ", " << xmax << " " << ymax << ")', " << col.srid << "))) = 1"; break;
   case MS_SQL:
     {
     const bool geography(col.dbms_type_lcase.name.compare("geography") == 0);

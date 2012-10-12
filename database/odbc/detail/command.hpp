@@ -118,6 +118,7 @@ inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(
          if (sys.find("cubrid") != std::string::npos) m_sys = CUBRID;
     else if (sys.find("db2") != std::string::npos) m_sys = DB2;
     else if (sys.find("informix") != std::string::npos) m_sys = Informix;
+    else if (sys.find("ingres") != std::string::npos) m_sys = Ingres;
     else if (sys.find("microsoft") != std::string::npos
           && sys.find("sql") != std::string::npos
           && sys.find("server") != std::string::npos) m_sys = MS_SQL;
@@ -164,7 +165,7 @@ inline void command::exec(const std::string& sql, const std::vector<column_defin
     binding* bind(binding_factory(m_sys, params[i]));
     binds.push_back(bind);
     check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLBindParameter(m_stmt, SQLUSMALLINT(i + 1), SQL_PARAM_INPUT
-      , bind->c_type(), bind->sql_type(), bind->precision(), 0, bind->val_ptr(), 0, bind->ind()));
+      , bind->c_type(), bind->sql_type(), bind->column_size(), 0, bind->val_ptr(), 0, bind->ind()));
   }
   const SQLRETURN r(lib::singleton().p_SQLExecute(m_stmt));
   if (SQL_NO_DATA != r) check(SQL_HANDLE_STMT, m_stmt, r);

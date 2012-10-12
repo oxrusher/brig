@@ -61,13 +61,14 @@ inline std::string command::sql_parameter(size_t, const column_definition& param
       stream << "(?, " << param.srid << ")";
       return stream.str();
 
-    case MS_SQL:
-      stream << sql_identifier(sys, param.dbms_type) << "::STGeomFromWKB(?, " << param.srid << ").MakeValid()";
-      return stream.str();
-
+    case Ingres:
     case MySQL:
     case SQLite:
       stream << "GeomFromWKB(?, " << param.srid << ")";
+      return stream.str();
+
+    case MS_SQL:
+      stream << sql_identifier(sys, param.dbms_type) << "::STGeomFromWKB(?, " << param.srid << ").MakeValid()";
       return stream.str();
 
     case Oracle:
@@ -111,8 +112,10 @@ inline std::string command::sql_column(const column_definition& col)
       case DB2:
       case Oracle:
       case Postgres: return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) as " + id;
-      case MS_SQL: return "CONVERT(CHAR(19), " + id + ", 126) as " + id;
+      case Informix: return "(TO_CHAR(" + id + ", '%Y-%m-%d') || 'T' || TO_CHAR(" + id + ", '%H:%M:%S')) as " + id;
+      case Ingres:
       case MySQL: return "DATE_FORMAT(" + id + ", '%Y-%m-%dT%T') as " + id;
+      case MS_SQL: return "CONVERT(CHAR(19), " + id + ", 126) as " + id;
       }
     else if (col.dbms_type_lcase.name.find("date") != std::string::npos)
       switch (sys)
@@ -122,8 +125,10 @@ inline std::string command::sql_column(const column_definition& col)
       case DB2:
       case Oracle:
       case Postgres: return "TO_CHAR(" + id + ", 'YYYY-MM-DD') as " + id;
-      case MS_SQL: return "CONVERT(CHAR(10), " + id + ", 126) as " + id;
+      case Informix: return "TO_CHAR(" + id + ", '%Y-%m-%d') as " + id;
+      case Ingres: if (col.dbms_type_lcase.name.compare("ingresdate") == 0) return "DATE_FORMAT(" + id + ", '%Y-%m-%dT%T') as " + id;
       case MySQL: return "DATE_FORMAT(" + id + ", '%Y-%m-%d') as " + id;
+      case MS_SQL: return "CONVERT(CHAR(10), " + id + ", 126) as " + id;
       }
   }
 
@@ -142,9 +147,10 @@ inline std::string command::sql_column(const column_definition& col)
     default: break;
     case DB2: return "DB2GSE.ST_AsBinary(" + id + ") as " + id;
     case Informix: return "ST_AsBinary(" + id + ") as " + id;
-    case MS_SQL: return id + ".STAsBinary() as " + id;
+    case Ingres:
     case MySQL:
     case SQLite: return "AsBinary(" + id + ") as " + id;
+    case MS_SQL: return id + ".STAsBinary() as " + id;
     case Oracle: return sql_identifier(sys, col.dbms_type) + ".GET_WKB(" + id + ") as " + id;
     }
 
