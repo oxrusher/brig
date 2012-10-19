@@ -6,7 +6,7 @@
 #include <brig/database/column_definition.hpp>
 #include <brig/database/identifier.hpp>
 #include <brig/database/index_definition.hpp>
-#include <stdexcept>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -21,15 +21,11 @@ struct table_definition {
   int query_rows;
 
   table_definition() : query_rows(-1)  {}
-  column_definition* operator [](const std::string& col_name);
+  const column_definition* operator [](const std::string& col_name) const
+    { return find_column(std::begin(columns), std::end(columns), col_name); }
+  column_definition* operator [](const std::string& col_name)
+    { return find_column(std::begin(columns), std::end(columns), col_name); }
 }; // table_definition
-
-inline column_definition* table_definition::operator [](const std::string& col_name)
-{
-  for (size_t i(0); i < columns.size(); ++i)
-    if (col_name.compare(columns[i].name) == 0) return &columns[i];
-  throw std::runtime_error("table error");
-} // table_definition::
 
 } } // brig::database
 

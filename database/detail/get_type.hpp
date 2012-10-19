@@ -49,8 +49,6 @@ inline column_type get_type(DBMS sys, const identifier& dbms_type_lcase, int sca
     break;
   case Oracle:
     if (dbms_type_lcase.name.compare("long") == 0) return String;
-    else if (dbms_type_lcase.name.compare("binary_float") == 0
-          || dbms_type_lcase.name.compare("binary_double") == 0) return Double;
     else if (dbms_type_lcase.name.compare("bfile") == 0
           || dbms_type_lcase.name.find("raw") != std::string::npos) return Blob;
     break;

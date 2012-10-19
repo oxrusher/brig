@@ -19,8 +19,11 @@
 #include <brig/database/index_definition.hpp>
 #include <brig/database/table_definition.hpp>
 #include <brig/database/variant.hpp>
+#include <ios>
+#include <locale>
 #include <memory>
 #include <stdexcept>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -32,12 +35,14 @@ void sql_select
   , std::string& sql, std::vector<column_definition>& params
   )
 {
+  using namespace std;
+
   const DBMS sys(dct->system());
-  std::vector<column_definition> cols(tbl.columns);
-  std::vector<column_definition> select_cols = tbl.query_columns.empty()? cols: get_columns(cols, tbl.query_columns);
-  std::string sql_infix, sql_counter, sql_suffix, sql_conditions;
+  vector<column_definition> cols(tbl.columns);
+  vector<column_definition> select_cols = tbl.query_columns.empty()? cols: get_columns(cols, tbl.query_columns);
+  string sql_infix, sql_counter, sql_suffix, sql_conditions;
   sql_limit(sys, tbl.query_rows, sql_infix, sql_counter, sql_suffix);
-  for (auto col(std::begin(tbl.columns)); col != std::end(tbl.columns); ++col)
+  for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
     if (Geometry != col->type && typeid(null_t) != col->query_value.type())
     {
       if (!sql_conditions.empty()) sql_conditions += "AND ";
@@ -47,8 +52,8 @@ void sql_select
     }
 
   // not spatial first
-  auto geom_col(std::find_if(std::begin(cols), std::end(cols), [](const column_definition& col){ return Geometry == col.type && typeid(null_t) != col.query_value.type(); }));
-  if (geom_col == std::end(cols))
+  auto geom_col(find_if(begin(cols), end(cols), [](const column_definition& col){ return Geometry == col.type && typeid(null_t) != col.query_value.type(); }));
+  if (geom_col == end(cols))
   {
     if (!sql_counter.empty()) sql += "SELECT * FROM (";
     sql += "SELECT " + sql_infix + " " + sql_select_list(dct, select_cols) + " FROM " + sql_identifier(sys, tbl.id);
@@ -59,47 +64,42 @@ void sql_select
   }
 
   // spatial
-  std::vector<brig::boost::box> boxes(1, brig::boost::envelope(brig::boost::geom_from_wkb(::boost::get<blob_t>(geom_col->query_value))));
+  vector<brig::boost::box> boxes(1, brig::boost::envelope(brig::boost::geom_from_wkb(::boost::get<blob_t>(geom_col->query_value))));
   normalize_hemisphere(boxes, sys, is_geodetic_type(sys, *geom_col));
+  auto spatial_idx(find_rtree(begin(tbl.indexes), end(tbl.indexes), geom_col->name));
+  string sql_hint;
+  if (MS_SQL == sys && spatial_idx != 0) sql_hint = "WITH(INDEX(" + sql_identifier(sys, spatial_idx->id) + "))";
 
-  std::string sql_hint;
-  if (MS_SQL == sys)
-  {
-    auto idx(std::find_if(std::begin(tbl.indexes), std::end(tbl.indexes), [&](const index_definition& i){ return Spatial == i.type && i.columns.front() == geom_col->name; }));
-    if (idx == std::end(tbl.indexes)) throw std::runtime_error("SQL error");
-    sql_hint = "WITH(INDEX(" + sql_identifier(sys, idx->id) + "))";
-  }
-
-  std::vector<column_definition> unique_cols;
-  auto idx(std::find_if(std::begin(tbl.indexes), std::end(tbl.indexes), [&](const index_definition& i){ return Primary == i.type; }));
-  if (idx == std::end(tbl.indexes)) idx = std::find_if(std::begin(tbl.indexes), std::end(tbl.indexes), [&](const index_definition& i){ return Unique == i.type; });
-  if (idx != std::end(tbl.indexes)) unique_cols = get_columns(cols, idx->columns);
+  vector<column_definition> unique_cols;
+  auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_definition& i){ return Primary == i.type; }));
+  if (idx == end(tbl.indexes)) idx = find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_definition& i){ return Unique == i.type; });
+  if (idx != end(tbl.indexes)) unique_cols = get_columns(cols, idx->columns);
 
   // key table
-  std::string sql_key_tbl, sql_tbl(sql_identifier(sys, tbl.id));
+  string sql_key_tbl, sql_tbl(sql_identifier(sys, tbl.id));
   if (MS_SQL == sys && boxes.size() > 1)
   {
-    if (unique_cols.empty()) throw std::runtime_error("unique columns error");
+    if (unique_cols.empty()) throw runtime_error("unique columns error");
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql_key_tbl += " UNION ";
-      sql_key_tbl += "(SELECT " + sql_select_list(dct, unique_cols) + " FROM " + sql_tbl + " " + sql_hint + " WHERE " + sql_intersect(sys, *geom_col, boxes[i]) + ")";
+      sql_key_tbl += "(SELECT " + sql_select_list(dct, unique_cols) + " FROM " + sql_tbl + " " + sql_hint + " WHERE (" + sql_intersect(sys, *geom_col, boxes[i], spatial_idx != 0) + "))";
     }
   }
   else if (Oracle == sys && boxes.size() > 1)
   {
-    if (unique_cols.empty()) throw std::runtime_error("unique columns error");
+    if (unique_cols.empty()) throw runtime_error("unique columns error");
     sql_key_tbl += "SELECT " + sql_infix + " DISTINCT * FROM (";
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql_key_tbl += " UNION ALL ";
-      sql_key_tbl += "(SELECT " + sql_infix + " " + sql_select_list(dct, unique_cols) + " FROM " + sql_tbl + " WHERE " + sql_intersect(sys, *geom_col, boxes[i]);
+      sql_key_tbl += "(SELECT " + sql_infix + " " + sql_select_list(dct, unique_cols) + " FROM " + sql_tbl + " WHERE (" + sql_intersect(sys, *geom_col, boxes[i], spatial_idx != 0) + ")";
       if (!sql_counter.empty()) sql_key_tbl += " AND " + sql_counter;
       sql_key_tbl += ")";
     }
     sql_key_tbl += ")";
   }
-  else if (SQLite == sys)
+  else if (SQLite == sys && spatial_idx != 0)
   {
     if (unique_cols.empty())
     {
@@ -110,12 +110,15 @@ void sql_select
       col.dbms_type_lcase.name = "int";
       unique_cols.push_back(col);
     }
-    if (unique_cols.size() != 1) throw std::runtime_error("SQL error");
+    if (unique_cols.size() != 1) throw runtime_error("unique columns error");
     sql_key_tbl += "SELECT pkid " + sql_identifier(sys, unique_cols[0].name) + " FROM " + sql_identifier(sys, "idx_" + tbl.id.name + "_" + geom_col->name) + " WHERE ";
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql_key_tbl += " OR ";
-      sql_key_tbl += sql_intersect(sys, *geom_col, boxes[i]);
+      const double xmin(boxes[i].min_corner().get<0>()), ymin(boxes[i].min_corner().get<1>()), xmax(boxes[i].max_corner().get<0>()), ymax(boxes[i].max_corner().get<1>());
+      ostringstream stream; stream.imbue(locale::classic()); stream << scientific; stream.precision(17);
+      stream << "(xmax >= " << xmin << " AND xmin <= " << xmax << " AND ymax >= " << ymin << " AND ymin <= " << ymax << ")";
+      sql_key_tbl += stream.str();
     }
   }
 
@@ -128,7 +131,7 @@ void sql_select
     for (size_t i(0); i < boxes.size(); ++i)
     {
       if (i > 0) sql += " OR ";
-      sql += sql_intersect(sys, *geom_col, boxes[i]);
+      sql += "(" + sql_intersect(sys, *geom_col, boxes[i], spatial_idx != 0) + ")";
     }
     sql += ")";
     if (!sql_conditions.empty()) sql += " AND " + sql_conditions;
@@ -138,12 +141,12 @@ void sql_select
     for (size_t i(0); i < select_cols.size(); ++i)
     {
       if (i > 0) sql += ", ";
-      const std::string id(sql_identifier(sys, select_cols[i].name));
+      const string id(sql_identifier(sys, select_cols[i].name));
       sql += "v." + id + " " + id;
     }
     sql += " FROM (" + sql_key_tbl + ") k JOIN (SELECT " + sql_select_list(dct, select_cols);
     for (size_t i(0); i < unique_cols.size(); ++i)
-      if (std::find_if(std::begin(select_cols), std::end(select_cols), [&](const column_definition& c){ return c.name == unique_cols[i].name; }) == std::end(select_cols))
+      if (!find_column(begin(select_cols), end(select_cols), unique_cols[i].name))
         sql += ", " + dct->sql_column(unique_cols[i]);
     sql += " FROM " + sql_tbl;
     if (!sql_conditions.empty()) sql += " WHERE " + sql_conditions;

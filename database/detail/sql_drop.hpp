@@ -6,7 +6,6 @@
 #include <brig/database/detail/sql_identifier.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/table_definition.hpp>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -18,7 +17,6 @@ inline void sql_drop(DBMS sys, const table_definition& tbl, std::vector<std::str
     for (auto idx(std::begin(tbl.indexes)); idx != std::end(tbl.indexes); ++idx)
       if (Spatial == idx->type)
       {
-        if (1 != idx->columns.size()) throw std::runtime_error("SQL error");
         sql.push_back("SELECT DisableSpatialIndex('" + tbl.id.name + "', '" + idx->columns.front() + "')");
         sql.push_back("DROP TABLE " + sql_identifier(sys, "idx_" + tbl.id.name + "_" + idx->columns.front()));
       }

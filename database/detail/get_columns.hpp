@@ -3,7 +3,6 @@
 #ifndef BRIG_DATABASE_DETAIL_GET_COLUMNS_HPP
 #define BRIG_DATABASE_DETAIL_GET_COLUMNS_HPP
 
-#include <algorithm>
 #include <brig/database/column_definition.hpp>
 #include <string>
 #include <vector>
@@ -14,8 +13,8 @@ inline std::vector<column_definition> get_columns(const std::vector<column_defin
 {
   using namespace std;
   vector<column_definition> res;
-  for (size_t i(0); i < names.size(); ++i)
-    res.push_back( *find_if(begin(cols), end(cols), [&](const column_definition& c){ return c.name == names[i]; }) );
+  for (auto name(begin(names)); name != end(names); ++name)
+    res.push_back( *find_column(begin(cols), end(cols), *name) );
   return res;
 }
 
