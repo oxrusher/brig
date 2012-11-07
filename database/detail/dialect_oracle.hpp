@@ -298,16 +298,15 @@ inline std::string dialect_oracle::sql_intersect(const table_definition& tbl, co
 {
   using namespace std;
 
-  const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>());
   const bool indexed(tbl.rtree(col) != 0);
+  const string id(sql_identifier(col));
+  const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>());
   ostringstream stream; stream.imbue(locale::classic()); stream << scientific; stream.precision(17);
-  
-  stream << (indexed? "MDSYS.SDO_FILTER": "MDSYS.SDO_GEOM.RELATE");
-  stream << "(" << sql_identifier(col)
-    << ", MDSYS.SDO_GEOMETRY(2003, " << tbl[col]->srid << ", NULL, MDSYS.SDO_ELEM_INFO_ARRAY(1, 1003, 3), MDSYS.SDO_ORDINATE_ARRAY(" << xmin << ", " << ymin << ", " << xmax << ", " << ymax << "))";
-  if (!indexed) stream << ", 0.000001";
-  stream << ") = 'TRUE'";
-  return stream.str();
+  stream << "MDSYS.SDO_GEOMETRY(2003, " << tbl[col]->srid << ", NULL, MDSYS.SDO_ELEM_INFO_ARRAY(1, 1003, 3), MDSYS.SDO_ORDINATE_ARRAY(" << xmin << ", " << ymin << ", " << xmax << ", " << ymax << "))";
+  if (indexed)
+    return "MDSYS.SDO_FILTER(" + id + ", " + stream.str() + ") = 'TRUE'";
+  else
+    return "MDSYS.SDO_GEOM.RELATE(" + id + ", 'anyinteract'" + ", " + stream.str() + ", 0.000001) = 'TRUE'";
 } // dialect_oracle::
 
 } } } // brig::database::detail
