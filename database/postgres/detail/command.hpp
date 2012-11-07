@@ -12,6 +12,7 @@
 #include <brig/database/postgres/detail/binding_factory.hpp>
 #include <brig/database/postgres/detail/get_value_factory.hpp>
 #include <brig/database/postgres/detail/lib.hpp>
+#include <brig/string_cast.hpp>
 #include <locale>
 #include <sstream>
 #include <stdexcept>
@@ -33,15 +34,14 @@ class command : public brig::database::command {
 public:
   command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd);
   virtual ~command()  { close_all(); }
-  virtual DBMS system()  { return Postgres; }
-  virtual std::string sql_parameter(size_t order, const column_definition& param);
-  virtual std::string sql_column(const column_definition& col);
   virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>());
   virtual size_t affected();
   virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
   virtual void set_autocommit(bool autocommit);
   virtual void commit();
+  virtual DBMS system()  { return Postgres; }
+  virtual command_traits traits();
 }; // command
 
 inline void command::check(bool r)
@@ -75,41 +75,6 @@ inline command::command(const std::string& host, int port, const std::string& db
   check(lib::singleton().p_PQstatus(m_con) == CONNECTION_OK);
   try  { check(lib::singleton().p_PQsetClientEncoding(m_con, "UTF8") == 0); }
   catch (const std::exception&)  { close_all(); throw; }
-}
-
-inline std::string command::sql_parameter(size_t order, const column_definition& param)
-{
-  using namespace detail;
-  std::ostringstream stream; stream.imbue(std::locale::classic());
-  if (Geometry == param.type)
-  {
-    if (param.dbms_type_lcase.name.compare("geography") == 0)
-    {
-      if (param.srid != 4326) throw std::runtime_error("SRID error");
-      stream << "ST_GeogFromWKB($" << (order + 1) << ")";
-    }
-    else
-      stream << "ST_GeomFromWKB($" << (order + 1) << ", " << param.srid << ")";
-  }
-  else
-    stream << "$" << (order + 1);
-  return stream.str();
-}
-
-inline std::string command::sql_column(const column_definition& col)
-{
-  using namespace brig::database::detail;
-  if (col.query_expression.empty() && (col.dbms_type_lcase.name.find("dec") == 0 || col.dbms_type_lcase.name.find("num") == 0))
-  {
-    const std::string id(sql_identifier(Postgres, col.name));
-    switch (col.type)
-    {
-    default: break;
-    case Integer: return "CAST( " + id + " AS bigint) AS " + id;
-    case Double: return "CAST( " + id + " AS double precision) AS " + id;
-    }
-  }
-  return brig::database::command::sql_column(col);
 }
 
 inline void command::exec(const std::string& sql, const std::vector<column_definition>& params)
@@ -181,6 +146,14 @@ inline void command::commit()
   if (m_autocommit) return;
   exec("COMMIT");
   exec("BEGIN");
+}
+
+inline command_traits command::traits()
+{
+  command_traits trs;
+  trs.parameter_prefix = '$';
+  trs.parameter_suffix = true;
+  return trs;
 } // command::
 
 } } } } // brig::database::postgres::detail

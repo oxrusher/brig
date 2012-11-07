@@ -3,23 +3,26 @@
 #ifndef BRIG_DATABASE_DETAIL_SQL_SELECT_LIST_HPP
 #define BRIG_DATABASE_DETAIL_SQL_SELECT_LIST_HPP
 
+#include <brig/database/command_traits.hpp>
 #include <brig/database/column_definition.hpp>
-#include <memory>
+#include <brig/database/detail/dialect.hpp>
+#include <iterator>
 #include <string>
 #include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-template <typename Dialect>
-std::string sql_select_list(std::shared_ptr<Dialect> dct, const std::vector<column_definition>& cols)
+inline std::string sql_select_list(dialect* dct, const command_traits& trs, const std::vector<column_definition>& cols)
 {
-  std::string res;
-  for (size_t i(0); i < cols.size(); ++i)
+  using namespace std;
+
+  string sql;
+  for (auto col(begin(cols)); col != end(cols); ++col)
   {
-    if (i > 0) res += ", ";
-    res += dct->sql_column(cols[i]);
+    if (col != begin(cols)) sql += ", ";
+    sql += dct->sql_column(trs, *col);
   }
-  return res;
+  return sql;
 }
 
 } } } // brig::database::detail

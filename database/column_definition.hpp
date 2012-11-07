@@ -15,7 +15,7 @@ namespace brig { namespace database {
 struct column_definition {
   std::string name;
   column_type type;
-  identifier dbms_type, dbms_type_lcase;
+  identifier dbms_type_lcase;
   int chars, srid, epsg;
   bool not_null;
 

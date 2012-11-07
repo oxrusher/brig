@@ -3,7 +3,9 @@
 #ifndef BRIG_DATABASE_TABLE_DEFINITION_HPP
 #define BRIG_DATABASE_TABLE_DEFINITION_HPP
 
+#include <algorithm>
 #include <brig/database/column_definition.hpp>
+#include <brig/database/global.hpp>
 #include <brig/database/identifier.hpp>
 #include <brig/database/index_definition.hpp>
 #include <iterator>
@@ -21,11 +23,29 @@ struct table_definition {
   int query_rows;
 
   table_definition() : query_rows(-1)  {}
-  const column_definition* operator [](const std::string& col_name) const
-    { return find_column(std::begin(columns), std::end(columns), col_name); }
-  column_definition* operator [](const std::string& col_name)
-    { return find_column(std::begin(columns), std::end(columns), col_name); }
+  column_definition* operator [](const std::string& col_name);
+  const column_definition* operator [](const std::string& col_name) const;
+  const index_definition* rtree(const std::string& col_name) const;
 }; // table_definition
+
+inline column_definition* table_definition::operator [](const std::string& col_name)
+{
+  using namespace std;
+  return find_column(begin(columns), end(columns), col_name);
+}
+
+inline const column_definition* table_definition::operator [](const std::string& col_name) const
+{
+  using namespace std;
+  return find_column(begin(columns), end(columns), col_name);
+}
+
+inline const index_definition* table_definition::rtree(const std::string& col_name) const
+{
+  using namespace std;
+  auto idx_iter(find_if(begin(indexes), end(indexes), [&col_name](const index_definition& idx){ return Spatial == idx.type && idx.columns.size() == 1 && col_name.compare(idx.columns.front()) == 0; }));
+  return idx_iter == end(indexes)? 0: &*idx_iter;
+} // table_definition::
 
 } } // brig::database
 

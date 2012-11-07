@@ -3,23 +3,20 @@
 #ifndef BRIG_DATABASE_DETAIL_SIMPLE_RASTERS_HPP
 #define BRIG_DATABASE_DETAIL_SIMPLE_RASTERS_HPP
 
-#include <brig/database/detail/fit_table.hpp>
+#include <brig/database/detail/to_lcase.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/table_definition.hpp>
-#include <brig/unicode/lower_case.hpp>
-#include <brig/unicode/transform.hpp>
-#include <string>
-#include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-inline column_definition simple_rasters_column(DBMS sys, const std::string& name, column_type type)
+inline column_definition simple_rasters_column(const std::string& name, column_type type)
 {
   column_definition col;
   col.name = name;
   col.type = type;
   col.not_null = true;
-  if (MySQL == sys && String == type)
+  if (String == type)
+    // MySQL:
     // Max key length is 1000 bytes.
     // The problem with UTF-8 is that every character reserves 3 bytes for the worst case.
     // The key uses 3 * 100 = 300 characters == 900 bytes
@@ -27,7 +24,7 @@ inline column_definition simple_rasters_column(DBMS sys, const std::string& name
   return col;
 }
 
-inline table_definition simple_rasters_table(DBMS sys, const std::string& schema)
+inline table_definition simple_rasters_table(bool schema)
 {
   table_definition tbl;
   tbl.id.name = "simple_rasters";
@@ -36,19 +33,19 @@ inline table_definition simple_rasters_table(DBMS sys, const std::string& schema
   index_definition& idx(tbl.indexes.back());
   idx.type = Primary;
 
-  if (SQLite != sys)  { tbl.columns.push_back( simple_rasters_column(sys, "schema", String) ); idx.columns.push_back("schema"); }
-  tbl.columns.push_back( simple_rasters_column(sys, "table", String) ); idx.columns.push_back("table");
-  tbl.columns.push_back( simple_rasters_column(sys, "raster", String) ); idx.columns.push_back("raster");
+  if (schema)  { tbl.columns.push_back( simple_rasters_column("schema", String) ); idx.columns.push_back("schema"); }
+  tbl.columns.push_back( simple_rasters_column("table", String) ); idx.columns.push_back("table");
+  tbl.columns.push_back( simple_rasters_column("raster", String) ); idx.columns.push_back("raster");
 
-  if (SQLite != sys) tbl.columns.push_back( simple_rasters_column(sys, "base_schema", String) );
-  tbl.columns.push_back( simple_rasters_column(sys, "base_table", String) );
-  tbl.columns.push_back( simple_rasters_column(sys, "base_raster", String) );
+  if (schema) tbl.columns.push_back( simple_rasters_column("base_schema", String) );
+  tbl.columns.push_back( simple_rasters_column("base_table", String) );
+  tbl.columns.push_back( simple_rasters_column("base_raster", String) );
 
-  tbl.columns.push_back( simple_rasters_column(sys, "geometry", String) );
-  tbl.columns.push_back( simple_rasters_column(sys, "resolution_x", Double) );
-  tbl.columns.push_back( simple_rasters_column(sys, "resolution_y", Double) );
+  tbl.columns.push_back( simple_rasters_column("geometry", String) );
+  tbl.columns.push_back( simple_rasters_column("resolution_x", Double) );
+  tbl.columns.push_back( simple_rasters_column("resolution_y", Double) );
 
-  return fit_table(tbl, sys, schema);
+  return tbl;
 }
 
 inline std::vector<std::string> simple_rasters_columns(const table_definition& tbl)
@@ -61,7 +58,7 @@ inline std::vector<std::string> simple_rasters_columns(const table_definition& t
   for (size_t i(0); i < tbl.columns.size(); ++i)
   {
     const string& name(tbl.columns[i].name);
-    const string name_lcase(transform<string>(name, lower_case));
+    const string name_lcase(to_lcase(name));
 
     if (name_lcase.compare("schema") == 0) cols[0] = name;
     else if (name_lcase.compare("table") == 0) cols[1] = name;

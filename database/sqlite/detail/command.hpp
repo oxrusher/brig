@@ -5,14 +5,12 @@
 
 #include <algorithm>
 #include <brig/database/command.hpp>
+#include <brig/database/detail/is_ogc_type.hpp>
+#include <brig/database/detail/to_lcase.hpp>
 #include <brig/database/sqlite/detail/binding.hpp>
 #include <brig/database/sqlite/detail/column_geometry.hpp>
 #include <brig/database/sqlite/detail/db_handle.hpp>
 #include <brig/database/sqlite/detail/lib.hpp>
-#include <brig/database/detail/is_ogc_type.hpp>
-#include <brig/database/detail/sql_identifier.hpp>
-#include <brig/unicode/lower_case.hpp>
-#include <brig/unicode/transform.hpp>
 #include <cstring>
 #include <exception>
 #include <memory>
@@ -36,14 +34,14 @@ class command : public brig::database::command
 public:
   explicit command(const std::string& file) : m_db(file), m_stmt(0), m_done(false), m_autocommit(true)  {}
   virtual ~command();
-  virtual DBMS system()  { return SQLite; }
-  virtual std::string sql_column(const column_definition& col);
   virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>());
   virtual size_t affected()  { return m_db.affected(); }
   virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
   virtual void set_autocommit(bool autocommit);
   virtual void commit();
+  virtual DBMS system()  { return SQLite; }
+  virtual command_traits traits();
 }; // command
 
 inline void command::close_stmt()
@@ -92,7 +90,6 @@ inline void command::exec(const std::string& sql, const std::vector<column_defin
 inline std::vector<std::string> command::columns()
 {
   using namespace brig::database::detail;
-  using namespace brig::unicode;
 
   std::vector<std::string> cols;
   if (!m_stmt) return cols;
@@ -107,7 +104,7 @@ inline std::vector<std::string> command::columns()
 
     column col;
     if (name_ptr) col.name = name_ptr;
-    col.geometry = (type_ptr && is_ogc_type(transform<std::string>(type_ptr, lower_case)));
+    col.geometry = (type_ptr && is_ogc_type(to_lcase(type_ptr)));
 
     m_cols.push_back(col);
     cols.push_back(col.name);
@@ -157,15 +154,6 @@ inline bool command::fetch(std::vector<variant>& row)
   }
 }
 
-inline std::string command::sql_column(const column_definition& col)
-{
-  using namespace brig::database::detail;
-  if (col.query_expression.empty() && Geometry == col.type)
-    return sql_identifier(SQLite, col.name);
-  else
-    return brig::database::command::sql_column(col);
-}
-
 inline void command::set_autocommit(bool autocommit)
 {
   if (m_autocommit == autocommit) return;
@@ -178,6 +166,13 @@ inline void command::commit()
   if (m_autocommit) return;
   exec("COMMIT");
   exec("BEGIN");
+}
+
+inline command_traits command::traits()
+{
+  command_traits trs;
+  trs.readable_geometry = true;
+  return trs;
 } // command::
 
 } } } } // brig::database::sqlite::detail

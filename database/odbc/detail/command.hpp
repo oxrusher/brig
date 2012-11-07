@@ -6,10 +6,10 @@
 #include <algorithm>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <brig/database/command.hpp>
+#include <brig/database/detail/to_lcase.hpp>
 #include <brig/database/odbc/detail/binding_factory.hpp>
 #include <brig/database/odbc/detail/get_data_factory.hpp>
 #include <brig/database/odbc/detail/lib.hpp>
-#include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
 #include <stdexcept>
 #include <string>
@@ -30,13 +30,13 @@ class command : public brig::database::command {
 public:
   command(const std::string& str);
   virtual ~command()  { close_all(); }
-  virtual DBMS system()  { return m_sys; }
   virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>());
   virtual size_t affected();
   virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
   virtual void set_autocommit(bool autocommit);
   virtual void commit();
+  virtual DBMS system()  { return m_sys; }
 }; // command
 
 inline void command::close_stmt()
@@ -114,7 +114,7 @@ inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(
   if (SQL_SUCCEEDED(lib::singleton().p_SQLGetInfoW(m_dbc, SQL_DBMS_NAME, buf, SQL_MAX_MESSAGE_LENGTH, &len)))
   {
     using namespace brig::unicode;
-    const std::string sys(transform<std::string>(buf, lower_case));
+    const std::string sys(database::detail::to_lcase(buf));
          if (sys.find("cubrid") != std::string::npos) m_sys = CUBRID;
     else if (sys.find("db2") != std::string::npos) m_sys = DB2;
     else if (sys.find("informix") != std::string::npos) m_sys = Informix;

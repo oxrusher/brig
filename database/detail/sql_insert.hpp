@@ -3,36 +3,35 @@
 #ifndef BRIG_DATABASE_DETAIL_SQL_INSERT_HPP
 #define BRIG_DATABASE_DETAIL_SQL_INSERT_HPP
 
-#include <brig/database/column_definition.hpp>
+#include <brig/database/command_traits.hpp>
+#include <brig/database/detail/dialect.hpp>
 #include <brig/database/detail/get_columns.hpp>
-#include <brig/database/detail/sql_identifier.hpp>
-#include <brig/database/identifier.hpp>
-#include <brig/database/global.hpp>
 #include <brig/database/table_definition.hpp>
-#include <memory>
+#include <iterator>
 #include <string>
 #include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-template <typename Dialect>
-std::string sql_insert(std::shared_ptr<Dialect> dct, const table_definition& tbl)
+inline std::string sql_insert(dialect* dct, const command_traits& trs, const table_definition& tbl)
 {
-  const DBMS sys(dct->system());
-  std::vector<column_definition> insert_cols = tbl.query_columns.empty()? tbl.columns: get_columns(tbl.columns, tbl.query_columns);
-  std::string prefix, suffix;
+  using namespace std;
 
-  prefix += "INSERT INTO " + sql_identifier(sys, tbl.id) + "(";
+  vector<column_definition> cols = tbl.query_columns.empty()? tbl.columns: get_columns(tbl.columns, tbl.query_columns);
+  string prefix, suffix;
+  size_t order(0);
+
+  prefix += "INSERT INTO " + dct->sql_identifier(tbl.id) + "(";
   suffix += "VALUES(";
-  for (size_t i(0); i < insert_cols.size(); ++i)
+  for (auto col(begin(cols)); col != end(cols); ++col)
   {
-    if (i > 0)
+    if (col != begin(cols))
     {
       prefix += ", ";
       suffix += ", ";
     }
-    prefix += sql_identifier(sys, insert_cols[i].name);
-    suffix += dct->sql_parameter(i, insert_cols[i]);
+    prefix += dct->sql_identifier(col->name);
+    suffix += dct->sql_parameter(trs, *col, order++);
   }
   prefix += ")";
   suffix += ")";

@@ -5,7 +5,7 @@
 
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <brig/database/command.hpp>
-#include <brig/database/detail/sql_identifier.hpp>
+#include <brig/database/detail/to_lcase.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/identifier.hpp>
 #include <brig/database/oracle/detail/binding.hpp>
@@ -14,7 +14,7 @@
 #include <brig/database/oracle/detail/define_factory.hpp>
 #include <brig/database/oracle/detail/handles.hpp>
 #include <brig/database/oracle/detail/lib.hpp>
-#include <brig/unicode/lower_case.hpp>
+#include <brig/string_cast.hpp>
 #include <brig/unicode/transform.hpp>
 #include <locale>
 #include <sstream>
@@ -34,9 +34,6 @@ class command : public brig::database::command {
 public:
   command(const std::string& srv, const std::string& usr, const std::string& pwd);
   virtual ~command()  { close_all(); }
-  virtual DBMS system()  { return Oracle; }
-  virtual std::string sql_parameter(size_t order, const column_definition& param);
-  virtual std::string sql_column(const column_definition& col);
   virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()
     );
   virtual size_t affected();
@@ -44,6 +41,8 @@ public:
   virtual bool fetch(std::vector<variant>& row);
   virtual void set_autocommit(bool autocommit);
   virtual void commit();
+  virtual DBMS system()  { return Oracle; }
+  virtual command_traits traits();
 }; // command
 
 inline void command::close_stmt()
@@ -128,8 +127,6 @@ inline size_t command::affected()
 
 inline std::vector<std::string> command::columns()
 {
-  using namespace brig::unicode;
-
   std::vector<std::string> cols;
   if (0 == m_hnd.stmt) return cols;
   m_cols.clear();
@@ -157,11 +154,11 @@ inline std::vector<std::string> command::columns()
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_name, &type_name_len, OCI_ATTR_TYPE_NAME, m_hnd.err));
 
       identifier dbms_type_lcase;
-      dbms_type_lcase.schema = transform<std::string>(type_schema, lower_case);
-      dbms_type_lcase.name = transform<std::string>(type_name, lower_case);
+      dbms_type_lcase.schema = database::detail::to_lcase(type_schema);
+      dbms_type_lcase.name = database::detail::to_lcase(type_name);
 
       m_cols.push_back(define_factory(&m_hnd, i + 1, data_type, size, precision, scale, dbms_type_lcase));
-      cols.push_back(transform<std::string>(name));
+      cols.push_back(brig::unicode::transform<std::string>(name));
 
     }
     catch (const std::exception&)  { handles::free_descriptor((void**)&dsc, OCI_DTYPE_PARAM); throw; }
@@ -188,29 +185,6 @@ inline bool command::fetch(std::vector<variant>& row)
   return true;
 }
 
-inline std::string command::sql_parameter(size_t order, const column_definition& param)
-{
-  using namespace brig::database::detail;
-  std::ostringstream stream; stream.imbue(std::locale::classic());
-  if (Geometry == param.type && param.dbms_type_lcase.name.compare("sdo_geometry") != 0)
-    stream << sql_identifier(Oracle, param.dbms_type) << "(:" << (order + 1) << ")";
-  else
-    stream << ":" << (order + 1);
-  return stream.str();
-}
-
-inline std::string command::sql_column(const column_definition& col)
-{
-  using namespace brig::database::detail;
-  if (col.query_expression.empty() && Geometry == col.type)
-  {
-    const std::string id(sql_identifier(Oracle, col.name));
-    if (col.dbms_type_lcase.name.compare("sdo_geometry") == 0) return id;
-    else return sql_identifier(Oracle, col.dbms_type) + ".GET_SDO_GEOM(" + id + ") as " + id;
-  }
-  return brig::database::command::sql_column(col);
-}
-
 inline void command::set_autocommit(bool autocommit)
 {
   if (m_autocommit == autocommit) return;
@@ -224,6 +198,16 @@ inline void command::commit()
   if (m_autocommit) return;
   close_stmt();
   m_hnd.check(lib::singleton().p_OCITransCommit(m_hnd.svc, m_hnd.err, OCI_DEFAULT));
+}
+
+inline command_traits command::traits()
+{
+  command_traits trs;
+  trs.parameter_prefix = ':';
+  trs.parameter_suffix = true;
+  trs.readable_geometry = true;
+  trs.writable_geometry = true;
+  return trs;
 } // command::
 
 } } } } // brig::database::oracle::detail

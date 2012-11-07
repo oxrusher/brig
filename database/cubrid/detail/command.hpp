@@ -26,13 +26,13 @@ class command : public brig::database::command {
 public:
   command(const std::string& url, const std::string& usr, const std::string& pwd);
   virtual ~command()  { close_all(); }
-  virtual DBMS system()  { return CUBRID; }
   virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>());
   virtual size_t affected()  { return size_t(m_res < 0? 0: m_res); }
   virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
   virtual void set_autocommit(bool autocommit);
   virtual void commit();
+  virtual DBMS system()  { return CUBRID; }
 }; // command
 
 inline void command::check(int r)

@@ -3,38 +3,26 @@
 #ifndef BRIG_DATABASE_DETAIL_GET_SCHEMA_HPP
 #define BRIG_DATABASE_DETAIL_GET_SCHEMA_HPP
 
+#include <brig/database/detail/dialect.hpp>
 #include <brig/database/command.hpp>
-#include <brig/database/global.hpp>
-#include <brig/database/variant.hpp>
 #include <brig/string_cast.hpp>
-#include <memory>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-inline std::string get_schema(std::shared_ptr<command> cmd)
+inline std::string get_schema(dialect* dct, command* cmd)
 {
-  std::string sql;
-  switch (cmd->system())
-  {
-  default: throw std::runtime_error("SQL error");
-  case CUBRID: sql = "SELECT CURRENT_USER"; break;
-  case DB2: sql = "VALUES RTRIM(CURRENT_SCHEMA)"; break;
-  case Informix: sql = "SELECT RTRIM(USER) FROM sysmaster:systables WHERE tabid = 1"; break;
-  case Ingres: sql = "SELECT dbmsinfo('session_user')"; break;
-  case MS_SQL: sql = "SELECT SCHEMA_NAME()"; break;
-  case MySQL: sql = "SELECT schema()"; break;
-  case Oracle: sql = "SELECT SYS_CONTEXT('USERENV','SESSION_SCHEMA') FROM DUAL"; break;
-  case Postgres: sql = "SELECT current_schema()"; break;
-  case SQLite: return "";
-  }
+  using namespace std;
 
+  const string sql(dct->sql_schema());
+  if (sql.empty()) return "";
   cmd->exec(sql);
-  std::vector<variant> row;
-  if (!cmd->fetch(row)) throw std::runtime_error("SQL error");
-  return string_cast<char>(row[0]);
+  vector<variant> row;
+  if (!cmd->fetch(row)) throw runtime_error("schema error");
+  const string schema(string_cast<char>(row[0]));
+  if (schema.empty()) throw runtime_error("schema error");
+  return schema;
 }
 
 } } } // brig::database::detail

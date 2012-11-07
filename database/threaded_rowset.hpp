@@ -23,24 +23,26 @@ public:
 
 inline threaded_rowset::threaded_rowset(std::shared_ptr<rowset> rs) : m_med(new mediator())
 {
-  auto worker = [](std::shared_ptr<rowset> rs, std::shared_ptr<mediator> med)
+  using namespace std;
+  auto worker = [](shared_ptr<rowset> rs, shared_ptr<mediator> med)
   {
     med->start();
     while (med->handle(rs.get())) med->dpg.prefill(rs.get());
   };
-  std::thread t(worker, rs, m_med);
+  thread t(worker, rs, m_med);
   t.detach();
 }
 
 inline std::vector<std::string> threaded_rowset::columns()
 {
-  return m_med->call(&rowset::columns, std::placeholders::_1);
+  using namespace std;
+  return m_med->call<vector<string>>(&rowset::columns, placeholders::_1);
 }
 
 inline bool threaded_rowset::fetch(std::vector<variant>& row)
 {
   if (m_med->dpg.empty())
-    m_med->call(&detail::double_page::fill, &m_med->dpg, std::placeholders::_1);
+    m_med->call<void>(&detail::double_page::fill, &m_med->dpg, std::placeholders::_1);
   return m_med->dpg.fetch(row);
 } // threaded_rowset::
 

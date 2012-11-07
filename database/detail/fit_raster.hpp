@@ -4,35 +4,35 @@
 #define BRIG_DATABASE_DETAIL_FIT_RASTER_HPP
 
 #include <algorithm>
-#include <brig/database/detail/fit_column.hpp>
-#include <brig/database/detail/fit_identifier.hpp>
-#include <brig/database/global.hpp>
+#include <brig/database/command.hpp>
+#include <brig/database/detail/dialect.hpp>
 #include <brig/database/raster_pyramid.hpp>
 #include <iterator>
+#include <string>
 
 namespace brig { namespace database { namespace detail {
 
-inline raster_pyramid fit_raster(const raster_pyramid& raster_from, DBMS sys_to, const std::string& schema_to)
+inline raster_pyramid fit_raster(dialect* dct, const raster_pyramid& raster, const std::string& schema)
 {
   using namespace std;
 
-  raster_pyramid raster_to;
-
-  for (auto lvl_from(begin(raster_from.levels)); lvl_from != end(raster_from.levels); ++lvl_from)
+  raster_pyramid res;
+  for (auto lvl_iter(begin(raster.levels)); lvl_iter != end(raster.levels); ++lvl_iter)
   {
-    raster_level lvl_to;
-    lvl_to.resolution = lvl_from->resolution;
-    lvl_to.geometry = fit_identifier(lvl_from->geometry, sys_to, schema_to);
-    lvl_to.raster = fit_column(lvl_from->raster, sys_to);
-    raster_to.levels.push_back(lvl_to);
+    raster_level lvl;
+    lvl.resolution_x = lvl_iter->resolution_x;
+    lvl.resolution_y = lvl_iter->resolution_y;
+    lvl.geometry.schema = schema;
+    lvl.geometry.name = dct->fit_identifier(lvl_iter->geometry.name);
+    lvl.geometry.qualifier = dct->fit_identifier(lvl_iter->geometry.qualifier);
+    lvl.raster = dct->fit_column(lvl_iter->raster);
+    res.levels.push_back(lvl);
   }
-
-  sort(begin(raster_to.levels), end(raster_to.levels), [](const raster_level& a, const raster_level& b){ return a.resolution.get<0>() * a.resolution.get<1>() < b.resolution.get<0>() * b.resolution.get<1>(); });
-
-  raster_to.id.schema = raster_to.levels.front().geometry.schema;
-  raster_to.id.name = raster_to.levels.front().geometry.name;
-  raster_to.id.qualifier = raster_to.levels.front().raster.name;
-  return raster_to;
+  sort(begin(res.levels), end(res.levels), [](const raster_level& a, const raster_level& b){ return a.resolution_x * a.resolution_y < b.resolution_x * b.resolution_y; });
+  res.id.schema = res.levels.front().geometry.schema;
+  res.id.name = res.levels.front().geometry.name;
+  res.id.qualifier = res.levels.front().raster.name;
+  return res;
 }
 
 } } } // brig::database::detail

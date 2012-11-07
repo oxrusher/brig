@@ -4,47 +4,39 @@
 #define BRIG_DATABASE_DETAIL_GET_TABLE_DEFINITION_HPP
 
 #include <brig/database/command.hpp>
+#include <brig/database/detail/dialect.hpp>
 #include <brig/database/detail/get_table_definition_sqlite.hpp>
-#include <brig/database/detail/get_type.hpp>
-#include <brig/database/detail/sql_columns.hpp>
-#include <brig/database/detail/sql_indexed_columns.hpp>
-#include <brig/database/detail/sql_srid.hpp>
+#include <brig/database/detail/to_lcase.hpp>
 #include <brig/database/global.hpp>
 #include <brig/database/numeric_cast.hpp>
 #include <brig/database/table_definition.hpp>
 #include <brig/string_cast.hpp>
-#include <brig/unicode/lower_case.hpp>
-#include <brig/unicode/transform.hpp>
-#include <memory>
+#include <iterator>
 #include <stdexcept>
 
 namespace brig { namespace database { namespace detail {
 
-inline table_definition get_table_definition(std::shared_ptr<command> cmd, const identifier& tbl)
+inline table_definition get_table_definition(dialect* dct, command* cmd, const identifier& tbl)
 {
   using namespace std;
-  using namespace brig::unicode;
 
-  const DBMS sys(cmd->system());
-  if (SQLite == sys) return get_table_definition_sqlite(cmd, tbl);
+  if (cmd->system() == SQLite) return get_table_definition_sqlite(dct, cmd, tbl);
 
   // columns
   table_definition res;
   res.id = tbl;
-  cmd->exec(sql_columns(sys, tbl));
+  cmd->exec(dct->sql_columns(res.id));
   vector<variant> row;
   while (cmd->fetch(row))
   {
     column_definition col;
     col.name = string_cast<char>(row[0]);
-    col.dbms_type.schema = string_cast<char>(row[1]);
-    col.dbms_type.name = string_cast<char>(row[2]); 
-    col.dbms_type_lcase.schema = transform<string>(col.dbms_type.schema, lower_case);
-    col.dbms_type_lcase.name = transform<string>(col.dbms_type.name, lower_case);
+    col.dbms_type_lcase.schema = to_lcase(string_cast<char>(row[1]));
+    col.dbms_type_lcase.name = to_lcase(string_cast<char>(row[2]));
     numeric_cast(row[3], col.chars);
     int scale(-1);
     numeric_cast(row[4], scale);
-    col.type = get_type(sys, col.dbms_type_lcase, scale);
+    col.type = dct->get_type(col.dbms_type_lcase, scale);
     int not_null(0);
     col.not_null = (numeric_cast(row[5], not_null) && not_null);
     res.columns.push_back(col);
@@ -52,7 +44,7 @@ inline table_definition get_table_definition(std::shared_ptr<command> cmd, const
   if (res.columns.empty()) throw runtime_error("table error");
 
   // indexes
-  cmd->exec(sql_indexed_columns(sys, tbl));
+  cmd->exec(dct->sql_indexed_columns(res.id));
   index_definition idx;
   while (cmd->fetch(row))
   {
@@ -87,24 +79,18 @@ inline table_definition get_table_definition(std::shared_ptr<command> cmd, const
 
   // srid, epsg, type qualifier
   for (auto col(begin(res.columns)); col != end(res.columns); ++col)
-  {
-    const string sql(sql_srid(sys, tbl, *col));
-    if (!sql.empty())
+    if (Geometry == col->type)
     {
+      const string sql(dct->sql_spatial_detail(res, col->name));
       cmd->exec(sql);
       if (cmd->fetch(row))
       {
         numeric_cast(row[0], col->srid);
         if (row.size() > 1) numeric_cast(row[1], col->epsg);
         else col->epsg = col->srid;
-        if (row.size() > 2)
-        {
-          col->dbms_type.qualifier = string_cast<char>(row[2]);
-          col->dbms_type_lcase.qualifier = transform<string>(col->dbms_type.qualifier, lower_case);
-        }
+        if (row.size() > 2) col->dbms_type_lcase.qualifier = to_lcase(string_cast<char>(row[2]));
       }
     }
-  }
   return res;
 }
 

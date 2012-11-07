@@ -33,7 +33,7 @@ public:
   explicit epsg(int code);
   operator int() const  { return m_code; }
   operator projPJ() const  { return m_res? m_res->pj: 0; }
-  bool is_latlong() const  { return m_res? detail::lib::singleton().p_pj_is_latlong(m_res->pj): false; }
+  bool is_latlong() const  { return m_res? (detail::lib::singleton().p_pj_is_latlong(m_res->pj) != 0): false; }
 }; // epsg
 
 inline std::string epsg::definition(bool cur_dir, int code)

@@ -3,6 +3,10 @@
 #ifndef BRIG_BOOST_GEOMETRY_HPP
 #define BRIG_BOOST_GEOMETRY_HPP
 
+#ifdef _MSC_VER
+#  define BOOST_NO_ARGUMENT_DEPENDENT_LOOKUP
+#endif
+
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>

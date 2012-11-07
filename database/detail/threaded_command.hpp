@@ -19,77 +19,74 @@ class threaded_command : public command {
 public:
   explicit threaded_command(std::shared_ptr<command_allocator> allocator);
   virtual ~threaded_command()  { m_med->stop(); }
-  virtual DBMS system();
-  virtual std::string sql_parameter(size_t order, const column_definition& param);
-  virtual std::string sql_column(const column_definition& col);
   virtual void exec(const std::string& sql, const std::vector<column_definition>& params);
   virtual size_t affected();
   virtual std::vector<std::string> columns();
   virtual bool fetch(std::vector<variant>& row);
   virtual void set_autocommit(bool autocommit);
   virtual void commit();
+  virtual DBMS system();
+  virtual command_traits traits();
 }; // threaded_command
 
 inline threaded_command::threaded_command(std::shared_ptr<command_allocator> allocator) : m_med(new mediator())
 {
-  auto worker = [](std::shared_ptr<command_allocator> allocator, std::shared_ptr<mediator> med)
+  using namespace std;
+  auto worker = [](shared_ptr<command_allocator> allocator, shared_ptr<mediator> med)
   {
-    std::unique_ptr<command> cmd;
-    try  { cmd = std::unique_ptr<command>(allocator->allocate()); }
-    catch (const std::exception&)  { med->stop(std::current_exception()); return; }
+    unique_ptr<command> cmd;
+    try  { cmd = unique_ptr<command>(allocator->allocate()); }
+    catch (const exception&)  { med->stop(current_exception()); return; }
     med->start();
     while (med->handle(cmd.get())) med->dpg.prefill(cmd.get());
   };
-  std::thread t(worker, allocator, m_med);
+  thread t(worker, allocator, m_med);
   t.detach();
-}
-
-inline DBMS threaded_command::system()
-{
-  return m_med->call(&command::system, std::placeholders::_1);
-}
-
-inline std::string threaded_command::sql_parameter(size_t order, const column_definition& param)
-{
-  return m_med->call(&command::sql_parameter, std::placeholders::_1, order, std::cref(param));
-}
-
-inline std::string threaded_command::sql_column(const column_definition& col)
-{
-  return m_med->call(&command::sql_column, std::placeholders::_1, std::cref(col));
 }
 
 inline void threaded_command::exec(const std::string& sql, const std::vector<column_definition>& params)
 {
+  using namespace std;
   m_med->dpg.clear();
-  m_med->call(&command::exec, std::placeholders::_1, std::cref(sql), std::cref(params));
+  m_med->call<void>(&command::exec, placeholders::_1, cref(sql), cref(params));
 }
 
 inline size_t threaded_command::affected()
 {
-  return m_med->call(&command::affected, std::placeholders::_1);
+  return m_med->call<size_t>(&command::affected, std::placeholders::_1);
 }
 
 inline std::vector<std::string> threaded_command::columns()
 {
-  return m_med->call(&command::columns, std::placeholders::_1);
+  using namespace std;
+  return m_med->call<vector<string>>(&command::columns, placeholders::_1);
 }
 
 inline bool threaded_command::fetch(std::vector<variant>& row)
 {
   if (m_med->dpg.empty())
-    m_med->call(&double_page::fill, &m_med->dpg, std::placeholders::_1);
+    m_med->call<void>(&double_page::fill, &m_med->dpg, std::placeholders::_1);
   return m_med->dpg.fetch(row);
 }
 
 inline void threaded_command::set_autocommit(bool autocommit)
 {
-  m_med->call(&command::set_autocommit, std::placeholders::_1, autocommit);
+  m_med->call<void>(&command::set_autocommit, std::placeholders::_1, autocommit);
 }
 
 inline void threaded_command::commit()
 {
-  m_med->call(&command::commit, std::placeholders::_1);
+  m_med->call<void>(&command::commit, std::placeholders::_1);
+}
+
+inline DBMS threaded_command::system()
+{
+  return m_med->call<DBMS>(&command::system, std::placeholders::_1);
+}
+
+inline command_traits threaded_command::traits()
+{
+  return m_med->call<command_traits>(&command::traits, std::placeholders::_1);
 } // threaded_command::
 
 } } } // brig::database::detail

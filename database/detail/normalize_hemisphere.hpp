@@ -4,28 +4,14 @@
 #define BRIG_DATABASE_DETAIL_NORMALIZE_HEMISPHERE_HPP
 
 #include <brig/boost/geometry.hpp>
-#include <brig/database/global.hpp>
 #include <stdexcept>
 #include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-inline void normalize_hemisphere(std::vector<brig::boost::box>& boxes, DBMS sys, bool geodetic)
+inline void normalize_hemisphere(std::vector<brig::boost::box>& boxes)
 {
   using namespace brig::boost;
-
-  switch (sys)
-  {
-  default: throw std::runtime_error("box error");
-  case DB2:
-  case Informix:
-  case Ingres:
-  case MySQL:
-  case SQLite: return;
-  case MS_SQL:
-  case Oracle:
-  case Postgres: if (!geodetic) return; break;
-  }
 
   size_t i(0);
   while (i < boxes.size())
