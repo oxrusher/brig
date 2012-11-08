@@ -10,7 +10,8 @@ namespace brig { namespace database { namespace mysql {
 
 inline std::string client_version()
 {
-  return detail::lib::singleton().empty()? "": detail::lib::singleton().p_mysql_get_client_info();
+  using namespace detail;
+  return lib::singleton().empty()? "": lib::singleton().p_mysql_get_client_info();
 }
 
 } } } // brig::database::mysql

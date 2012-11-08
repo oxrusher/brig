@@ -14,7 +14,7 @@ class command_allocator : public brig::database::command_allocator {
   std::string m_file;
 public:
   command_allocator(const std::string& file) : m_file(file)  { detail::lib::singleton(); }
-  virtual command* allocate()  { return new detail::command(m_file); }
+  command* allocate() override  { return new detail::command(m_file); }
 }; // command_allocator
 
 } } } // brig::database::sqlite

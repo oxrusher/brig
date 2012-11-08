@@ -18,7 +18,7 @@ class define_string : public define {
   OCIInd m_ind;
 public:
   define_string(handles* hnd, size_t order, ub2 size, ub1 cs_form);
-  virtual void operator()(variant& var);
+  void operator()(variant& var) override;
 }; // define_string
 
 inline define_string::define_string(handles* hnd, size_t order, ub2 size, ub1 cs_form)

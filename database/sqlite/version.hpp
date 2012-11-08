@@ -10,12 +10,14 @@ namespace brig { namespace database { namespace sqlite {
 
 inline std::string sqlite3_libversion()
 {
-  return detail::lib::singleton().empty()? "": detail::lib::singleton().p_sqlite3_libversion();
+  using namespace detail;
+  return lib::singleton().empty()? "": lib::singleton().p_sqlite3_libversion();
 }
 
 inline std::string spatialite_version()
 {
-  return detail::lib::singleton().p_spatialite_version == 0? "": detail::lib::singleton().p_spatialite_version();
+  using namespace detail;
+  return lib::singleton().p_spatialite_version == 0? "": lib::singleton().p_spatialite_version();
 }
 
 } } } // brig::database::sqlite

@@ -10,7 +10,7 @@
 namespace brig { namespace database { namespace postgres { namespace detail {
 
 struct get_value_string : get_value {
-  virtual void operator()(PGresult* res, int row, int col, variant& var);
+  void operator()(PGresult* res, int row, int col, variant& var) override;
 }; // get_value_string
 
 inline void get_value_string::operator()(PGresult* res, int row, int col, variant& var)

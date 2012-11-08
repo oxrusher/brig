@@ -4,22 +4,20 @@
 #define BRIG_DATABASE_CUBRID_CLIENT_VERSION_HPP
 
 #include <brig/database/cubrid/detail/lib.hpp>
-#include <locale>
-#include <sstream>
+#include <brig/string_cast.hpp>
 #include <string>
 
 namespace brig { namespace database { namespace cubrid {
 
 inline std::string client_version()
 {
+  using namespace detail;
+
   int major_version(0), minor_version(0), patch(0);
-  if ( detail::lib::singleton().p_cci_get_version == 0
-    || detail::lib::error(detail::lib::singleton().p_cci_get_version(&major_version, &minor_version, &patch))
+  if ( lib::singleton().p_cci_get_version == 0
+    || lib::error(lib::singleton().p_cci_get_version(&major_version, &minor_version, &patch))
      ) return "";
-  
-  std::ostringstream stream; stream.imbue(std::locale::classic());
-  stream << major_version << "." << minor_version << "." << patch;
-  return stream.str();
+  return string_cast<char>(major_version) + "." + string_cast<char>(minor_version) + "." + string_cast<char>(patch);
 }
 
 } } } // brig::database::cubrid

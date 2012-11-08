@@ -20,11 +20,11 @@ public:
     : m_sql_type(sql_type)
     , m_str(brig::unicode::transform<decltype(m_str)>(str))
     { m_ind = m_str.size() * sizeof(SQLWCHAR); }
-  virtual SQLSMALLINT c_type()  { return SQL_C_WCHAR; }
-  virtual SQLSMALLINT sql_type()  { return m_sql_type; }
-  virtual SQLULEN column_size()  { return std::max<>(SQLULEN(m_str.size()), SQLULEN(1)); }
-  virtual SQLPOINTER val_ptr()  { return SQLPOINTER(m_str.c_str()); }
-  virtual SQLLEN* ind()  { return &m_ind; }
+  SQLSMALLINT c_type() override  { return SQL_C_WCHAR; }
+  SQLSMALLINT sql_type() override  { return m_sql_type; }
+  SQLULEN column_size() override  { return std::max<>(SQLULEN(m_str.size()), SQLULEN(1)); }
+  SQLPOINTER val_ptr() override  { return SQLPOINTER(m_str.c_str()); }
+  SQLLEN* ind() override  { return &m_ind; }
 }; // binding_string
 
 } } } } // brig::database::odbc::detail

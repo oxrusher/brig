@@ -11,11 +11,13 @@
 namespace brig { namespace database { namespace cubrid { namespace detail {
 
 struct get_data_string : get_data {
-  virtual int operator()(int req, size_t col, variant& var);
+  int operator()(int req, size_t col, variant& var) override;
 }; // get_data_string
 
 inline int get_data_string::operator()(int req, size_t col, variant& var)
 {
+  using namespace std;
+
   char* data;
   int ind(-1);
   const int r(lib::singleton().p_cci_get_data(req, col + 1, CCI_A_TYPE_STR, &data, &ind));
@@ -23,8 +25,8 @@ inline int get_data_string::operator()(int req, size_t col, variant& var)
     var = null_t();
   else
   {
-    var = std::string();
-    std::string& str(::boost::get<std::string>(var));
+    var = string();
+    string& str(::boost::get<string>(var));
     str = data;
   }
   return r;

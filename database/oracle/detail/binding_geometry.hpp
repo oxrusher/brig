@@ -30,7 +30,7 @@ class binding_geometry : public binding
 
 public:
   binding_geometry(handles* hnd, size_t order, const blob_t& blob, int srid);
-  virtual ~binding_geometry()  { free(); }
+  ~binding_geometry() override  { free(); }
 }; // binding_geometry
 
 inline void binding_geometry::free()
@@ -62,6 +62,7 @@ template <typename InputIterator>
 void binding_geometry::add_point(uint8_t byte_order, InputIterator& iter, uint32_t& offset) const
 {
   using namespace brig::detail::ogc;
+
   add_real(read<double>(byte_order, iter), m_geom->ordinates);
   add_real(read<double>(byte_order, iter), m_geom->ordinates);
   m_ind->ordinates = OCI_IND_NOTNULL;
@@ -86,12 +87,14 @@ void binding_geometry::add_polygon(uint8_t byte_order, InputIterator& iter, uint
 template <typename InputIterator>
 void binding_geometry::add_geom(InputIterator& iter, uint32_t& offset) const
 {
+  using namespace std;
   using namespace brig::detail::ogc;
+
   uint8_t byte_order(read_byte_order(iter));
   uint32_t i(0), count(0);
   switch (read<uint32_t>(byte_order, iter)) // type
   {
-  default: throw std::runtime_error("WKB error");
+  default: throw runtime_error("WKB error");
 
   case Point:
     add_info(offset, 1, 1);
@@ -112,7 +115,7 @@ void binding_geometry::add_geom(InputIterator& iter, uint32_t& offset) const
     for (i = 0; i < count; ++i)
     {
       byte_order = read_byte_order(iter);
-      if (Point != read<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
+      if (Point != read<uint32_t>(byte_order, iter)) throw runtime_error("WKB error");
       add_point(byte_order, iter, offset);
     }
     break;
@@ -121,7 +124,7 @@ void binding_geometry::add_geom(InputIterator& iter, uint32_t& offset) const
     for (i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
     {
       byte_order = read_byte_order(iter);
-      if (LineString != read<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
+      if (LineString != read<uint32_t>(byte_order, iter)) throw runtime_error("WKB error");
       add_line(byte_order, iter, offset, 2);
     }
     break;
@@ -130,7 +133,7 @@ void binding_geometry::add_geom(InputIterator& iter, uint32_t& offset) const
     for (i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
     {
       byte_order = read_byte_order(iter);
-      if (Polygon != read<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
+      if (Polygon != read<uint32_t>(byte_order, iter)) throw runtime_error("WKB error");
       add_polygon(byte_order, iter, offset);
     }
     break;
@@ -144,7 +147,9 @@ void binding_geometry::add_geom(InputIterator& iter, uint32_t& offset) const
 
 inline binding_geometry::binding_geometry(handles* hnd, size_t order, const blob_t& blob, int srid) : m_hnd(hnd), m_geom(0), m_ind(0)
 {
+  using namespace std;
   using namespace brig::detail::ogc;
+
   m_hnd->check(lib::singleton().p_OCIObjectNew(m_hnd->env, m_hnd->err, m_hnd->svc, OCI_TYPECODE_OBJECT, m_hnd->geom, 0, OCI_DURATION_DEFAULT, true, (void**)&m_geom));
   try
   {
@@ -161,7 +166,7 @@ inline binding_geometry::binding_geometry(handles* hnd, size_t order, const blob
     uint8_t byte_order(read_byte_order(ptr));
     switch (read<uint32_t>(byte_order, ptr)) // type
     {
-    default: throw std::runtime_error("WKB error");
+    default: throw runtime_error("WKB error");
     case Point:
       m_hnd->set_int(2001, &m_geom->gtype, &m_ind->gtype);
       m_hnd->set_real(read<double>(byte_order, ptr), &m_geom->point.x, &m_ind->point.x);
@@ -179,7 +184,7 @@ inline binding_geometry::binding_geometry(handles* hnd, size_t order, const blob
     uint32_t offset(1);
     add_geom(ptr, offset);
   }
-  catch (const std::exception&)  { free(); throw; }
+  catch (const exception&)  { free(); throw; }
 } // binding_geometry::
 
 } } } } // brig::database::oracle::detail

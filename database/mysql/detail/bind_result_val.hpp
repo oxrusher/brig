@@ -15,7 +15,7 @@ class bind_result_val : public bind_result {
   T m_val;
 public:
   explicit bind_result_val(MYSQL_BIND& bind);
-  virtual int operator()(MYSQL_STMT* stmt, unsigned int col, variant& var);
+  int operator()(MYSQL_STMT* stmt, unsigned int col, variant& var) override;
 }; // bind_result_val
 
 template <typename T, enum_field_types TypeID>

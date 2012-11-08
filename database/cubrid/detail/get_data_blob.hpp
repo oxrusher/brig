@@ -12,7 +12,7 @@
 namespace brig { namespace database { namespace cubrid { namespace detail {
 
 struct get_data_blob : get_data {
-  virtual int operator()(int req, size_t col, variant& var);
+  int operator()(int req, size_t col, variant& var) override;
 }; // get_data_blob
 
 inline int get_data_blob::operator()(int req, size_t col, variant& var)

@@ -18,7 +18,7 @@ public:
     : m_host(host), m_db(db), m_usr(usr), m_pwd(pwd)
     , m_port(port)
     { detail::lib::singleton(); }
-  virtual command* allocate()
+  command* allocate() override
     { return new detail::command(m_host, m_port, m_db, m_usr, m_pwd); }
 }; // command_allocator
 

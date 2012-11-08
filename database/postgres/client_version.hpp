@@ -4,8 +4,7 @@
 #define BRIG_DATABASE_POSTGRES_CLIENT_VERSION_HPP
 
 #include <brig/database/postgres/detail/lib.hpp>
-#include <locale>
-#include <sstream>
+#include <brig/string_cast.hpp>
 #include <string>
 
 namespace brig { namespace database { namespace postgres {
@@ -17,9 +16,7 @@ inline std::string client_version()
   const int major_version(version / 10000);
   const int minor_version((version % 10000) / 100);
   const int revision(version % 100);
-  std::ostringstream stream; stream.imbue(std::locale::classic());
-  stream << major_version << "." << minor_version << "." << revision;
-  return stream.str();
+  return string_cast<char>(major_version) + "." + string_cast<char>(minor_version) + "." + string_cast<char>(revision);
 }
 
 } } } // brig::database::postgres

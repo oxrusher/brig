@@ -22,7 +22,7 @@ struct dialect_postgres : dialect {
   std::string sql_geometries() override;
   std::string sql_test_rasters() override;
   std::string sql_rasters() override;
-  raster_level get_raster_level(const raster_pyramid& raster, size_t lvl) override;
+  void init_raster(raster_pyramid& raster) override;
 
   std::string sql_columns(const identifier& tbl) override;
   std::string sql_indexed_columns(const identifier& tbl) override;
@@ -229,13 +229,16 @@ ON r.r_table_schema = o.o_table_schema AND r.r_table_name = o.o_table_name AND r
 ORDER BY base_scm, base_tbl, base_col, res_x, res_y";
 }
 
-inline raster_level dialect_postgres::get_raster_level(const raster_pyramid& raster, size_t lvl)
+inline void dialect_postgres::init_raster(raster_pyramid& raster)
 {
-  raster_level res(raster.levels[lvl]);
-  const std::string col_name(res.raster.name);
-  res.raster.name = col_name + "_as_jpg";
-  res.raster.query_expression = "ST_AsJPEG(" + sql_identifier(col_name) + ")";
-  return res;
+  using namespace std;
+
+  for (auto lvl(begin(raster.levels)); lvl != end(raster.levels); ++lvl)
+  {
+    const std::string col_name(lvl->raster.name);
+    lvl->raster.name = col_name + "_as_jpg";
+    lvl->raster.query_expression = "ST_AsJPEG(" + sql_identifier(col_name) + ")";
+  }
 }
 
 inline std::string dialect_postgres::sql_parameter(const command_traits& trs, const column_definition& param, size_t order)

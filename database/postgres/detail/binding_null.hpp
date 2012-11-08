@@ -10,10 +10,10 @@ namespace brig { namespace database { namespace postgres { namespace detail {
 
 struct binding_null : binding {
   binding_null()  {}
-  virtual Oid type()  { return PG_TYPE_TEXT; }
-  virtual const char* value()  { return 0; }
-  virtual int length()  { return 0; }
-  virtual int format()  { return 0; }
+  Oid type() override  { return PG_TYPE_TEXT; }
+  const char* value() override  { return 0; }
+  int length() override  { return 0; }
+  int format() override  { return 0; }
 }; // binding_null
 
 } } } } // brig::database::postgres::detail

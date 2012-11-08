@@ -14,10 +14,10 @@ class binding_impl : public binding {
   SQLLEN m_ind;
 public:
   binding_impl(T val) : m_val(val), m_ind(sizeof(T))  {}
-  virtual SQLSMALLINT c_type()  { return CType; }
-  virtual SQLSMALLINT sql_type()  { return SqlType; }
-  virtual SQLPOINTER val_ptr()  { return SQLPOINTER(&m_val); }
-  virtual SQLLEN* ind()  { return &m_ind; }
+  SQLSMALLINT c_type() override  { return CType; }
+  SQLSMALLINT sql_type() override  { return SqlType; }
+  SQLPOINTER val_ptr() override  { return SQLPOINTER(&m_val); }
+  SQLLEN* ind() override  { return &m_ind; }
 }; // binding_impl
 
 } } } } // brig::database::odbc::detail

@@ -25,14 +25,14 @@ class command : public brig::database::command {
 
 public:
   command(const std::string& url, const std::string& usr, const std::string& pwd);
-  virtual ~command()  { close_all(); }
-  virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>());
-  virtual size_t affected()  { return size_t(m_res < 0? 0: m_res); }
-  virtual std::vector<std::string> columns();
-  virtual bool fetch(std::vector<variant>& row);
-  virtual void set_autocommit(bool autocommit);
-  virtual void commit();
-  virtual DBMS system()  { return CUBRID; }
+  ~command() override  { close_all(); }
+  void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) override;
+  size_t affected() override  { return size_t(m_res < 0? 0: m_res); }
+  std::vector<std::string> columns() override;
+  bool fetch(std::vector<variant>& row) override;
+  void set_autocommit(bool autocommit) override;
+  void commit() override;
+  DBMS system() override  { return CUBRID; }
 }; // command
 
 inline void command::check(int r)
@@ -62,21 +62,25 @@ inline void command::close_all()
 inline command::command(const std::string& url, const std::string& usr, const std::string& pwd)
   : m_con(CCI_ER_CON_HANDLE), m_req(CCI_ER_REQ_HANDLE), m_res(0)
 {
-  if (lib::singleton().empty()) throw std::runtime_error("CUBRID error");
+  using namespace std;
+
+  if (lib::singleton().empty()) throw runtime_error("CUBRID error");
   int con(lib::singleton().p_cci_connect_with_url((char*)url.c_str(), (char*)usr.c_str(), (char*)pwd.c_str()));
-  if (lib::error(con)) throw std::runtime_error("CUBRID error");
-  std::swap(m_con, con);
+  if (lib::error(con)) throw runtime_error("CUBRID error");
+  swap(m_con, con);
 }
 
 inline void command::exec(const std::string& sql, const std::vector<column_definition>& params)
 {
+  using namespace std;
+
   close_request();
   int req(lib::singleton().p_cci_prepare(m_con, (char*)sql.c_str(), 0, &m_err));
   check(req);
-  std::swap(m_req, req);
+  swap(m_req, req);
 
   for (size_t i(0); i < params.size(); ++i)
-    if (lib::error(bind(m_req, i, params[i]))) throw std::runtime_error("CUBRID error");
+    if (lib::error(bind(m_req, i, params[i]))) throw runtime_error("CUBRID error");
 
   m_res = lib::singleton().p_cci_execute(m_req, 0, 0, &m_err);
   check(m_res);
@@ -84,14 +88,16 @@ inline void command::exec(const std::string& sql, const std::vector<column_defin
 
 inline std::vector<std::string> command::columns()
 {
-  std::vector<std::string> cols;
+  using namespace std;
+
+  vector<string> cols;
   if (lib::error(m_req)) return cols;
 
   m_cols.clear();
   T_CCI_SQLX_CMD cmd_type;
   int col_count(0);
   T_CCI_COL_INFO* col_info(lib::singleton().p_cci_get_result_info(m_req, &cmd_type, &col_count));
-  if (!col_info) throw std::runtime_error("CUBRID error");
+  if (!col_info) throw runtime_error("CUBRID error");
 
   for (int i(1); i <= col_count; ++i)
   {

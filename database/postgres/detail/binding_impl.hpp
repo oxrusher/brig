@@ -16,10 +16,10 @@ class binding_impl : public binding {
   T m_val;
 public:
   binding_impl(T val);
-  virtual Oid type()  { return TypeID; }
-  virtual const char* value()  { return (const char*)&m_val; }
-  virtual int length()  { return sizeof(T); }
-  virtual int format()  { return 1; }
+  Oid type() override  { return TypeID; }
+  const char* value() override  { return (const char*)&m_val; }
+  int length() override  { return sizeof(T); }
+  int format() override  { return 1; }
 }; // binding_impl
 
 template <typename T, Oid TypeID>

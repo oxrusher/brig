@@ -30,14 +30,14 @@ class command : public brig::database::command {
 
 public:
   command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd);
-  virtual ~command()  { close_all(); }
-  virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>());
-  virtual size_t affected();
-  virtual std::vector<std::string> columns();
-  virtual bool fetch(std::vector<variant>& row);
-  virtual void set_autocommit(bool autocommit);
-  virtual void commit();
-  virtual DBMS system()  { return MySQL; }
+  ~command() override  { close_all(); }
+  void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) override;
+  size_t affected() override;
+  std::vector<std::string> columns() override;
+  bool fetch(std::vector<variant>& row) override;
+  void set_autocommit(bool autocommit) override;
+  void commit() override;
+  DBMS system() override  { return MySQL; }
 }; // command
 
 inline void command::check(bool r)
@@ -69,25 +69,29 @@ inline void command::close_all()
 inline command::command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd)
   : m_con(0), m_stmt(0), m_autocommit(true)
 {
-  if (lib::singleton().empty()) throw std::runtime_error("MySQL error");
+  using namespace std;
+
+  if (lib::singleton().empty()) throw runtime_error("MySQL error");
   m_con = lib::singleton().p_mysql_init(0);
-  if (!m_con) throw std::runtime_error("MySQL error");
+  if (!m_con) throw runtime_error("MySQL error");
   try
   {
     check(lib::singleton().p_mysql_real_connect(m_con, host.c_str(), usr.c_str(), pwd.c_str(), db.c_str(), port, 0, 0) == m_con);
     check(lib::singleton().p_mysql_set_character_set(m_con, "utf8") == 0);
   }
-  catch (const std::exception&)  { close_all(); throw; }
+  catch (const exception&)  { close_all(); throw; }
 }
 
 inline void command::exec(const std::string& sql, const std::vector<column_definition>& params)
 {
+  using namespace std;
+
   close_stmt();
   m_stmt = lib::singleton().p_mysql_stmt_init(m_con);
-  if (!m_stmt) throw std::runtime_error("MySQL error");
+  if (!m_stmt) throw runtime_error("MySQL error");
   check(lib::singleton().p_mysql_stmt_prepare(m_stmt, sql.c_str(), sql.size()) == 0);
 
-  std::vector<MYSQL_BIND> binds(params.size());
+  vector<MYSQL_BIND> binds(params.size());
   if (!binds.empty())
   {
     memset(binds.data(), 0, binds.size() * sizeof(MYSQL_BIND));

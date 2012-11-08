@@ -11,7 +11,9 @@ namespace brig { namespace database { namespace oracle { namespace detail {
 
 inline ub1 get_charset_form(const identifier& dbms_type_lcase)
 {
-  if (dbms_type_lcase.schema.empty() && (dbms_type_lcase.name.find("nchar") != std::string::npos || dbms_type_lcase.name.find("nvarchar2") != std::string::npos || dbms_type_lcase.name.find("nclob") != std::string::npos))
+  using namespace std;
+
+  if (dbms_type_lcase.schema.empty() && (dbms_type_lcase.name.find("nchar") != string::npos || dbms_type_lcase.name.find("nvarchar2") != string::npos || dbms_type_lcase.name.find("nclob") != string::npos))
     return SQLCS_NCHAR;
   else
     return SQLCS_IMPLICIT;

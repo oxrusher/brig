@@ -16,7 +16,7 @@ class define_impl : public define {
   OCIInd m_ind;
 public:
   define_impl(handles* hnd, size_t order);
-  virtual void operator()(variant& var);
+  void operator()(variant& var) override;
 }; // define_impl
 
 template <typename T, ub2 TargetType>

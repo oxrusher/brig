@@ -16,6 +16,7 @@
 namespace brig { namespace database { namespace detail {
 
 struct dialect {
+  virtual ~dialect()  {}
   virtual std::string sql_identifier(const std::string& id)  { return '"' + id + '"'; }
   std::string sql_identifier(const identifier& id);
 
@@ -23,7 +24,7 @@ struct dialect {
   virtual std::string sql_geometries() = 0;
   virtual std::string sql_test_rasters()  { return ""; }
   virtual std::string sql_rasters()  { return ""; }
-  virtual raster_level get_raster_level(const raster_pyramid& raster, size_t lvl)  { return raster.levels[lvl]; }
+  virtual void init_raster(raster_pyramid& /*raster*/)  {}
 
   virtual std::string sql_columns(const identifier& tbl) = 0;
   virtual std::string sql_indexed_columns(const identifier& tbl) = 0;

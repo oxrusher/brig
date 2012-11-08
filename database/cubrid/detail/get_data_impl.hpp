@@ -11,7 +11,7 @@ namespace brig { namespace database { namespace cubrid { namespace detail {
 
 template <typename T, T_CCI_A_TYPE Type>
 struct get_data_impl : get_data {
-  virtual int operator()(int req, size_t col, variant& var);
+  int operator()(int req, size_t col, variant& var) override;
 }; // get_data_impl
 
 template <typename T, T_CCI_A_TYPE Type>

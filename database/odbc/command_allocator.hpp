@@ -14,7 +14,7 @@ class command_allocator : public brig::database::command_allocator {
   std::string m_str;
 public:
   command_allocator(const std::string& str) : m_str(str)  { detail::lib::singleton(); }
-  virtual command* allocate()  { return new detail::command(m_str); }
+  command* allocate() override  { return new detail::command(m_str); }
 }; // command_allocator
 
 } } } // brig::database::odbc

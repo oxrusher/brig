@@ -40,8 +40,10 @@ struct handles
 
 inline void handles::check(sword r)
 {
+  using namespace std;
+
   if (OCI_SUCCESS == r || OCI_SUCCESS_WITH_INFO == r) return;
-  std::basic_string<utext> msg;
+  basic_string<utext> msg;
   if (0 != err && OCI_ERROR == r)
   {
     ub4 record(1);
@@ -53,7 +55,7 @@ inline void handles::check(sword r)
       msg += buf;
     }
   }
-  throw std::runtime_error(msg.empty()? "OCI error": brig::unicode::transform<std::string>(msg));
+  throw runtime_error(msg.empty()? "OCI error": brig::unicode::transform<string>(msg));
 }
 
 inline void handles::alloc_handle(void** p_handle, ub4 type)

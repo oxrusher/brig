@@ -23,7 +23,7 @@ class define_blob : public define {
 
 public:
   define_blob(handles* hnd, size_t order);
-  virtual void operator()(variant& var);
+  void operator()(variant& var) override;
 }; // define_blob
 
 inline define_blob::define_blob(handles* hnd, size_t order) : m_len(0), m_ind(OCI_IND_NOTNULL)

@@ -26,7 +26,7 @@ struct dialect_sqlite : dialect {
   std::string sql_geometries() override;
   std::string sql_test_rasters() override;
   std::string sql_rasters() override;
-  raster_level get_raster_level(const raster_pyramid& raster, size_t lvl) override;
+  void init_raster(raster_pyramid& raster) override;
 
   std::string sql_columns(const identifier&) override  { throw std::runtime_error("DBMS error"); }
   std::string sql_indexed_columns(const identifier&) override  { throw std::runtime_error("DBMS error"); }
@@ -135,33 +135,31 @@ FROM raster_pyramids r JOIN geometry_columns g ON g.f_table_name = (r.table_pref
 ORDER BY base_tbl, base_col, res_x, res_y";
 }
 
-inline raster_level dialect_sqlite::get_raster_level(const raster_pyramid& raster, size_t lvl)
+inline void dialect_sqlite::init_raster(raster_pyramid& raster)
 {
   const std::string tbl(sql_identifier(raster.id.name));
-  const bool hint((lvl * 6) < raster.levels.size());
-
-  raster_level res(raster.levels[lvl]);
-  res.raster.query_expression = "(SELECT r FROM (SELECT id i, raster r FROM " + tbl + ") t WHERE t.i = " + "id)";
-
+  for (size_t i(0); i < raster.levels.size(); ++i)
   {
-    column_definition col;
-    col.name = "pixel_x_size";
-    col.type = Double;
-    col.query_expression = hint? "+pixel_x_size": "";
-    col.query_value = res.resolution_x;
-    res.query_conditions.push_back(col);
+    const bool hint((i * 6) < raster.levels.size());
+    raster_level& lvl(raster.levels[i]);
+    lvl.raster.query_expression = "(SELECT r FROM (SELECT id i, raster r FROM " + tbl + ") t WHERE t.i = " + "id)";
+    {
+      column_definition col;
+      col.name = "pixel_x_size";
+      col.type = Double;
+      col.query_expression = hint? "+pixel_x_size": "";
+      col.query_value = lvl.resolution_x;
+      lvl.query_conditions.push_back(col);
+    }
+    {
+      column_definition col;
+      col.name = "pixel_y_size";
+      col.type = Double;
+      col.query_expression = hint? "+pixel_y_size": "";
+      col.query_value = lvl.resolution_y;
+      lvl.query_conditions.push_back(col);
+    }
   }
-
-  {
-    column_definition col;
-    col.name = "pixel_y_size";
-    col.type = Double;
-    col.query_expression = hint? "+pixel_y_size": "";
-    col.query_value = res.resolution_y;
-    res.query_conditions.push_back(col);
-  }
-
-  return res;
 }
 
 inline std::string dialect_sqlite::sql_parameter(const command_traits& trs, const column_definition& param, size_t order)

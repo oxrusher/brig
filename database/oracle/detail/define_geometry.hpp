@@ -29,8 +29,8 @@ class define_geometry : public define {
 
 public:
   define_geometry(handles* hnd, size_t order);
-  virtual ~define_geometry();
-  virtual void operator()(variant& var);
+  ~define_geometry() override;
+  void operator()(variant& var) override;
 }; // define_geometry
 
 inline define_geometry::define_geometry(handles* hnd, size_t order) : m_hnd(hnd), m_geom(0), m_ind(0)
@@ -49,6 +49,7 @@ template <typename OutputIterator>
 void define_geometry::set_point(OutputIterator& iter, uint32_t ord_beg) const
 {
   using namespace brig::detail::ogc;
+
   write<double>(iter, m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg)));
   write<double>(iter, m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg + 1)));
 }
@@ -63,18 +64,20 @@ void define_geometry::set_line(OutputIterator& iter, uint32_t ord_beg, uint32_t 
 
 inline void define_geometry::operator()(variant& var)
 {
+  using namespace std;
   using namespace brig::detail::ogc;
+
   if (!m_ind || m_ind->null())  { var = null_t(); return; }
   const uint32_t gtype (m_hnd->get_int(&(m_geom->gtype), m_ind->gtype));
   const uint32_t tt    (gtype % 100);
   const uint32_t dim   (gtype / 1000);
-  if (2 != dim) throw std::runtime_error("OCI geometry error");
+  if (2 != dim) throw runtime_error("OCI geometry error");
   const uint32_t infos (m_hnd->get_count(m_geom->elem_info, m_ind->elem_info));
   const uint32_t ords  (m_hnd->get_count(m_geom->ordinates, m_ind->ordinates));
   bool collection(false);
   switch (tt)
   {
-  default: throw std::runtime_error("OCI geometry error");
+  default: throw runtime_error("OCI geometry error");
   case 1: // point
   case 2: // line / curve
   case 3: // polygon / surface
@@ -110,12 +113,12 @@ inline void define_geometry::operator()(variant& var)
   {
     switch (etype(i))
     {
-    default: throw std::runtime_error("OCI geometry error");
+    default: throw runtime_error("OCI geometry error");
 
     case 1: // point / cluster
       {
         const uint32_t num_points(interpretation(i));
-        if (num_points < 1) throw std::runtime_error("OCI geometry error"); // oriented point
+        if (num_points < 1) throw runtime_error("OCI geometry error"); // oriented point
         const uint32_t ord_beg (starting_offset(i));
         const uint32_t ord_end (ord_beg + num_points * dim);
         for (uint32_t ord(ord_beg); ord < ord_end; ord += dim)
@@ -132,7 +135,7 @@ inline void define_geometry::operator()(variant& var)
 
     case 2: // line string
       {
-        if (1 != interpretation(i)) throw std::runtime_error("OCI geometry error"); // not straight line segments
+        if (1 != interpretation(i)) throw runtime_error("OCI geometry error"); // not straight line segments
         write_byte_order(iter);
         write<uint32_t>(iter, LineString);
         set_line(iter, starting_offset(i), i + 3 < infos? starting_offset(i + 3): ords, dim); // triplet
@@ -161,7 +164,7 @@ inline void define_geometry::operator()(variant& var)
           const uint32_t ord_beg(starting_offset(i));
           switch (interpretation(i))
           {
-          default: throw std::runtime_error("OCI geometry error");
+          default: throw runtime_error("OCI geometry error");
 
           case 1: // simple polygon
             set_line(iter, ord_beg, i + 3 < infos? starting_offset(i + 3): ords, dim); // triplet
@@ -206,7 +209,7 @@ inline void define_geometry::operator()(variant& var)
     write_byte_order(ptr);
     switch (tt)
     {
-    default: throw std::runtime_error("OCI geometry error");
+    default: throw runtime_error("OCI geometry error");
     case 4: write<uint32_t>(ptr, GeometryCollection); break; // collection
     case 5: write<uint32_t>(ptr, MultiPoint); break; // multipoint
     case 6: write<uint32_t>(ptr, MultiLineString); break; // multiline

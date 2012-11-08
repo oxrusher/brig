@@ -17,7 +17,7 @@ public:
   command_allocator(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd)
     : m_srv("//" + host + ":" + string_cast<char>(port) + "/" + db), m_usr(usr), m_pwd(pwd)
     { detail::lib::singleton(); }
-  virtual command* allocate()
+  command* allocate() override
     { return new detail::command(m_srv, m_usr, m_pwd); }
 }; // command_allocator
 

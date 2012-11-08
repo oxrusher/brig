@@ -20,7 +20,7 @@ class define_binary : public define {
   ub2 m_len;
 public:
   define_binary(handles* hnd, size_t order, ub2 size);
-  virtual void operator()(variant& var);
+  void operator()(variant& var) override;
 }; // define_binary
 
 inline define_binary::define_binary(handles* hnd, size_t order, ub2 size) : m_ind(OCI_IND_NULL), m_len(0)

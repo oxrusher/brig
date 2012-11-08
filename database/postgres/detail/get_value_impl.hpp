@@ -13,7 +13,7 @@ namespace brig { namespace database { namespace postgres { namespace detail {
 
 template <typename T>
 struct get_value_impl : get_value {
-  virtual void operator()(PGresult* res, int row, int col, variant& var);
+  void operator()(PGresult* res, int row, int col, variant& var) override;
 }; // get_value_impl
 
 template <typename T>

@@ -29,14 +29,14 @@ class command : public brig::database::command {
 
 public:
   command(const std::string& str);
-  virtual ~command()  { close_all(); }
-  virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>());
-  virtual size_t affected();
-  virtual std::vector<std::string> columns();
-  virtual bool fetch(std::vector<variant>& row);
-  virtual void set_autocommit(bool autocommit);
-  virtual void commit();
-  virtual DBMS system()  { return m_sys; }
+  ~command() override  { close_all(); }
+  void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) override;
+  size_t affected() override;
+  std::vector<std::string> columns() override;
+  bool fetch(std::vector<variant>& row) override;
+  void set_autocommit(bool autocommit) override;
+  void commit() override;
+  DBMS system() override  { return m_sys; }
 }; // command
 
 inline void command::close_stmt()
@@ -51,25 +51,29 @@ inline void command::close_stmt()
 
 inline void command::close_all()
 {
+  using namespace std;
+
   close_stmt();
   m_sys = VoidSystem;
   if (SQL_NULL_HANDLE != m_dbc)
   {
-    SQLHANDLE dbc(SQL_NULL_HANDLE); std::swap(dbc, m_dbc);
+    SQLHANDLE dbc(SQL_NULL_HANDLE); swap(dbc, m_dbc);
     lib::singleton().p_SQLDisconnect(dbc);
     lib::singleton().p_SQLFreeHandle(SQL_HANDLE_DBC, dbc);
   }
   if (SQL_NULL_HANDLE != m_env)
   {
-    SQLHANDLE env(SQL_NULL_HANDLE); std::swap(env, m_env);
+    SQLHANDLE env(SQL_NULL_HANDLE); swap(env, m_env);
     lib::singleton().p_SQLFreeHandle(SQL_HANDLE_ENV, env);
   }
 }
 
 inline void command::check(SQLSMALLINT type, SQLHANDLE handle, SQLRETURN r)
 {
+  using namespace std;
+
   if (SQL_SUCCEEDED(r)) return;
-  std::basic_string<SQLWCHAR> msg;
+  basic_string<SQLWCHAR> msg;
   if (SQL_NULL_HANDLE != handle  && SQL_ERROR == r)
   {
     SQLWCHAR state[6], buf[SQL_MAX_MESSAGE_LENGTH];
@@ -81,18 +85,20 @@ inline void command::check(SQLSMALLINT type, SQLHANDLE handle, SQLRETURN r)
       msg += buf;
     }
   }
-  throw std::runtime_error(msg.empty()? "ODBC error": brig::unicode::transform<std::string>(msg));
+  throw runtime_error(msg.empty()? "ODBC error": brig::unicode::transform<string>(msg));
 }
 
 inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(SQL_NULL_HANDLE), m_stmt(SQL_NULL_HANDLE), m_sys(VoidSystem)
 {
+  using namespace std;
+
   SQLWCHAR buf[SQL_MAX_MESSAGE_LENGTH];
   SQLSMALLINT len(0);
 
   // environment
   SQLHANDLE env(SQL_NULL_HANDLE);
-  if (lib::singleton().empty() || !SQL_SUCCEEDED(lib::singleton().p_SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env))) throw std::runtime_error("ODBC error");
-  std::swap(m_env, env);
+  if (lib::singleton().empty() || !SQL_SUCCEEDED(lib::singleton().p_SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env))) throw runtime_error("ODBC error");
+  swap(m_env, env);
 
   // connection
   try
@@ -100,32 +106,31 @@ inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(
     SQLHANDLE dbc(SQL_NULL_HANDLE);
     check(SQL_HANDLE_ENV, m_env, lib::singleton().p_SQLSetEnvAttr(m_env, SQL_ATTR_ODBC_VERSION, SQLPOINTER(SQL_OV_ODBC3), 0));
     check(SQL_HANDLE_ENV, m_env, lib::singleton().p_SQLAllocHandle(SQL_HANDLE_DBC, m_env, &dbc));
-    std::swap(m_dbc, dbc);
+    swap(m_dbc, dbc);
 
     check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLDriverConnectW
       ( m_dbc, 0
-      , (SQLWCHAR*)brig::unicode::transform<std::basic_string<SQLWCHAR>>(str).c_str(), SQL_NTS
+      , (SQLWCHAR*)brig::unicode::transform<basic_string<SQLWCHAR>>(str).c_str(), SQL_NTS
       , 0, 0, &len, SQL_DRIVER_NOPROMPT
       ));
   }
-  catch (const std::exception&)  { close_all(); throw; }
+  catch (const exception&)  { close_all(); throw; }
   
   // DBMS
   if (SQL_SUCCEEDED(lib::singleton().p_SQLGetInfoW(m_dbc, SQL_DBMS_NAME, buf, SQL_MAX_MESSAGE_LENGTH, &len)))
   {
-    using namespace brig::unicode;
-    const std::string sys(database::detail::to_lcase(buf));
-         if (sys.find("cubrid") != std::string::npos) m_sys = CUBRID;
-    else if (sys.find("db2") != std::string::npos) m_sys = DB2;
-    else if (sys.find("informix") != std::string::npos) m_sys = Informix;
-    else if (sys.find("ingres") != std::string::npos) m_sys = Ingres;
-    else if (sys.find("microsoft") != std::string::npos
-          && sys.find("sql") != std::string::npos
-          && sys.find("server") != std::string::npos) m_sys = MS_SQL;
-    else if (sys.find("mysql") != std::string::npos) m_sys = MySQL;
-    else if (sys.find("oracle") != std::string::npos) m_sys = Oracle;
-    else if (sys.find("postgres") != std::string::npos) m_sys = Postgres;
-    else if (sys.find("sqlite") != std::string::npos) m_sys = SQLite;
+    const string sys(database::detail::to_lcase(buf));
+         if (sys.find("cubrid") != string::npos) m_sys = CUBRID;
+    else if (sys.find("db2") != string::npos) m_sys = DB2;
+    else if (sys.find("informix") != string::npos) m_sys = Informix;
+    else if (sys.find("ingres") != string::npos) m_sys = Ingres;
+    else if (sys.find("microsoft") != string::npos
+          && sys.find("sql") != string::npos
+          && sys.find("server") != string::npos) m_sys = MS_SQL;
+    else if (sys.find("mysql") != string::npos) m_sys = MySQL;
+    else if (sys.find("oracle") != string::npos) m_sys = Oracle;
+    else if (sys.find("postgres") != string::npos) m_sys = Postgres;
+    else if (sys.find("sqlite") != string::npos) m_sys = SQLite;
   }
 
   // http://www.ibm.com/Search/?q=Delimited+Identifiers+in+ODBC
@@ -136,21 +141,23 @@ inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(
       SQLINTEGER attr(0);
       SQLINTEGER len(sizeof(attr));
       check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLGetConnectAttr(m_dbc, SQL_INFX_ATTR_DELIMIDENT, &attr, sizeof(attr), &len));
-      if (SQL_TRUE != attr) throw std::runtime_error("Enable delimited identifiers (DELIMIDENT=y)");
+      if (SQL_TRUE != attr) throw runtime_error("Enable delimited identifiers (DELIMIDENT=y)");
     }
-    catch (const std::exception&)  { close_all(); throw; }
+    catch (const exception&)  { close_all(); throw; }
   }
 }
 
 inline void command::exec(const std::string& sql, const std::vector<column_definition>& params)
 {
+  using namespace std;
+
   if (SQL_NULL_HANDLE == m_stmt || sql != m_sql || sql.empty())
   {
     close_stmt();
     SQLHANDLE stmt(SQL_NULL_HANDLE);
     check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLAllocHandle(SQL_HANDLE_STMT, m_dbc, &stmt));
-    std::swap(m_stmt, stmt);
-    check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLPrepareW(m_stmt, (SQLWCHAR*)brig::unicode::transform<std::basic_string<SQLWCHAR>>(sql).c_str(), SQL_NTS));
+    swap(m_stmt, stmt);
+    check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLPrepareW(m_stmt, (SQLWCHAR*)brig::unicode::transform<basic_string<SQLWCHAR>>(sql).c_str(), SQL_NTS));
     m_sql = sql;
   }
   else
@@ -181,7 +188,9 @@ inline size_t command::affected()
 
 inline std::vector<std::string> command::columns()
 {
-  std::vector<std::string> cols;
+  using namespace std;
+
+  vector<string> cols;
   if (SQL_NULL_HANDLE == m_stmt) return cols;
   m_sql = "";
   m_cols.clear();
@@ -210,7 +219,7 @@ inline std::vector<std::string> command::columns()
     }
 
     m_cols.push_back(get_data_factory(SQLSMALLINT(sql_type)));
-    cols.push_back(brig::unicode::transform<std::string>(buf));
+    cols.push_back(brig::unicode::transform<string>(buf));
   }
   return cols;
 }

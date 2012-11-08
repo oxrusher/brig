@@ -11,7 +11,7 @@ namespace brig { namespace database { namespace odbc { namespace detail {
 
 template <typename T, SQLSMALLINT TargetType>
 struct get_data_impl : get_data {
-  virtual SQLRETURN operator()(SQLHSTMT stmt, size_t col, variant& var);
+  SQLRETURN operator()(SQLHSTMT stmt, size_t col, variant& var) override;
 }; // get_data_impl
 
 template <typename T, SQLSMALLINT TargetType>

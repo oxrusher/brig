@@ -33,15 +33,15 @@ class command : public brig::database::command
 
 public:
   explicit command(const std::string& file) : m_db(file), m_stmt(0), m_done(false), m_autocommit(true)  {}
-  virtual ~command();
-  virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>());
-  virtual size_t affected()  { return m_db.affected(); }
-  virtual std::vector<std::string> columns();
-  virtual bool fetch(std::vector<variant>& row);
-  virtual void set_autocommit(bool autocommit);
-  virtual void commit();
-  virtual DBMS system()  { return SQLite; }
-  virtual command_traits traits();
+  ~command() override;
+  void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) override;
+  size_t affected() override  { return m_db.affected(); }
+  std::vector<std::string> columns() override;
+  bool fetch(std::vector<variant>& row) override;
+  void set_autocommit(bool autocommit) override;
+  void commit() override;
+  DBMS system() override  { return SQLite; }
+  command_traits traits() override;
 }; // command
 
 inline void command::close_stmt()

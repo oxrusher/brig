@@ -16,11 +16,11 @@ class binding_blob : public binding {
   SQLLEN m_ind;
 public:
   binding_blob(SQLSMALLINT sql_type, const blob_t& blob) : m_sql_type(sql_type), m_ptr((void*)blob.data()), m_ind(blob.size())  {}
-  virtual SQLSMALLINT c_type()  { return SQL_C_BINARY; }
-  virtual SQLSMALLINT sql_type()  { return m_sql_type; }
-  virtual SQLULEN column_size()  { return std::max<>(SQLULEN(m_ind), SQLULEN(1)); }
-  virtual SQLPOINTER val_ptr()  { return m_ptr; }
-  virtual SQLLEN* ind()  { return &m_ind; }
+  SQLSMALLINT c_type() override  { return SQL_C_BINARY; }
+  SQLSMALLINT sql_type() override  { return m_sql_type; }
+  SQLULEN column_size() override  { return std::max<>(SQLULEN(m_ind), SQLULEN(1)); }
+  SQLPOINTER val_ptr() override  { return m_ptr; }
+  SQLLEN* ind() override  { return &m_ind; }
 }; // binding_blob
 
 } } } } // brig::database::odbc::detail

@@ -33,16 +33,15 @@ class command : public brig::database::command {
 
 public:
   command(const std::string& srv, const std::string& usr, const std::string& pwd);
-  virtual ~command()  { close_all(); }
-  virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()
-    );
-  virtual size_t affected();
-  virtual std::vector<std::string> columns();
-  virtual bool fetch(std::vector<variant>& row);
-  virtual void set_autocommit(bool autocommit);
-  virtual void commit();
-  virtual DBMS system()  { return Oracle; }
-  virtual command_traits traits();
+  ~command() override  { close_all(); }
+  void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) override;
+  size_t affected() override;
+  std::vector<std::string> columns() override;
+  bool fetch(std::vector<variant>& row) override;
+  void set_autocommit(bool autocommit) override;
+  void commit() override;
+  DBMS system() override  { return Oracle; }
+  command_traits traits() override;
 }; // command
 
 inline void command::close_stmt()
@@ -65,18 +64,19 @@ inline void command::close_all()
 
 inline command::command(const std::string& srv_, const std::string& usr_, const std::string& pwd_) : m_autocommit(true)
 {
+  using namespace std;
   using namespace brig::unicode;
 
-  const std::u16string
-    srv(transform<std::u16string>(srv_)),
-    usr(transform<std::u16string>(usr_)),
-    pwd(transform<std::u16string>(pwd_)),
-    type_schema(transform<std::u16string>("MDSYS")),
-    type_name(transform<std::u16string>("SDO_GEOMETRY"));
+  const u16string
+    srv(transform<u16string>(srv_)),
+    usr(transform<u16string>(usr_)),
+    pwd(transform<u16string>(pwd_)),
+    type_schema(transform<u16string>("MDSYS")),
+    type_name(transform<u16string>("SDO_GEOMETRY"));
 
   try
   {
-    if (lib::singleton().empty()) throw std::runtime_error("OCI error");
+    if (lib::singleton().empty()) throw runtime_error("OCI error");
     OCIEnv* env(0);
     m_hnd.check(lib::singleton().p_OCIEnvNlsCreate(&env, OCI_THREADED|OCI_NO_MUTEX|OCI_OBJECT, 0, 0, 0, 0, 0, 0, OCI_UTF16ID, OCI_UTF16ID));
     m_hnd.env = env;
@@ -98,12 +98,14 @@ inline command::command(const std::string& srv_, const std::string& usr_, const 
       , (const text*)0, 0, OCI_DURATION_SESSION, OCI_TYPEGET_HEADER, &type));
     m_hnd.geom = type;
   }
-  catch (const std::exception&)  { close_all(); throw; }
+  catch (const exception&)  { close_all(); throw; }
 }
 
 inline void command::exec(const std::string& sql_, const std::vector<column_definition>& params)
 {
-  const std::u16string sql(brig::unicode::transform<std::u16string>(sql_));
+  using namespace std;
+
+  const u16string sql(brig::unicode::transform<u16string>(sql_));
 
   close_stmt();
   m_hnd.alloc_handle((void**)&m_hnd.stmt, OCI_HTYPE_STMT);
@@ -127,7 +129,9 @@ inline size_t command::affected()
 
 inline std::vector<std::string> command::columns()
 {
-  std::vector<std::string> cols;
+  using namespace std;
+
+  vector<string> cols;
   if (0 == m_hnd.stmt) return cols;
   m_cols.clear();
   ub4 count(0);
@@ -158,10 +162,10 @@ inline std::vector<std::string> command::columns()
       dbms_type_lcase.name = database::detail::to_lcase(type_name);
 
       m_cols.push_back(define_factory(&m_hnd, i + 1, data_type, size, precision, scale, dbms_type_lcase));
-      cols.push_back(brig::unicode::transform<std::string>(name));
+      cols.push_back(brig::unicode::transform<string>(name));
 
     }
-    catch (const std::exception&)  { handles::free_descriptor((void**)&dsc, OCI_DTYPE_PARAM); throw; }
+    catch (const exception&)  { handles::free_descriptor((void**)&dsc, OCI_DTYPE_PARAM); throw; }
     handles::free_descriptor((void**)&dsc, OCI_DTYPE_PARAM);
   }
 

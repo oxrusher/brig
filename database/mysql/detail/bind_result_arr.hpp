@@ -17,7 +17,7 @@ class bind_result_arr : public bind_result {
   unsigned long m_lenght;
 public:
   explicit bind_result_arr(MYSQL_BIND& bind);
-  virtual int operator()(MYSQL_STMT* stmt, unsigned int col, variant& var);
+  int operator()(MYSQL_STMT* stmt, unsigned int col, variant& var) override;
 }; // bind_result_arr
 
 template <typename T, enum_field_types TypeID>

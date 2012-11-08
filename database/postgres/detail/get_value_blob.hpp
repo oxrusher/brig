@@ -11,7 +11,7 @@
 namespace brig { namespace database { namespace postgres { namespace detail {
 
 struct get_value_blob : get_value {
-  virtual void operator()(PGresult* res, int row, int col, variant& var);
+  void operator()(PGresult* res, int row, int col, variant& var) override;
 }; // get_value_blob
 
 inline void get_value_blob::operator()(PGresult* res, int row, int col, variant& var)

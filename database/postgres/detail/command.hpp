@@ -33,15 +33,15 @@ class command : public brig::database::command {
 
 public:
   command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd);
-  virtual ~command()  { close_all(); }
-  virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>());
-  virtual size_t affected();
-  virtual std::vector<std::string> columns();
-  virtual bool fetch(std::vector<variant>& row);
-  virtual void set_autocommit(bool autocommit);
-  virtual void commit();
-  virtual DBMS system()  { return Postgres; }
-  virtual command_traits traits();
+  ~command() override  { close_all(); }
+  void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) override;
+  size_t affected() override;
+  std::vector<std::string> columns() override;
+  bool fetch(std::vector<variant>& row) override;
+  void set_autocommit(bool autocommit) override;
+  void commit() override;
+  DBMS system() override  { return Postgres; }
+  command_traits traits() override;
 }; // command
 
 inline void command::check(bool r)
@@ -79,12 +79,14 @@ inline command::command(const std::string& host, int port, const std::string& db
 
 inline void command::exec(const std::string& sql, const std::vector<column_definition>& params)
 {
+  using namespace std;
+
   close_result();
   ::boost::ptr_vector<binding> binds;
-  std::vector<Oid> types;
-  std::vector<char*> values;
-  std::vector<int> lengths;
-  std::vector<int> formats;
+  vector<Oid> types;
+  vector<char*> values;
+  vector<int> lengths;
+  vector<int> formats;
   for (size_t i(0); i < params.size(); ++i)
   {
     binding* bind(binding_factory(params[i].query_value));

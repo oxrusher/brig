@@ -13,10 +13,10 @@ class binding_string : public binding {
   const std::string& m_str;
 public:
   binding_string(const std::string& str) : m_str(str)  {}
-  virtual Oid type()  { return PG_TYPE_TEXT; }
-  virtual const char* value()  { return m_str.c_str(); }
-  virtual int length()  { return m_str.size(); }
-  virtual int format()  { return 0; }
+  Oid type() override  { return PG_TYPE_TEXT; }
+  const char* value() override  { return m_str.c_str(); }
+  int length() override  { return m_str.size(); }
+  int format() override  { return 0; }
 }; // binding_string
 
 } } } } // brig::database::postgres::detail
