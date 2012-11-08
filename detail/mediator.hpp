@@ -15,6 +15,7 @@ namespace brig { namespace detail {
 template <typename Interface>
 class mediator : ::boost::noncopyable {
   struct task {
+    virtual ~task()  {}
     virtual void exec(Interface* iface) = 0;
   }; // task
 
@@ -23,7 +24,7 @@ class mediator : ::boost::noncopyable {
     Result r;
     UnaryFun& f;
     explicit task_impl(UnaryFun& f_) : f(f_)  {}
-    virtual void exec(Interface* iface)  { r = f(iface); }
+    void exec(Interface* iface) override  { r = f(iface); }
     Result result()  { return std::move(r); }
   }; // task_impl<Result, UnaryFun>
 
@@ -31,7 +32,7 @@ class mediator : ::boost::noncopyable {
   struct task_impl<void, UnaryFun> : task {
     UnaryFun& f;
     explicit task_impl(UnaryFun& f_) : f(f_)  {}
-    virtual void exec(Interface* iface)  { f(iface); }
+    void exec(Interface* iface) override  { f(iface); }
     void result()  {}
   }; // task_impl<void, UnaryFun>
 

@@ -18,15 +18,15 @@ class threaded_command : public command {
   std::shared_ptr<mediator> m_med;
 public:
   explicit threaded_command(std::shared_ptr<command_allocator> allocator);
-  virtual ~threaded_command()  { m_med->stop(); }
-  virtual void exec(const std::string& sql, const std::vector<column_definition>& params);
-  virtual size_t affected();
-  virtual std::vector<std::string> columns();
-  virtual bool fetch(std::vector<variant>& row);
-  virtual void set_autocommit(bool autocommit);
-  virtual void commit();
-  virtual DBMS system();
-  virtual command_traits traits();
+  ~threaded_command() override  { m_med->stop(); }
+  void exec(const std::string& sql, const std::vector<column_definition>& params) override;
+  size_t affected() override;
+  std::vector<std::string> columns() override;
+  bool fetch(std::vector<variant>& row) override;
+  void set_autocommit(bool autocommit) override;
+  void commit() override;
+  DBMS system() override;
+  command_traits traits() override;
 }; // threaded_command
 
 inline threaded_command::threaded_command(std::shared_ptr<command_allocator> allocator) : m_med(new mediator())

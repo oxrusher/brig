@@ -16,9 +16,9 @@ class threaded_rowset : public rowset {
   std::shared_ptr<mediator> m_med;
 public:
   explicit threaded_rowset(std::shared_ptr<rowset> rs);
-  virtual ~threaded_rowset()  { m_med->stop(); }
-  virtual std::vector<std::string> columns();
-  virtual bool fetch(std::vector<variant>& row);
+  ~threaded_rowset() override  { m_med->stop(); }
+  std::vector<std::string> columns() override;
+  bool fetch(std::vector<variant>& row) override;
 }; // threaded_rowset
 
 inline threaded_rowset::threaded_rowset(std::shared_ptr<rowset> rs) : m_med(new mediator())
