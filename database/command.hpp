@@ -12,8 +12,7 @@
 
 namespace brig { namespace database {
 
-struct command : public rowset
-{
+struct command : rowset {
   virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) = 0;
   virtual size_t affected() = 0;
 

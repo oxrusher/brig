@@ -11,8 +11,8 @@ namespace brig { namespace proj {
 
 inline void transform_wkb(blob_t& wkb, projPJ in_pj, projPJ out_pj)
 {
-  const blob_t::value_type* in_ptr = wkb.data();
-  blob_t::value_type* out_ptr = (blob_t::value_type*)wkb.data();
+  const blob_t::value_type* in_ptr(wkb.data());
+  blob_t::value_type* out_ptr((blob_t::value_type*)wkb.data());
   detail::transform_geometry(in_ptr, out_ptr, in_pj, out_pj);
 }
 

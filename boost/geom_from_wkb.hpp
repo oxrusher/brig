@@ -11,7 +11,7 @@ namespace brig { namespace boost {
 
 inline geometry geom_from_wkb(const blob_t& wkb)
 {
-  auto ptr = wkb.data();
+  auto ptr(wkb.data());
   geometry geom;
   detail::read_geometry(ptr, geom);
   return geom;

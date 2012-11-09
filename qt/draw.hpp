@@ -12,7 +12,7 @@ namespace brig { namespace qt {
 
 inline void draw(const blob_t& wkb, const frame& fr, QPainter& painter)
 {
-  auto ptr = wkb.data();
+  auto ptr(wkb.data());
   detail::draw_geometry(ptr, fr, painter);
 }
 

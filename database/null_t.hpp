@@ -14,7 +14,10 @@ struct null_t  { null_t() {} };
 namespace std {
 
 template <class CharT, class TraitsT>
-basic_ostream<CharT, TraitsT>& operator<<(basic_ostream<CharT, TraitsT>& stream, const brig::database::null_t&)  { return stream; }
+basic_ostream<CharT, TraitsT>& operator<<(basic_ostream<CharT, TraitsT>& stream, const brig::database::null_t&)
+{
+  return stream;
+}
 
 } // std
 

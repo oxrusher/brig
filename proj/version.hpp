@@ -10,7 +10,8 @@ namespace brig { namespace proj {
 
 inline std::string version()
 {
-  return detail::lib::singleton().empty()? "": detail::lib::singleton().p_pj_get_release();
+  using namespace detail;
+  return lib::singleton().empty()? "": lib::singleton().p_pj_get_release();
 }
 
 } } // brig::proj

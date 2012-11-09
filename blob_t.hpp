@@ -24,18 +24,20 @@ namespace std {
 template <typename CharT, typename TraitsT>
 basic_ostream<CharT, TraitsT>& operator<<(basic_ostream<CharT, TraitsT>& stream, const brig::blob_t& blob)
 {
+  using namespace std;
+
   if (stream.flags() & ios::hex)
   {
     const size_t width(size_t(stream.width()));
     const size_t size(blob.size());
-    const size_t count(width == 0? size: std::min<>(width / 2, size));
+    const size_t count(width == 0? size: min<>(width / 2, size));
 
-    basic_ostringstream<CharT, TraitsT> str_stream; stream.imbue(std::locale::classic());
-    str_stream << hex << setfill(CharT(0x30));
-    if (stream.flags() & ios::uppercase) str_stream << uppercase;
+    basic_ostringstream<CharT, TraitsT> s; s.imbue(locale::classic());
+    s << hex << setfill(CharT(0x30)); // DIGIT ZERO
+    if (stream.flags() & ios::uppercase) s << uppercase;
     for (size_t i(0); i < count; ++i)
-      str_stream << setw(2) << static_cast<int>(blob[i]);
-    stream << str_stream.str();
+      s << setw(2) << static_cast<int>(blob[i]);
+    stream << s.str();
   }
   else
   {

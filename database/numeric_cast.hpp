@@ -10,7 +10,10 @@
 namespace brig { namespace database {
 
 template <typename To>
-bool numeric_cast(const variant& from, To& to)  { return ::boost::apply_visitor(detail::numeric_visitor<To>(to), from); }
+bool numeric_cast(const variant& from, To& to)
+{
+  return ::boost::apply_visitor(detail::numeric_visitor<To>(to), from);
+}
 
 } } // brig::database
 

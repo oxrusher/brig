@@ -108,7 +108,7 @@ inline std::string dialect::sql_column_definition(const column_definition& col)
   str += sql_identifier(col.name) + " " + sql_regular_identifier(col.dbms_type_lcase);
   if (col.not_null) str += " NOT NULL";
   return str;
-}
+} // dialect::
 
 } } } // brig::database::detail
 

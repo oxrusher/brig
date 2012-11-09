@@ -59,7 +59,7 @@ inline std::string dialect_sqlite::sql_tables()
 
 inline std::string dialect_sqlite::sql_geometries()
 {
-  return "SELECT '' scm, f_table_name tbl, f_geometry_column col FROM geometry_columns";
+  return "SELECT '' scm, g.f_table_name tbl, g.f_geometry_column col FROM geometry_columns g JOIN sqlite_master t ON g.f_table_name = t.name";
 }
 
 inline std::string dialect_sqlite::sql_mbr(const table_definition& tbl, const std::string& col)
