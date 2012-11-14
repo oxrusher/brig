@@ -31,7 +31,7 @@ public:
   command(const std::string& str);
   ~command() override  { close_all(); }
   void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) override;
-  size_t affected() override;
+  void exec_batch(const std::string& sql) override;
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
   void set_autocommit(bool autocommit) override;
@@ -149,15 +149,13 @@ inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(
 
 inline void command::exec(const std::string& sql, const std::vector<column_definition>& params)
 {
-  using namespace std;
-
   if (SQL_NULL_HANDLE == m_stmt || sql != m_sql || sql.empty())
   {
     close_stmt();
     SQLHANDLE stmt(SQL_NULL_HANDLE);
     check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLAllocHandle(SQL_HANDLE_STMT, m_dbc, &stmt));
-    swap(m_stmt, stmt);
-    check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLPrepareW(m_stmt, (SQLWCHAR*)brig::unicode::transform<basic_string<SQLWCHAR>>(sql).c_str(), SQL_NTS));
+    std::swap(m_stmt, stmt);
+    check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLPrepareW(m_stmt, (SQLWCHAR*)brig::unicode::transform<std::basic_string<SQLWCHAR>>(sql).c_str(), SQL_NTS));
     m_sql = sql;
   }
   else
@@ -178,12 +176,16 @@ inline void command::exec(const std::string& sql, const std::vector<column_defin
   if (SQL_NO_DATA != r) check(SQL_HANDLE_STMT, m_stmt, r);
 }
 
-inline size_t command::affected()
+inline void command::exec_batch(const std::string& sql)
 {
-  SQLLEN count(0);
-  if (SQL_NULL_HANDLE != m_stmt) check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLRowCount(m_stmt, &count));
-  if (count < 0) count = 0;
-  return count;
+  exec(sql);
+  while (true)
+  {
+    const SQLRETURN r(lib::singleton().p_SQLMoreResults(m_stmt));
+    if (SQL_NO_DATA == r) break;
+    check(SQL_HANDLE_STMT, m_stmt, r);
+  }
+  close_stmt();
 }
 
 inline std::vector<std::string> command::columns()

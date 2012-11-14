@@ -16,9 +16,9 @@ class db_handle : ::boost::noncopyable {
 public:
   explicit db_handle(const std::string& file);
   virtual ~db_handle()  { lib::singleton().p_sqlite3_close(m_db); }
-  size_t affected()  { return lib::singleton().p_sqlite3_changes(m_db); }
   void check(int r)  { if (SQLITE_OK != r) error(); }
   void error();
+  void exec(const char* sql)  { check(lib::singleton().p_sqlite3_exec(m_db, sql, 0, 0, 0)); }
   sqlite3_stmt* prepare_stmt(const std::string& sql);
 }; // db_handle
 

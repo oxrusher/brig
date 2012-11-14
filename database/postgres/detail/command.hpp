@@ -35,7 +35,7 @@ public:
   command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd);
   ~command() override  { close_all(); }
   void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) override;
-  size_t affected() override;
+  void exec_batch(const std::string& sql) override;
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
   void set_autocommit(bool autocommit) override;
@@ -101,11 +101,13 @@ inline void command::exec(const std::string& sql, const std::vector<column_defin
   check(r == PGRES_COMMAND_OK || r == PGRES_TUPLES_OK);
 }
 
-inline size_t command::affected()
+inline void command::exec_batch(const std::string& sql)
 {
-  if (!m_res) return 0;
-  try  { return ::boost::lexical_cast<size_t>(lib::singleton().p_PQcmdTuples(m_res)); }
-  catch (::boost::bad_lexical_cast&)  { return 0; }
+  close_result();
+  m_res = lib::singleton().p_PQexec(m_con, sql.c_str());
+  const ExecStatusType r(lib::singleton().p_PQresultStatus(m_res));
+  check(r == PGRES_COMMAND_OK || r == PGRES_TUPLES_OK);
+  close_result();
 }
 
 inline std::vector<std::string> command::columns()
@@ -113,8 +115,7 @@ inline std::vector<std::string> command::columns()
   std::vector<std::string> cols;
   if (!m_res) return cols;
   m_cols.clear();
-  int count(lib::singleton().p_PQnfields(m_res));
-  for (int i(0); i < count; ++i)
+  for (int i(0), count(lib::singleton().p_PQnfields(m_res)); i < count; ++i)
   {
     m_cols.push_back(get_value_factory(lib::singleton().p_PQftype(m_res, i)));
     cols.push_back(lib::singleton().p_PQfname(m_res, i));
@@ -127,7 +128,7 @@ inline bool command::fetch(std::vector<variant>& row)
   if (!m_res || m_row >= lib::singleton().p_PQntuples(m_res)) return false;
   if (m_cols.empty()) columns();
   row.resize(m_cols.size());
-  const int i(m_row); ++m_row;
+  const int i(m_row++);
   for (size_t j(0); j < m_cols.size(); ++j)
   {
     if (lib::singleton().p_PQgetisnull(m_res, i, j)) row[j] = null_t();

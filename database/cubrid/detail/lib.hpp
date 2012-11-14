@@ -23,6 +23,7 @@ public:
   decltype(cci_get_autocommit) *p_cci_get_autocommit;
   decltype(cci_get_data) *p_cci_get_data;
   decltype(cci_get_result_info) *p_cci_get_result_info;
+  decltype(cci_next_result) *p_cci_next_result;
   decltype(cci_prepare) *p_cci_prepare;
   decltype(cci_set_autocommit) *p_cci_set_autocommit;
 
@@ -48,6 +49,7 @@ inline lib::lib() : p_cci_set_autocommit(0), p_cci_get_version(0)
     && (p_cci_get_autocommit = BRIG_DL_FUNCTION(handle, cci_get_autocommit))
     && (p_cci_get_data = BRIG_DL_FUNCTION(handle, cci_get_data))
     && (p_cci_get_result_info = BRIG_DL_FUNCTION(handle, cci_get_result_info))
+    && (p_cci_next_result = BRIG_DL_FUNCTION(handle, cci_next_result))
     && (p_cci_prepare = BRIG_DL_FUNCTION(handle, cci_prepare))
      )  p_cci_set_autocommit = BRIG_DL_FUNCTION(handle, cci_set_autocommit);
 

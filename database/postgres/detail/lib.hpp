@@ -13,8 +13,8 @@ class lib {
 
 public:
   decltype(PQclear) *p_PQclear;
-  decltype(PQcmdTuples) *p_PQcmdTuples;
   decltype(PQerrorMessage) *p_PQerrorMessage;
+  decltype(PQexec) *p_PQexec;
   decltype(PQexecParams) *p_PQexecParams;
   decltype(PQfinish) *p_PQfinish;
   decltype(PQfname) *p_PQfname;
@@ -39,8 +39,8 @@ inline lib::lib() : p_PQstatus(0)
   auto handle = BRIG_DL_LIBRARY("libpq.dll", "libpq.so");
   if (  handle
     && (p_PQclear = BRIG_DL_FUNCTION(handle, PQclear))
-    && (p_PQcmdTuples = BRIG_DL_FUNCTION(handle, PQcmdTuples))
     && (p_PQerrorMessage = BRIG_DL_FUNCTION(handle, PQerrorMessage))
+    && (p_PQexec = BRIG_DL_FUNCTION(handle, PQexec))
     && (p_PQexecParams = BRIG_DL_FUNCTION(handle, PQexecParams))
     && (p_PQfinish = BRIG_DL_FUNCTION(handle, PQfinish))
     && (p_PQfname = BRIG_DL_FUNCTION(handle, PQfname))

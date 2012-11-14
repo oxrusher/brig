@@ -137,7 +137,7 @@ LEFT JOIN (SELECT tabid, idxname, constrtype FROM sysconstraints) cs ON (i.tabid
 SELECT RTRIM(i.owner), i.idxname, 0 pri, 0 unq, 1 sp, c.colname, 0 dsc, 0 keyno \
 FROM \
   (SELECT idxname, owner, tabid, CAST(SUBSTRING(CAST(indexkeys AS lvarchar) FROM 1 FOR 2) AS SMALLINT) colno, amid FROM sysindices) i \
-, (SELECT tabid FROM systables WHERE owner = 'informix' AND tabname = 't') t \
+, (SELECT tabid FROM systables WHERE owner = '" << tbl.schema << "' AND tabname = '" << tbl.name << "') t \
 , (SELECT am_id FROM sysams WHERE am_name = 'rtree') m \
 , syscolumns c \
 WHERE i.tabid = t.tabid AND i.amid = m.am_id AND i.tabid = c.tabid AND i.colno = c.colno";

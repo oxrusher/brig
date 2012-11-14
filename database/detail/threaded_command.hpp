@@ -20,7 +20,7 @@ public:
   explicit threaded_command(std::shared_ptr<command_allocator> allocator);
   ~threaded_command() override  { m_med->stop(); }
   void exec(const std::string& sql, const std::vector<column_definition>& params) override;
-  size_t affected() override;
+  void exec_batch(const std::string& sql) override;
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
   void set_autocommit(bool autocommit) override;
@@ -46,26 +46,24 @@ inline threaded_command::threaded_command(std::shared_ptr<command_allocator> all
 
 inline void threaded_command::exec(const std::string& sql, const std::vector<column_definition>& params)
 {
-  using namespace std;
   m_med->dpg.clear();
-  m_med->call<void>(&command::exec, placeholders::_1, cref(sql), cref(params));
+  m_med->call<void>(&command::exec, std::placeholders::_1, std::cref(sql), std::cref(params));
 }
 
-inline size_t threaded_command::affected()
+inline void threaded_command::exec_batch(const std::string& sql)
 {
-  return m_med->call<size_t>(&command::affected, std::placeholders::_1);
+  m_med->dpg.clear();
+  m_med->call<void>(&command::exec_batch, std::placeholders::_1, std::cref(sql));
 }
 
 inline std::vector<std::string> threaded_command::columns()
 {
-  using namespace std;
-  return m_med->call<vector<string>>(&command::columns, placeholders::_1);
+  return m_med->call<std::vector<std::string>>(&command::columns, std::placeholders::_1);
 }
 
 inline bool threaded_command::fetch(std::vector<variant>& row)
 {
-  if (m_med->dpg.empty())
-    m_med->call<void>(&double_page::fill, &m_med->dpg, std::placeholders::_1);
+  if (m_med->dpg.empty()) m_med->call<void>(&double_page::fill, &m_med->dpg, std::placeholders::_1);
   return m_med->dpg.fetch(row);
 }
 

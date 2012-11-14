@@ -14,7 +14,7 @@ namespace brig { namespace database {
 
 struct command : rowset {
   virtual void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) = 0;
-  virtual size_t affected() = 0;
+  virtual void exec_batch(const std::string& sql) = 0;
 
   virtual void set_autocommit(bool autocommit) = 0;
   virtual void commit() = 0;

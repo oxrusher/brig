@@ -35,7 +35,7 @@ public:
   command(const std::string& srv, const std::string& usr, const std::string& pwd);
   ~command() override  { close_all(); }
   void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) override;
-  size_t affected() override;
+  void exec_batch(const std::string& sql) override;
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
   void set_autocommit(bool autocommit) override;
@@ -105,10 +105,9 @@ inline void command::exec(const std::string& sql_, const std::vector<column_defi
 {
   using namespace std;
 
-  const u16string sql(brig::unicode::transform<u16string>(sql_));
-
   close_stmt();
   m_hnd.alloc_handle((void**)&m_hnd.stmt, OCI_HTYPE_STMT);
+  const u16string sql(brig::unicode::transform<u16string>(sql_));
   m_hnd.check(lib::singleton().p_OCIStmtPrepare(m_hnd.stmt, m_hnd.err, (const text*)sql.c_str(), ub4(sql.size() * sizeof(char16_t)), OCI_NTV_SYNTAX, OCI_DEFAULT));
   ub2 stmt_type(0);
   m_hnd.check(lib::singleton().p_OCIAttrGet(m_hnd.stmt, OCI_HTYPE_STMT, &stmt_type, 0, OCI_ATTR_STMT_TYPE, m_hnd.err));
@@ -120,11 +119,10 @@ inline void command::exec(const std::string& sql_, const std::vector<column_defi
   m_hnd.check(lib::singleton().p_OCIStmtExecute(m_hnd.svc, m_hnd.stmt, m_hnd.err, OCI_STMT_SELECT == stmt_type? 0: 1, 0, 0, 0, m_autocommit? OCI_COMMIT_ON_SUCCESS: OCI_DEFAULT));
 }
 
-inline size_t command::affected()
+inline void command::exec_batch(const std::string& sql)
 {
-  ub4 count(0);
-  if (0 != m_hnd.stmt) m_hnd.check(lib::singleton().p_OCIAttrGet(m_hnd.stmt, OCI_HTYPE_STMT, &count, 0, OCI_ATTR_ROW_COUNT, m_hnd.err));
-  return count;
+  exec(sql);
+  close_stmt();
 }
 
 inline std::vector<std::string> command::columns()

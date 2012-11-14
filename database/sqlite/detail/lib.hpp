@@ -21,7 +21,6 @@ public:
   decltype(sqlite3_bind_int64) *p_sqlite3_bind_int64;
   decltype(sqlite3_bind_null) *p_sqlite3_bind_null;
   decltype(sqlite3_bind_text) *p_sqlite3_bind_text;
-  decltype(sqlite3_changes) *p_sqlite3_changes;
   decltype(sqlite3_close) *p_sqlite3_close;
   decltype(sqlite3_column_blob) *p_sqlite3_column_blob;
   decltype(sqlite3_column_bytes) *p_sqlite3_column_bytes;
@@ -58,7 +57,6 @@ inline lib::lib() : p_sqlite3_step(0), p_spatialite_version(0)
     && (p_sqlite3_bind_int64 = BRIG_DL_FUNCTION(handle, sqlite3_bind_int64))
     && (p_sqlite3_bind_null = BRIG_DL_FUNCTION(handle, sqlite3_bind_null))
     && (p_sqlite3_bind_text = BRIG_DL_FUNCTION(handle, sqlite3_bind_text))
-    && (p_sqlite3_changes = BRIG_DL_FUNCTION(handle, sqlite3_changes))
     && (p_sqlite3_close = BRIG_DL_FUNCTION(handle, sqlite3_close))
     && (p_sqlite3_column_blob = BRIG_DL_FUNCTION(handle, sqlite3_column_blob))
     && (p_sqlite3_column_bytes = BRIG_DL_FUNCTION(handle, sqlite3_column_bytes))

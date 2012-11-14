@@ -207,17 +207,19 @@ inline void dialect_oracle::sql_register_spatial_column(const table_definition& 
   using namespace std;
   using namespace brig::boost;
 
-  sql.push_back("DELETE FROM MDSYS.USER_SDO_GEOM_METADATA WHERE TABLE_NAME = '" + tbl.id.name + "' AND COLUMN_NAME = '" + col + "'");
   auto col_def(tbl[col]);
   auto box(envelope(geom_from_wkb(::boost::get<blob_t>(col_def->query_value))));
   const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>());
   ostringstream stream; stream.imbue(locale::classic()); stream << scientific; stream.precision(17);
   stream << "\
+BEGIN \
+DELETE FROM MDSYS.USER_SDO_GEOM_METADATA WHERE TABLE_NAME = '" << tbl.id.name << "' AND COLUMN_NAME = '" << col << "'; \
 INSERT INTO MDSYS.USER_SDO_GEOM_METADATA (TABLE_NAME, COLUMN_NAME, DIMINFO, SRID) VALUES \
 ( '" << tbl.id.name << "' \
 , '" << col << "' \
 , MDSYS.SDO_DIM_ARRAY(MDSYS.SDO_DIM_ELEMENT('X', " << xmin << ", " << xmax << ", 0.000001), MDSYS.SDO_DIM_ELEMENT('Y', " << ymin << ", " << ymax << ", 0.000001)) \
-, " << col_def->srid << ")";
+, " << col_def->srid << "); \
+END;";
   sql.push_back(stream.str());
 }
 

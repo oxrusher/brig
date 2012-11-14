@@ -32,7 +32,7 @@ public:
   command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd);
   ~command() override  { close_all(); }
   void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) override;
-  size_t affected() override;
+  void exec_batch(const std::string& sql) override;
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
   void set_autocommit(bool autocommit) override;
@@ -69,29 +69,25 @@ inline void command::close_all()
 inline command::command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd)
   : m_con(0), m_stmt(0), m_autocommit(true)
 {
-  using namespace std;
-
-  if (lib::singleton().empty()) throw runtime_error("MySQL error");
+  if (lib::singleton().empty()) throw std::runtime_error("MySQL error");
   m_con = lib::singleton().p_mysql_init(0);
-  if (!m_con) throw runtime_error("MySQL error");
+  if (!m_con) throw std::runtime_error("MySQL error");
   try
   {
-    check(lib::singleton().p_mysql_real_connect(m_con, host.c_str(), usr.c_str(), pwd.c_str(), db.c_str(), port, 0, 0) == m_con);
+    check(lib::singleton().p_mysql_real_connect(m_con, host.c_str(), usr.c_str(), pwd.c_str(), db.c_str(), port, 0, CLIENT_MULTI_STATEMENTS) == m_con);
     check(lib::singleton().p_mysql_set_character_set(m_con, "utf8") == 0);
   }
-  catch (const exception&)  { close_all(); throw; }
+  catch (const std::exception&)  { close_all(); throw; }
 }
 
 inline void command::exec(const std::string& sql, const std::vector<column_definition>& params)
 {
-  using namespace std;
-
   close_stmt();
   m_stmt = lib::singleton().p_mysql_stmt_init(m_con);
-  if (!m_stmt) throw runtime_error("MySQL error");
+  if (!m_stmt) throw std::runtime_error("MySQL error");
   check(lib::singleton().p_mysql_stmt_prepare(m_stmt, sql.c_str(), sql.size()) == 0);
 
-  vector<MYSQL_BIND> binds(params.size());
+  std::vector<MYSQL_BIND> binds(params.size());
   if (!binds.empty())
   {
     memset(binds.data(), 0, binds.size() * sizeof(MYSQL_BIND));
@@ -103,12 +99,18 @@ inline void command::exec(const std::string& sql, const std::vector<column_defin
   check(lib::singleton().p_mysql_stmt_execute(m_stmt) == 0);
 }
 
-inline size_t command::affected()
+inline void command::exec_batch(const std::string& sql)
 {
-  my_ulonglong count(0);
-  if (m_stmt) count = lib::singleton().p_mysql_stmt_affected_rows(m_stmt);
-  if (count == my_ulonglong(-1)) count = 0;
-  return size_t(count);
+  close_stmt();
+  check(lib::singleton().p_mysql_query(m_con, sql.c_str()) == 0);
+  while (true)
+  {
+    MYSQL_RES* res(lib::singleton().p_mysql_store_result(m_con));
+    if (res) lib::singleton().p_mysql_free_result(res);
+    const int r(lib::singleton().p_mysql_next_result(m_con));
+    if (r < 0) break;
+    check(r == 0);
+  }
 }
 
 inline std::vector<std::string> command::columns()
@@ -152,17 +154,15 @@ inline bool command::fetch(std::vector<variant>& row)
 inline void command::set_autocommit(bool autocommit)
 {
   if (m_autocommit == autocommit) return;
-  close_stmt();
-  check(lib::singleton().p_mysql_query(m_con, autocommit? "ROLLBACK": "BEGIN") == 0);
+  exec(autocommit? "ROLLBACK": "BEGIN");
   m_autocommit = autocommit;
 }
 
 inline void command::commit()
 {
   if (m_autocommit) return;
-  close_stmt();
-  check(lib::singleton().p_mysql_query(m_con, "COMMIT") == 0);
-  check(lib::singleton().p_mysql_query(m_con, "BEGIN") == 0);
+  exec("COMMIT");
+  exec("BEGIN");
 } // command::
 
 } } } } // brig::database::mysql::detail

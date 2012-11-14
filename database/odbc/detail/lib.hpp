@@ -30,9 +30,9 @@ public:
   decltype(SQLGetData) *p_SQLGetData;
   decltype(SQLGetDiagRecW) *p_SQLGetDiagRecW;
   decltype(SQLGetInfoW) *p_SQLGetInfoW;
+  decltype(SQLMoreResults) *p_SQLMoreResults;
   decltype(SQLNumResultCols) *p_SQLNumResultCols;
   decltype(SQLPrepareW) *p_SQLPrepareW;
-  decltype(SQLRowCount) *p_SQLRowCount;
   decltype(SQLSetConnectAttr) *p_SQLSetConnectAttr;
   decltype(SQLSetEnvAttr) *p_SQLSetEnvAttr;
 
@@ -60,9 +60,9 @@ inline lib::lib() : p_SQLSetEnvAttr(0)
     && (p_SQLGetData = BRIG_DL_FUNCTION(handle, SQLGetData))
     && (p_SQLGetDiagRecW = BRIG_DL_FUNCTION(handle, SQLGetDiagRecW))
     && (p_SQLGetInfoW = BRIG_DL_FUNCTION(handle, SQLGetInfoW))
+    && (p_SQLMoreResults = BRIG_DL_FUNCTION(handle, SQLMoreResults))
     && (p_SQLNumResultCols = BRIG_DL_FUNCTION(handle, SQLNumResultCols))
     && (p_SQLPrepareW = BRIG_DL_FUNCTION(handle, SQLPrepareW))
-    && (p_SQLRowCount = BRIG_DL_FUNCTION(handle, SQLRowCount))
     && (p_SQLSetConnectAttr = BRIG_DL_FUNCTION(handle, SQLSetConnectAttr))
      )  p_SQLSetEnvAttr = BRIG_DL_FUNCTION(handle, SQLSetEnvAttr);
 } // lib::

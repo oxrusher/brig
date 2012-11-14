@@ -21,9 +21,6 @@ public:
   decltype(OCICollAppend) *p_OCICollAppend;
   decltype(OCICollGetElem) *p_OCICollGetElem;
   decltype(OCICollSize) *p_OCICollSize;
-  decltype(OCIDateTimeConstruct) *p_OCIDateTimeConstruct;
-  decltype(OCIDateTimeGetDate) *p_OCIDateTimeGetDate;
-  decltype(OCIDateTimeGetTime) *p_OCIDateTimeGetTime;
   decltype(OCIDefineByPos) *p_OCIDefineByPos;
   decltype(OCIDefineDynamic) *p_OCIDefineDynamic;
   decltype(OCIDefineObject) *p_OCIDefineObject;
@@ -66,9 +63,6 @@ inline lib::lib() : p_OCITypeByName(0)
     && (p_OCICollAppend = BRIG_DL_FUNCTION(handle, OCICollAppend))
     && (p_OCICollGetElem = BRIG_DL_FUNCTION(handle, OCICollGetElem))
     && (p_OCICollSize = BRIG_DL_FUNCTION(handle, OCICollSize))
-    && (p_OCIDateTimeConstruct = BRIG_DL_FUNCTION(handle, OCIDateTimeConstruct))
-    && (p_OCIDateTimeGetDate = BRIG_DL_FUNCTION(handle, OCIDateTimeGetDate))
-    && (p_OCIDateTimeGetTime = BRIG_DL_FUNCTION(handle, OCIDateTimeGetTime))
     && (p_OCIDefineByPos = BRIG_DL_FUNCTION(handle, OCIDefineByPos))
     && (p_OCIDefineDynamic = BRIG_DL_FUNCTION(handle, OCIDefineDynamic))
     && (p_OCIDefineObject = BRIG_DL_FUNCTION(handle, OCIDefineObject))

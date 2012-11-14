@@ -35,7 +35,7 @@ public:
   explicit command(const std::string& file) : m_db(file), m_stmt(0), m_done(false), m_autocommit(true)  {}
   ~command() override;
   void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) override;
-  size_t affected() override  { return m_db.affected(); }
+  void exec_batch(const std::string& sql) override;
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
   void set_autocommit(bool autocommit) override;
@@ -87,6 +87,12 @@ inline void command::exec(const std::string& sql, const std::vector<column_defin
   }
 }
 
+inline void command::exec_batch(const std::string& sql)
+{
+  close_stmt();
+  m_db.exec(sql.c_str());
+}
+
 inline std::vector<std::string> command::columns()
 {
   using namespace brig::database::detail;
@@ -96,8 +102,7 @@ inline std::vector<std::string> command::columns()
   m_sql = "";
   m_cols.clear();
 
-  const int count(lib::singleton().p_sqlite3_column_count(m_stmt));
-  for (int i(0); i < count; ++i)
+  for (int i(0), count(lib::singleton().p_sqlite3_column_count(m_stmt)); i < count; ++i)
   {
     auto name_ptr = lib::singleton().p_sqlite3_column_name(m_stmt, i);
     auto type_ptr = lib::singleton().p_sqlite3_column_decltype(m_stmt, i);
