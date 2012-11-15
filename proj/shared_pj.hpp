@@ -28,6 +28,7 @@ public:
   shared_pj()  {}
   explicit shared_pj(int epsg);
   explicit shared_pj(const std::string& def);
+  std::string definition() const  { return m_res? m_res->def: std::string(); }
   bool is_latlong() const  { return m_res? (detail::lib::singleton().p_pj_is_latlong(m_res->pj) != 0): false; }
   bool operator==(const shared_pj& r) const;
   operator projPJ() const  { return m_res? m_res->pj: 0; }
