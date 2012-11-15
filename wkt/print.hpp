@@ -13,7 +13,7 @@ namespace brig { namespace wkt {
 
 inline std::string print(const blob_t& wkb)
 {
-  auto ptr = wkb.data();
+  auto ptr(wkb.data());
   std::ostringstream stream; stream.imbue(std::locale::classic());
   detail::print_geometry(ptr, stream);
   return stream.str();
