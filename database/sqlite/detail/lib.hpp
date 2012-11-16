@@ -79,7 +79,7 @@ inline lib::lib() : p_sqlite3_step(0), p_spatialite_version(0)
    // SpatiaLite (optional)
    if (!empty())
    {
-     handle = BRIG_DL_LIBRARY("libspatialite-2.dll", "libspatialite.so.2");
+     handle = BRIG_DL_LIBRARY("libspatialite.dll", "libspatialite.so");
      if (handle)
      {
        p_spatialite_version = BRIG_DL_FUNCTION(handle, spatialite_version);
