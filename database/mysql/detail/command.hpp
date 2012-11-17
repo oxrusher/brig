@@ -154,15 +154,17 @@ inline bool command::fetch(std::vector<variant>& row)
 inline void command::set_autocommit(bool autocommit)
 {
   if (m_autocommit == autocommit) return;
-  exec(autocommit? "ROLLBACK": "BEGIN");
+  close_stmt();
+  check(lib::singleton().p_mysql_query(m_con, autocommit? "ROLLBACK": "BEGIN") == 0);
   m_autocommit = autocommit;
 }
 
 inline void command::commit()
 {
   if (m_autocommit) return;
-  exec("COMMIT");
-  exec("BEGIN");
+  close_stmt();
+  check(lib::singleton().p_mysql_query(m_con, "COMMIT") == 0);
+  check(lib::singleton().p_mysql_query(m_con, "BEGIN") == 0);
 } // command::
 
 } } } } // brig::database::mysql::detail
