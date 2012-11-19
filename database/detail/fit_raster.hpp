@@ -16,6 +16,9 @@ inline raster_pyramid fit_raster(dialect* dct, const raster_pyramid& raster, con
   using namespace std;
 
   raster_pyramid res;
+  res.id.schema = schema;
+  res.id.name = dct->fit_identifier(raster.id.name);
+  res.id.qualifier = dct->fit_identifier(raster.id.qualifier);
   string lvl_0;
   for (size_t i(0); i < raster.levels.size(); ++i)
   {
@@ -35,14 +38,6 @@ inline raster_pyramid fit_raster(dialect* dct, const raster_pyramid& raster, con
    
     lvl.geometry.qualifier = dct->fit_identifier(raster.levels[i].geometry.qualifier);
     lvl.raster = dct->fit_column(raster.levels[i].raster);
-
-    if (i == 0)
-    {
-      res.id.schema = lvl.geometry.schema;
-      res.id.name = lvl.geometry.name;
-      res.id.qualifier = lvl.raster.name;
-    }
-
     res.levels.push_back(lvl);
   }
   return res;

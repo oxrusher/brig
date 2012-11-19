@@ -147,7 +147,7 @@ inline column_definition dialect_ingres::fit_column(const column_definition& col
   switch (res.type)
   {
   case VoidColumn: throw runtime_error("datatype error");
-  case Blob: res.dbms_type_lcase.name = "blob"; break;
+  case Blob: res.dbms_type_lcase.name = "long byte"; break;
   case Double: res.dbms_type_lcase.name = "double precision"; break;
   case Geometry:
     res.dbms_type_lcase.name = "geometry";

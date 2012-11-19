@@ -59,11 +59,32 @@ inline SQLSMALLINT binding_visitor::sql_type() const
   switch (m_param.type)
   {
     default: throw std::runtime_error("ODBC type error");
-    case Blob: return MS_SQL == m_sys? SQL_LONGVARBINARY: SQL_VARBINARY; // todo:
-    case Geometry: return Informix == m_sys? SQL_INFX_UDT_LVARCHAR: MS_SQL == m_sys? SQL_LONGVARBINARY: SQL_VARBINARY; // todo:
+    case Blob:
+      switch (m_sys)
+      {
+      default: return SQL_VARBINARY;
+      case MS_SQL:
+      case Ingres: return SQL_LONGVARBINARY;
+      }
+      break;
+    case Geometry:
+      switch (m_sys)
+      {
+      default: return SQL_VARBINARY;
+      case MS_SQL:
+      case Ingres: return SQL_LONGVARBINARY;
+      case Informix: return SQL_INFX_UDT_LVARCHAR;
+      }
+      break;
     case Double: return SQL_DOUBLE;
     case Integer: return SQL_BIGINT;
-    case String: return MS_SQL == m_sys? SQL_WLONGVARCHAR: SQL_WVARCHAR; // todo:
+    case String:
+      switch (m_sys)
+      {
+      default: return SQL_WVARCHAR;
+      case MS_SQL: return SQL_WLONGVARCHAR;
+      }
+      break;
   };
 } // binding_visitor::
 

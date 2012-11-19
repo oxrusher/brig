@@ -9,20 +9,12 @@
 
 namespace brig { namespace database { namespace detail {
 
-template <typename InputCodeUnit>
-std::string to_lcase(const InputCodeUnit* ptr)
+template <typename Text>
+std::string to_lcase(Text text)
 {
   using namespace std;
   using namespace brig::unicode;
-  return transform<string>(ptr, lower_case);
-}
-
-template <typename InputCodeUnit>
-std::string to_lcase(const std::basic_string<InputCodeUnit>& str)
-{
-  using namespace std;
-  using namespace brig::unicode;
-  return transform<string>(str, lower_case);
+  return transform<string>(text, lower_case);
 }
 
 } } } // brig::database::detail
