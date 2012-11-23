@@ -44,7 +44,7 @@ inline std::string shared_pj::definition(bool cur_dir, int epsg)
 
 inline shared_pj::shared_pj(int epsg)
 {
-  if (detail::lib::singleton().empty()) throw std::runtime_error("PROJ.4 error");
+  if (detail::lib::singleton().empty()) throw std::runtime_error("projection error");
 
   std::string def(definition(true, epsg));
   projPJ pj(detail::lib::singleton().p_pj_init_plus( def.c_str() ));
@@ -54,21 +54,21 @@ inline shared_pj::shared_pj(int epsg)
     pj = detail::lib::singleton().p_pj_init_plus( def.c_str() );
   }
   if (!pj)
-    throw std::runtime_error("PROJ.4 error");
+    throw std::runtime_error("projection error");
   m_res = std::make_shared<resource>(def, pj);
 }
 
 inline shared_pj::shared_pj(const std::string& def)
 {
-  if (detail::lib::singleton().empty()) throw std::runtime_error("PROJ.4 error");
+  if (detail::lib::singleton().empty()) throw std::runtime_error("projection error");
   projPJ pj(detail::lib::singleton().p_pj_init_plus( def.c_str() ));
-  if (!pj) throw std::runtime_error("PROJ.4 error");
+  if (!pj) throw std::runtime_error("projection error");
   m_res = std::make_shared<resource>(def, pj);
 }
 
 inline bool shared_pj::operator==(const shared_pj& r) const
 {
-  return m_res && r.m_res && (m_res == r.m_res || m_res->def.compare(r.m_res->def) == 0);
+  return m_res && r.m_res && !m_res->def.empty() && (m_res == r.m_res || m_res->def.compare(r.m_res->def) == 0);
 } // shared_pj::
 
 } } // brig::proj

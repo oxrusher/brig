@@ -233,12 +233,12 @@ inline void dialect_postgres::init_raster(raster_pyramid& raster)
 {
   using namespace std;
 
-  raster.id.qualifier += "_as_jpg";
+  raster.id.qualifier += "_as_png";
   for (auto lvl(begin(raster.levels)); lvl != end(raster.levels); ++lvl)
   {
     const std::string col_name(lvl->raster.name);
-    lvl->raster.name = col_name + "_as_jpg";
-    lvl->raster.query_expression = "ST_AsJPEG(" + sql_identifier(col_name) + ")";
+    lvl->raster.name = col_name + "_as_png";
+    lvl->raster.query_expression = "ST_AsPNG(" + sql_identifier(col_name) + ")";
   }
 }
 
