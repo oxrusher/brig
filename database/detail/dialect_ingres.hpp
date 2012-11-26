@@ -33,7 +33,7 @@ struct dialect_ingres : dialect {
   std::string sql_mbr(const table_definition& tbl, const std::string& col) override;
 
   std::string sql_schema() override;
-  std::string fit_identifier(const std::string& id)  override;
+  std::string fit_identifier(const std::string& id) override;
   column_definition fit_column(const column_definition& col) override;
   table_definition fit_table(const table_definition& tbl, const std::string& schema) override;
   std::string sql_srid(int epsg) override;

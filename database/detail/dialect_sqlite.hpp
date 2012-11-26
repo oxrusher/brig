@@ -36,6 +36,7 @@ struct dialect_sqlite : dialect {
   std::string sql_mbr(const table_definition& tbl, const std::string& col) override;
 
   std::string sql_schema() override  { return ""; }
+  std::string fit_identifier(const std::string& id) override;
   column_definition fit_column(const column_definition& col) override;
   std::string sql_srid(int epsg) override;
 
@@ -66,6 +67,11 @@ inline std::string dialect_sqlite::sql_mbr(const table_definition& tbl, const st
 {
   const std::string c(sql_identifier(col));
   return "SELECT Min(MbrMinX(" + c + ")), Min(MbrMinY(" + c + ")), Max(MbrMaxX(" + c + ")), Max(MbrMaxY(" + c + ")) FROM " + sql_identifier(tbl.id.name);
+}
+
+inline std::string dialect_sqlite::fit_identifier(const std::string& id)
+{
+  return to_lcase(id);
 }
 
 inline column_definition dialect_sqlite::fit_column(const column_definition& col)
