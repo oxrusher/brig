@@ -15,7 +15,7 @@ public:
   binding_blob(const blob_t& blob) : m_blob(blob)  {}
   Oid type() override  { return PG_TYPE_BYTEA; }
   const char* value() override  { return (const char*)m_blob.data(); }
-  int length() override  { return m_blob.size(); }
+  int length() override  { return int(m_blob.size()); }
   int format() override  { return 1; }
 }; // binding_blob
 

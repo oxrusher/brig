@@ -3,9 +3,9 @@
 #ifndef BRIG_DATABASE_ODBC_DETAIL_BINDING_NULL_HPP
 #define BRIG_DATABASE_ODBC_DETAIL_BINDING_NULL_HPP
 
-#include <brig/database/global.hpp>
 #include <brig/database/odbc/detail/binding.hpp>
 #include <brig/database/odbc/detail/lib.hpp>
+#include <brig/global.hpp>
 
 namespace brig { namespace database { namespace odbc { namespace detail {
 

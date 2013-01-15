@@ -8,9 +8,9 @@
 #include <brig/database/oracle/detail/geometry.hpp>
 #include <brig/database/oracle/detail/handles.hpp>
 #include <brig/database/oracle/detail/lib.hpp>
-#include <brig/database/variant.hpp>
 #include <brig/detail/back_insert_iterator.hpp>
 #include <brig/detail/ogc.hpp>
+#include <brig/variant.hpp>
 #include <cstdint>
 #include <stdexcept>
 

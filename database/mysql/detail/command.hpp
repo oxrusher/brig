@@ -6,10 +6,10 @@
 #include <algorithm>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <brig/database/command.hpp>
-#include <brig/database/global.hpp>
 #include <brig/database/mysql/detail/bind_param.hpp>
 #include <brig/database/mysql/detail/bind_result_factory.hpp>
 #include <brig/database/mysql/detail/lib.hpp>
+#include <brig/global.hpp>
 #include <cstring>
 #include <stdexcept>
 #include <string>
@@ -85,7 +85,7 @@ inline void command::exec(const std::string& sql, const std::vector<column_defin
   close_stmt();
   m_stmt = lib::singleton().p_mysql_stmt_init(m_con);
   if (!m_stmt) throw std::runtime_error("MySQL error");
-  check(lib::singleton().p_mysql_stmt_prepare(m_stmt, sql.c_str(), sql.size()) == 0);
+  check(lib::singleton().p_mysql_stmt_prepare(m_stmt, sql.c_str(), (unsigned long)sql.size()) == 0);
 
   std::vector<MYSQL_BIND> binds(params.size());
   if (!binds.empty())
@@ -153,16 +153,16 @@ inline bool command::fetch(std::vector<variant>& row)
 
 inline void command::set_autocommit(bool autocommit)
 {
-  if (m_autocommit == autocommit) return;
   close_stmt();
+  if (m_autocommit == autocommit) return;
   check(lib::singleton().p_mysql_query(m_con, autocommit? "ROLLBACK": "BEGIN") == 0);
   m_autocommit = autocommit;
 }
 
 inline void command::commit()
 {
-  if (m_autocommit) return;
   close_stmt();
+  if (m_autocommit) return;
   check(lib::singleton().p_mysql_query(m_con, "COMMIT") == 0);
   check(lib::singleton().p_mysql_query(m_con, "BEGIN") == 0);
 } // command::

@@ -3,10 +3,10 @@
 #ifndef BRIG_DATABASE_COMMAND_HPP
 #define BRIG_DATABASE_COMMAND_HPP
 
-#include <brig/database/column_definition.hpp>
+#include <brig/column_definition.hpp>
 #include <brig/database/command_traits.hpp>
-#include <brig/database/global.hpp>
-#include <brig/database/rowset.hpp>
+#include <brig/database/dbms.hpp>
+#include <brig/rowset.hpp>
 #include <string>
 #include <vector>
 

@@ -3,6 +3,8 @@
 #ifndef BRIG_DETAIL_DYNAMIC_LOADING_HPP
 #define BRIG_DETAIL_DYNAMIC_LOADING_HPP
 
+#include <brig/detail/stringify.hpp>
+
 #ifdef _WIN32
   #include <windows.h>
   #define BRIG_DL_LIBRARY(win, lin) LoadLibraryA(win)
@@ -14,7 +16,5 @@
   #define BRIG_DL_FUNCTION(lib, fun) (decltype(fun)*)dlsym(lib, BRIG_STRINGIFY(fun))
 
 #endif
-
-#define BRIG_STRINGIFY(str) #str
 
 #endif // BRIG_DETAIL_DYNAMIC_LOADING_HPP

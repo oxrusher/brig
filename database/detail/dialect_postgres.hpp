@@ -7,7 +7,7 @@
 #include <brig/database/detail/dialect.hpp>
 #include <brig/database/detail/get_iso_type.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
-#include <brig/database/global.hpp>
+#include <brig/global.hpp>
 #include <brig/string_cast.hpp>
 #include <ios>
 #include <iterator>
@@ -27,7 +27,7 @@ struct dialect_postgres : dialect {
   std::string sql_columns(const identifier& tbl) override;
   std::string sql_indexed_columns(const identifier& tbl) override;
   std::string sql_spatial_detail(const table_definition& tbl, const std::string& col) override;
-  column_type get_type(const identifier& dbms_type_lcase, int scale) override;
+  column_type get_type(const identifier& type_lcase, int scale) override;
 
   std::string sql_mbr(const table_definition& tbl, const std::string& col) override;
 
@@ -49,7 +49,7 @@ struct dialect_postgres : dialect {
 
 inline std::string dialect_postgres::sql_tables()
 {
-  return "SELECT TABLE_SCHEMA scm, TABLE_NAME tbl FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA NOT SIMILAR TO E'(information\\_schema)|(pg\\_%)'";
+  return "SELECT TABLE_SCHEMA scm, TABLE_NAME tbl FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA NOT SIMILAR TO E'(information\\_schema)|(pg\\_%)' AND TABLE_TYPE <> 'VIEW'";
 }
 
 inline std::string dialect_postgres::sql_geometries()
@@ -96,7 +96,7 @@ ORDER BY pri DESC, scm, name, gs";
 
 inline std::string dialect_postgres::sql_spatial_detail(const table_definition& tbl, const std::string& col)
 {
-  const std::string& dbms_type_name_lcase(tbl[col]->dbms_type_lcase.name);
+  const std::string& dbms_type_name_lcase(tbl[col]->type_lcase.name);
   if (dbms_type_name_lcase.compare("raster") == 0)
     return "\
 SELECT c.SRID, (CASE s.AUTH_NAME WHEN 'EPSG' THEN s.AUTH_SRID ELSE NULL END) epsg \
@@ -115,25 +115,25 @@ LEFT JOIN PUBLIC.SPATIAL_REF_SYS s ON c.SRID = s.SRID";
   throw std::runtime_error("datatype error");
 }
 
-inline column_type dialect_postgres::get_type(const identifier& dbms_type_lcase, int scale)
+inline column_type dialect_postgres::get_type(const identifier& type_lcase, int scale)
 {
   using namespace std;
 
-  if ( dbms_type_lcase.schema.compare("user-defined") == 0
-    && (dbms_type_lcase.name.compare("raster") == 0 || dbms_type_lcase.name.compare("geography") == 0 || dbms_type_lcase.name.compare("geometry") == 0)
-    && (dbms_type_lcase.qualifier.empty() || is_ogc_type(dbms_type_lcase.qualifier))
+  if ( type_lcase.schema.compare("user-defined") == 0
+    && (type_lcase.name.compare("raster") == 0 || type_lcase.name.compare("geography") == 0 || type_lcase.name.compare("geometry") == 0)
+    && (type_lcase.qualifier.empty() || is_ogc_type(type_lcase.qualifier))
      )
     return Geometry;
-  if (!dbms_type_lcase.schema.empty()) return VoidColumn;
-  if (dbms_type_lcase.name.find("serial") != string::npos) return Integer;
-  if (dbms_type_lcase.name.compare("bytea") == 0) return Blob;
-  if (dbms_type_lcase.name.find("array") != string::npos && dbms_type_lcase.name.find("char") == string::npos && dbms_type_lcase.name.find("text") == string::npos) return VoidColumn;
-  return get_iso_type(dbms_type_lcase.name, scale);
+  if (!type_lcase.schema.empty()) return VoidColumn;
+  if (type_lcase.name.find("serial") != string::npos) return Integer;
+  if (type_lcase.name.compare("bytea") == 0) return Blob;
+  if (type_lcase.name.find("array") != string::npos && type_lcase.name.find("char") == string::npos && type_lcase.name.find("text") == string::npos) return VoidColumn;
+  return get_iso_type(type_lcase.name, scale);
 }
 
 inline std::string dialect_postgres::sql_mbr(const table_definition& tbl, const std::string& col)
 {
-  const std::string& dbms_type_name_lcase(tbl[col]->dbms_type_lcase.name);
+  const std::string& dbms_type_name_lcase(tbl[col]->type_lcase.name);
   if (dbms_type_name_lcase.compare("raster") == 0)
     return "\
 SELECT ST_XMin(t.r), ST_YMin(t.r), ST_XMax(t.r), ST_YMax(t.r) \
@@ -153,25 +153,23 @@ inline std::string dialect_postgres::sql_schema()
 
 inline column_definition dialect_postgres::fit_column(const column_definition& col)
 {
-  using namespace std;
-
   column_definition res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn: throw runtime_error("datatype error");
-  case Blob: res.dbms_type_lcase.name = "bytea"; break;
-  case Double: res.dbms_type_lcase.name = "double precision"; break;
+  case VoidColumn: break;
+  case Blob: res.type_lcase.name = "bytea"; break;
+  case Double: res.type_lcase.name = "double precision"; break;
   case Geometry:
-    res.dbms_type_lcase.schema = "user-defined";
-    res.dbms_type_lcase.name = "geometry";
+    res.type_lcase.schema = "user-defined";
+    res.type_lcase.name = "geometry";
     res.epsg = col.epsg;
     break;
-  case Integer: res.dbms_type_lcase.name = "bigint"; break;
+  case Integer: res.type_lcase.name = "bigint"; break;
   case String:
     res.chars = (col.chars > 0 && col.chars < CharsLimit)? col.chars: CharsLimit;
-    res.dbms_type_lcase.name = "varchar(" + string_cast<char>(res.chars) + ")";
+    res.type_lcase.name = "varchar(" + string_cast<char>(res.chars) + ")";
     break;
   }
   if (col.not_null) res.not_null = true;
@@ -249,12 +247,12 @@ inline std::string dialect_postgres::sql_parameter(const command_traits& trs, co
   const string marker(trs.sql_parameter_marker(order));
   if (Geometry == param.type && !trs.writable_geometry)
   {
-    if (param.dbms_type_lcase.name.compare("geography") == 0)
+    if (param.type_lcase.name.compare("geography") == 0)
     {
       if (param.srid != 4326) throw runtime_error("SRID error");
       return "ST_GeogFromWKB(" + marker + ")";
     }
-    if (param.dbms_type_lcase.name.compare("geometry") == 0) return "ST_GeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ")";
+    if (param.type_lcase.name.compare("geometry") == 0) return "ST_GeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ")";
     throw runtime_error("datatype error");
   }
   return marker;
@@ -266,12 +264,12 @@ inline std::string dialect_postgres::sql_column(const command_traits& trs, const
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (String == col.type && col.dbms_type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
-  if (String == col.type && col.dbms_type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
+  if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
+  if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
   if (Geometry == col.type && !trs.readable_geometry)
   {
-    if (col.dbms_type_lcase.name.compare("raster") == 0) return "ST_AsBinary(ST_Envelope(" + id + ")) AS " + id;
-    if (col.dbms_type_lcase.name.compare("geography") == 0 || col.dbms_type_lcase.name.compare("geometry") == 0) return "ST_AsBinary(" + id + ") AS " + id;
+    if (col.type_lcase.name.compare("raster") == 0) return "ST_AsBinary(ST_Envelope(" + id + ")) AS " + id;
+    if (col.type_lcase.name.compare("geography") == 0 || col.type_lcase.name.compare("geometry") == 0) return "ST_AsBinary(" + id + ") AS " + id;
     throw runtime_error("datatype error");
   }
   return id;
@@ -284,7 +282,7 @@ inline void dialect_postgres::sql_limit(int rows, std::string&, std::string&, st
 
 inline bool dialect_postgres::need_to_normalize_hemisphere(const column_definition& col)
 {
-  return col.dbms_type_lcase.name.compare("geography") == 0;
+  return col.type_lcase.name.compare("geography") == 0;
 }
 
 inline std::string dialect_postgres::sql_intersect(const table_definition& tbl, const std::string& col, const boost::box& box)
@@ -294,9 +292,9 @@ inline std::string dialect_postgres::sql_intersect(const table_definition& tbl, 
   const double xmin(box.min_corner().get<0>()), ymin(box.min_corner().get<1>()), xmax(box.max_corner().get<0>()), ymax(box.max_corner().get<1>());
   auto col_def(tbl[col]);
   bool geography(false), raster(false);
-  if (col_def->dbms_type_lcase.name.compare("raster") == 0) raster = true;
-  else if (col_def->dbms_type_lcase.name.compare("geography") == 0) geography = true;
-  else if (col_def->dbms_type_lcase.name.compare("geometry") != 0) throw runtime_error("datatype error");
+  if (col_def->type_lcase.name.compare("raster") == 0) raster = true;
+  else if (col_def->type_lcase.name.compare("geography") == 0) geography = true;
+  else if (col_def->type_lcase.name.compare("geometry") != 0) throw runtime_error("datatype error");
   if (geography && col_def->srid != 4326) throw runtime_error("SRID error");
   ostringstream stream; stream.imbue(locale::classic()); stream << scientific; stream.precision(17);
 

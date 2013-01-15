@@ -8,28 +8,28 @@
 
 namespace brig { namespace unicode {
 
-template <typename OutputString, typename InputCodeUnit, typename Mapping>
-OutputString transform(const InputCodeUnit* ptr, Mapping mapping)
+template <typename OutputCodeUnit, typename InputCodeUnit, typename Mapping>
+std::basic_string<OutputCodeUnit> transform(const InputCodeUnit* ptr, Mapping mapping)
 {
-  return detail::transform_impl<OutputString>(ptr, mapping);
+  return detail::transform_impl<OutputCodeUnit>(ptr, mapping);
 }
 
-template <typename OutputString, typename InputCodeUnit, typename Mapping>
-OutputString transform(const std::basic_string<InputCodeUnit>& str, Mapping mapping)
+template <typename OutputCodeUnit, typename InputCodeUnit, typename Mapping>
+std::basic_string<OutputCodeUnit> transform(const std::basic_string<InputCodeUnit>& str, Mapping mapping)
 {
-  return detail::transform_impl<OutputString>(str.c_str(), mapping);
+  return detail::transform_impl<OutputCodeUnit>(str.c_str(), mapping);
 }
 
-template <typename OutputString, typename InputCodeUnit>
-OutputString transform(const InputCodeUnit* ptr)
+template <typename OutputCodeUnit, typename InputCodeUnit>
+std::basic_string<OutputCodeUnit> transform(const InputCodeUnit* ptr)
 {
-  return detail::transformer<OutputString, InputCodeUnit, sizeof(InputCodeUnit) == sizeof(typename OutputString::value_type)>::apply(ptr);
+  return detail::transformer<OutputCodeUnit, InputCodeUnit, sizeof(InputCodeUnit) == sizeof(OutputCodeUnit)>::apply(ptr);
 }
 
-template <typename OutputString, typename InputCodeUnit>
-OutputString transform(const std::basic_string<InputCodeUnit>& str)
+template <typename OutputCodeUnit, typename InputCodeUnit>
+std::basic_string<OutputCodeUnit> transform(const std::basic_string<InputCodeUnit>& str)
 {
-  return detail::transformer<OutputString, InputCodeUnit, sizeof(InputCodeUnit) == sizeof(typename OutputString::value_type)>::apply(str.c_str());
+  return detail::transformer<OutputCodeUnit, InputCodeUnit, sizeof(InputCodeUnit) == sizeof(OutputCodeUnit)>::apply(str.c_str());
 }
 
 } } // brig::unicode

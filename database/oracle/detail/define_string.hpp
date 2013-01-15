@@ -6,8 +6,8 @@
 #include <brig/database/oracle/detail/define.hpp>
 #include <brig/database/oracle/detail/handles.hpp>
 #include <brig/database/oracle/detail/lib.hpp>
-#include <brig/database/variant.hpp>
 #include <brig/unicode/transform.hpp>
+#include <brig/variant.hpp>
 #include <climits>
 #include <string>
 
@@ -35,7 +35,7 @@ inline void define_string::operator()(variant& var)
   if (OCI_IND_NULL == m_ind)
     var = null_t();
   else
-    var = brig::unicode::transform<std::string>(m_str);
+    var = brig::unicode::transform<char>(m_str);
 } // define_string::
 
 } } } } // brig::database::oracle::detail

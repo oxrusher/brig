@@ -6,10 +6,10 @@
 #include <algorithm>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <brig/database/command.hpp>
-#include <brig/database/detail/to_lcase.hpp>
 #include <brig/database/odbc/detail/binding_factory.hpp>
 #include <brig/database/odbc/detail/get_data_factory.hpp>
 #include <brig/database/odbc/detail/lib.hpp>
+#include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
 #include <stdexcept>
 #include <string>
@@ -85,12 +85,13 @@ inline void command::check(SQLSMALLINT type, SQLHANDLE handle, SQLRETURN r)
       msg += buf;
     }
   }
-  throw runtime_error(msg.empty()? "ODBC error": brig::unicode::transform<string>(msg));
+  throw runtime_error(msg.empty()? "ODBC error": brig::unicode::transform<char>(msg));
 }
 
 inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(SQL_NULL_HANDLE), m_stmt(SQL_NULL_HANDLE), m_sys(VoidSystem)
 {
   using namespace std;
+  using namespace brig::unicode;
 
   SQLWCHAR buf[SQL_MAX_MESSAGE_LENGTH];
   SQLSMALLINT len(0);
@@ -110,7 +111,7 @@ inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(
 
     check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLDriverConnectW
       ( m_dbc, 0
-      , (SQLWCHAR*)brig::unicode::transform<basic_string<SQLWCHAR>>(str).c_str(), SQL_NTS
+      , (SQLWCHAR*)transform<SQLWCHAR>(str).c_str(), SQL_NTS
       , 0, 0, &len, SQL_DRIVER_NOPROMPT
       ));
   }
@@ -119,7 +120,7 @@ inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(
   // DBMS
   if (SQL_SUCCEEDED(lib::singleton().p_SQLGetInfoW(m_dbc, SQL_DBMS_NAME, buf, SQL_MAX_MESSAGE_LENGTH, &len)))
   {
-    const string sys(database::detail::to_lcase(buf));
+    const string sys(transform<char>(buf, lower_case));
          if (sys.find("cubrid") != string::npos) m_sys = CUBRID;
     else if (sys.find("db2") != string::npos) m_sys = DB2;
     else if (sys.find("informix") != string::npos) m_sys = Informix;
@@ -155,7 +156,7 @@ inline void command::exec(const std::string& sql, const std::vector<column_defin
     SQLHANDLE stmt(SQL_NULL_HANDLE);
     check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLAllocHandle(SQL_HANDLE_STMT, m_dbc, &stmt));
     std::swap(m_stmt, stmt);
-    check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLPrepareW(m_stmt, (SQLWCHAR*)brig::unicode::transform<std::basic_string<SQLWCHAR>>(sql).c_str(), SQL_NTS));
+    check(SQL_HANDLE_STMT, m_stmt, lib::singleton().p_SQLPrepareW(m_stmt, (SQLWCHAR*)brig::unicode::transform<SQLWCHAR>(sql).c_str(), SQL_NTS));
     m_sql = sql;
   }
   else
@@ -221,7 +222,7 @@ inline std::vector<std::string> command::columns()
     }
 
     m_cols.push_back(get_data_factory(SQLSMALLINT(sql_type)));
-    cols.push_back(brig::unicode::transform<string>(buf));
+    cols.push_back(brig::unicode::transform<char>(buf));
   }
   return cols;
 }
@@ -251,16 +252,16 @@ inline bool command::get_autocommit()
 
 inline void command::set_autocommit(bool autocommit)
 {
-  if (get_autocommit() == autocommit) return;
   close_stmt();
+  if (get_autocommit() == autocommit) return;
   if (autocommit) check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLEndTran(SQL_HANDLE_DBC, m_dbc, SQL_ROLLBACK));
   check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLSetConnectAttr(m_dbc, SQL_ATTR_AUTOCOMMIT, SQLPOINTER(autocommit? SQL_AUTOCOMMIT_ON: SQL_AUTOCOMMIT_OFF), 0));
 }
 
 inline void command::commit()
 {
-  if (get_autocommit()) return;
   close_stmt();
+  if (get_autocommit()) return;
   check(SQL_HANDLE_DBC, m_dbc, lib::singleton().p_SQLEndTran(SQL_HANDLE_DBC, m_dbc, SQL_COMMIT));
 } // command::
 

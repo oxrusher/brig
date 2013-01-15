@@ -6,9 +6,9 @@
 #include <brig/boost/geometry.hpp>
 #include <brig/database/command.hpp>
 #include <brig/database/detail/dialect.hpp>
-#include <brig/database/global.hpp>
-#include <brig/database/numeric_cast.hpp>
-#include <brig/database/table_definition.hpp>
+#include <brig/global.hpp>
+#include <brig/numeric_cast.hpp>
+#include <brig/table_definition.hpp>
 #include <stdexcept>
 #include <string>
 
@@ -34,7 +34,7 @@ inline brig::boost::box get_mbr(dialect* dct, command* cmd, const table_definiti
      )
     return box(point(xmin, ymin), point(xmax, ymax));
 
-  throw runtime_error("MBR error");
+  throw runtime_error("envelope error");
 }
 
 } } } // brig::database::detail

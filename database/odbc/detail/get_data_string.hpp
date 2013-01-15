@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <brig/database/odbc/detail/get_data.hpp>
 #include <brig/database/odbc/detail/lib.hpp>
-#include <brig/database/variant.hpp>
+#include <brig/variant.hpp>
 #include <brig/unicode/transform.hpp>
 #include <string>
 
@@ -42,7 +42,7 @@ inline SQLRETURN get_data_string::operator()(SQLHSTMT stmt, size_t col, variant&
     if (ind <= reserved) break;
   }
 
-  var = brig::unicode::transform<string>(str);
+  var = brig::unicode::transform<char>(str);
   return SQL_SUCCESS;
 } // get_data_string::
 

@@ -7,8 +7,8 @@
 #include <boost/variant/static_visitor.hpp>
 #include <brig/blob_t.hpp>
 #include <brig/database/mysql/detail/lib.hpp>
-#include <brig/database/null_t.hpp>
-#include <brig/database/variant.hpp>
+#include <brig/null_t.hpp>
+#include <brig/variant.hpp>
 #include <cstdint>
 #include <string>
 

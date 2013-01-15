@@ -9,10 +9,10 @@
 
 namespace brig { namespace unicode { namespace detail {
 
-template <typename OutputString, typename InputCodeUnit, typename Mapping>
-OutputString transform_impl(const InputCodeUnit* ptr, Mapping mapping)
+template <typename OutputCodeUnit, typename InputCodeUnit, typename Mapping>
+std::basic_string<OutputCodeUnit> transform_impl(const InputCodeUnit* ptr, Mapping mapping)
 {
-  OutputString str;
+  std::basic_string<OutputCodeUnit> str;
   if (ptr == 0) return str;
   auto iter(brig::detail::back_inserter(str));
   while (true)

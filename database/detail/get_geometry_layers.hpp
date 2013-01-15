@@ -3,9 +3,9 @@
 #ifndef BRIG_DATABASE_DETAIL_GET_GEOMETRY_LAYERS_HPP
 #define BRIG_DATABASE_DETAIL_GET_GEOMETRY_LAYERS_HPP
 
+#include <brig/identifier.hpp>
 #include <brig/database/command.hpp>
 #include <brig/database/detail/dialect.hpp>
-#include <brig/database/identifier.hpp>
 #include <brig/string_cast.hpp>
 #include <vector>
 
@@ -15,7 +15,9 @@ inline std::vector<identifier> get_geometry_layers(dialect* dct, command* cmd)
 {
   using namespace std;
 
-  cmd->exec(dct->sql_geometries());
+  const string sql(dct->sql_geometries());
+  if (sql.empty()) return vector<identifier>();
+  cmd->exec(sql);
   vector<identifier> res;
   vector<variant> row;
   while (cmd->fetch(row))

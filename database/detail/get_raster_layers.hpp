@@ -7,8 +7,8 @@
 #include <brig/database/detail/dialect.hpp>
 #include <brig/database/detail/get_table_definition.hpp>
 #include <brig/database/detail/simple_rasters.hpp>
-#include <brig/database/global.hpp>
-#include <brig/database/raster_pyramid.hpp>
+#include <brig/global.hpp>
+#include <brig/raster_pyramid.hpp>
 #include <brig/string_cast.hpp>
 #include <iterator>
 #include <vector>

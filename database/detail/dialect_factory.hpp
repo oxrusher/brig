@@ -13,7 +13,7 @@
 #include <brig/database/detail/dialect_oracle.hpp>
 #include <brig/database/detail/dialect_postgres.hpp>
 #include <brig/database/detail/dialect_sqlite.hpp>
-#include <brig/database/global.hpp>
+#include <brig/global.hpp>
 #include <stdexcept>
 
 namespace brig { namespace database { namespace detail {

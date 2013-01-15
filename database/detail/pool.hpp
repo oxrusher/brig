@@ -7,7 +7,7 @@
 #include <brig/database/command.hpp>
 #include <brig/database/command_allocator.hpp>
 #include <brig/database/detail/threaded_command_allocator.hpp>
-#include <brig/database/global.hpp>
+#include <brig/global.hpp>
 #include <exception>
 #include <memory>
 #include <mutex>

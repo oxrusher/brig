@@ -4,7 +4,7 @@
 #define BRIG_DATABASE_CUBRID_DETAIL_GET_DATA_HPP
 
 #include <boost/utility.hpp>
-#include <brig/database/variant.hpp>
+#include <brig/variant.hpp>
 
 namespace brig { namespace database { namespace cubrid { namespace detail {
 

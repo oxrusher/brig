@@ -5,16 +5,16 @@
 
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <brig/database/command.hpp>
-#include <brig/database/detail/to_lcase.hpp>
-#include <brig/database/global.hpp>
-#include <brig/database/identifier.hpp>
 #include <brig/database/oracle/detail/binding.hpp>
 #include <brig/database/oracle/detail/binding_factory.hpp>
 #include <brig/database/oracle/detail/define.hpp>
 #include <brig/database/oracle/detail/define_factory.hpp>
 #include <brig/database/oracle/detail/handles.hpp>
 #include <brig/database/oracle/detail/lib.hpp>
+#include <brig/global.hpp>
+#include <brig/identifier.hpp>
 #include <brig/string_cast.hpp>
+#include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
 #include <locale>
 #include <sstream>
@@ -28,8 +28,8 @@ class command : public brig::database::command {
   ::boost::ptr_vector<define> m_cols;
   bool m_autocommit;
 
-  void close_all();
   void close_stmt();
+  void close_all();
 
 public:
   command(const std::string& srv, const std::string& usr, const std::string& pwd);
@@ -68,11 +68,11 @@ inline command::command(const std::string& srv_, const std::string& usr_, const 
   using namespace brig::unicode;
 
   const u16string
-    srv(transform<u16string>(srv_)),
-    usr(transform<u16string>(usr_)),
-    pwd(transform<u16string>(pwd_)),
-    type_schema(transform<u16string>("MDSYS")),
-    type_name(transform<u16string>("SDO_GEOMETRY"));
+    srv(transform<char16_t>(srv_)),
+    usr(transform<char16_t>(usr_)),
+    pwd(transform<char16_t>(pwd_)),
+    type_schema(transform<char16_t>("MDSYS")),
+    type_name(transform<char16_t>("SDO_GEOMETRY"));
 
   try
   {
@@ -107,7 +107,7 @@ inline void command::exec(const std::string& sql_, const std::vector<column_defi
 
   close_stmt();
   m_hnd.alloc_handle((void**)&m_hnd.stmt, OCI_HTYPE_STMT);
-  const u16string sql(brig::unicode::transform<u16string>(sql_));
+  const u16string sql(brig::unicode::transform<char16_t>(sql_));
   m_hnd.check(lib::singleton().p_OCIStmtPrepare(m_hnd.stmt, m_hnd.err, (const text*)sql.c_str(), ub4(sql.size() * sizeof(char16_t)), OCI_NTV_SYNTAX, OCI_DEFAULT));
   ub2 stmt_type(0);
   m_hnd.check(lib::singleton().p_OCIAttrGet(m_hnd.stmt, OCI_HTYPE_STMT, &stmt_type, 0, OCI_ATTR_STMT_TYPE, m_hnd.err));
@@ -128,6 +128,7 @@ inline void command::exec_batch(const std::string& sql)
 inline std::vector<std::string> command::columns()
 {
   using namespace std;
+  using namespace brig::unicode;
 
   vector<string> cols;
   if (0 == m_hnd.stmt) return cols;
@@ -155,12 +156,12 @@ inline std::vector<std::string> command::columns()
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_schema, &type_schema_len, OCI_ATTR_SCHEMA_NAME, m_hnd.err));
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_name, &type_name_len, OCI_ATTR_TYPE_NAME, m_hnd.err));
 
-      identifier dbms_type_lcase;
-      dbms_type_lcase.schema = database::detail::to_lcase(type_schema);
-      dbms_type_lcase.name = database::detail::to_lcase(type_name);
+      identifier type_lcase;
+      type_lcase.schema = transform<char>(type_schema, lower_case);
+      type_lcase.name = transform<char>(type_name, lower_case);
 
-      m_cols.push_back(define_factory(&m_hnd, i + 1, data_type, size, precision, scale, dbms_type_lcase));
-      cols.push_back(brig::unicode::transform<string>(name));
+      m_cols.push_back(define_factory(&m_hnd, i + 1, data_type, size, precision, scale, type_lcase));
+      cols.push_back(transform<char>(name));
 
     }
     catch (const exception&)  { handles::free_descriptor((void**)&dsc, OCI_DTYPE_PARAM); throw; }
@@ -189,16 +190,16 @@ inline bool command::fetch(std::vector<variant>& row)
 
 inline void command::set_autocommit(bool autocommit)
 {
-  if (m_autocommit == autocommit) return;
   close_stmt();
+  if (m_autocommit == autocommit) return;
   if (autocommit) m_hnd.check(lib::singleton().p_OCITransRollback(m_hnd.svc, m_hnd.err, OCI_DEFAULT));
   m_autocommit = autocommit;
 }
 
 inline void command::commit()
 {
-  if (m_autocommit) return;
   close_stmt();
+  if (m_autocommit) return;
   m_hnd.check(lib::singleton().p_OCITransCommit(m_hnd.svc, m_hnd.err, OCI_DEFAULT));
 }
 

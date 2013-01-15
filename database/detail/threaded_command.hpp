@@ -5,7 +5,7 @@
 
 #include <brig/database/command.hpp>
 #include <brig/database/command_allocator.hpp>
-#include <brig/database/detail/double_page.hpp>
+#include <brig/detail/double_page.hpp>
 #include <brig/detail/mediator.hpp>
 #include <exception>
 #include <memory>
@@ -14,7 +14,7 @@
 namespace brig { namespace database { namespace detail {
 
 class threaded_command : public command {
-  struct mediator : brig::detail::mediator<command>  { double_page dpg; };
+  struct mediator : brig::detail::mediator<command>  { brig::detail::double_page dpg; };
   std::shared_ptr<mediator> m_med;
 public:
   explicit threaded_command(std::shared_ptr<command_allocator> allocator);
@@ -63,7 +63,7 @@ inline std::vector<std::string> threaded_command::columns()
 
 inline bool threaded_command::fetch(std::vector<variant>& row)
 {
-  if (m_med->dpg.empty()) m_med->call<void>(&double_page::fill, &m_med->dpg, std::placeholders::_1);
+  if (m_med->dpg.empty()) m_med->call<void>(&brig::detail::double_page::fill, &m_med->dpg, std::placeholders::_1);
   return m_med->dpg.fetch(row);
 }
 

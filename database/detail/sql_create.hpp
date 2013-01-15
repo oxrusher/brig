@@ -5,8 +5,8 @@
 
 #include <algorithm>
 #include <brig/database/detail/dialect.hpp>
-#include <brig/database/global.hpp>
-#include <brig/database/table_definition.hpp>
+#include <brig/global.hpp>
+#include <brig/table_definition.hpp>
 #include <iterator>
 #include <stdexcept>
 #include <string>

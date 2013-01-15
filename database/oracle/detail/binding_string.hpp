@@ -19,7 +19,7 @@ public:
   binding_string(handles* hnd, size_t order, const std::string& str, ub1 cs_form);
 }; // binding_string
 
-inline binding_string::binding_string(handles* hnd, size_t order, const std::string& str, ub1 cs_form) : m_str(brig::unicode::transform<std::u16string>(str))
+inline binding_string::binding_string(handles* hnd, size_t order, const std::string& str, ub1 cs_form) : m_str(brig::unicode::transform<char16_t>(str))
 {
   const size_t size((m_str.size() + 1) * sizeof(char16_t));
   if (size > SHRT_MAX) throw std::runtime_error("OCI type error");

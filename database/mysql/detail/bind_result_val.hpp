@@ -5,8 +5,8 @@
 
 #include <brig/database/mysql/detail/bind_result.hpp>
 #include <brig/database/mysql/detail/lib.hpp>
-#include <brig/database/null_t.hpp>
-#include <brig/database/variant.hpp>
+#include <brig/null_t.hpp>
+#include <brig/variant.hpp>
 
 namespace brig { namespace database { namespace mysql { namespace detail {
 

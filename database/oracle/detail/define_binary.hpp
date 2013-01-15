@@ -7,7 +7,7 @@
 #include <brig/database/oracle/detail/define.hpp>
 #include <brig/database/oracle/detail/handles.hpp>
 #include <brig/database/oracle/detail/lib.hpp>
-#include <brig/database/variant.hpp>
+#include <brig/variant.hpp>
 #include <climits>
 #include <cstring>
 #include <string>

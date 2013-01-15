@@ -9,8 +9,10 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline bool is_ogc_type(const std::string& dbms_type_lcase)
+inline bool is_ogc_type(const std::string& type_lcase)
 {
+  using namespace std;
+
   static const char* types[] =
   { "collection" // synonym
   , "curve" // non-instantiable
@@ -27,9 +29,9 @@ inline bool is_ogc_type(const std::string& dbms_type_lcase)
   , "polygon"
   , "surface" // non-instantiable
   };
-  const std::string prefix("st_");
-  auto iter(std::find_if(std::begin(types), std::end(types), [&](const char* type){ return dbms_type_lcase.compare(type) == 0 || dbms_type_lcase.compare(prefix + type) == 0; }));
-  return iter != std::end(types);
+  const string prefix("st_");
+  auto iter(find_if(begin(types), end(types), [&](const char* type){ return type_lcase.compare(type) == 0 || type_lcase.compare(prefix + type) == 0; }));
+  return iter != end(types);
 }
 
 } } } // brig::database::detail

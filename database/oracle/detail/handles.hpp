@@ -55,7 +55,7 @@ inline void handles::check(sword r)
       msg += buf;
     }
   }
-  throw runtime_error(msg.empty()? "OCI error": brig::unicode::transform<string>(msg));
+  throw runtime_error(msg.empty()? "OCI error": brig::unicode::transform<char>(msg));
 }
 
 inline void handles::alloc_handle(void** p_handle, ub4 type)

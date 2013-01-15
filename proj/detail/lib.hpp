@@ -24,12 +24,12 @@ public:
 
 inline lib::lib() : p_pj_transform(0)
 {
-  auto handle = BRIG_DL_LIBRARY("libproj-0.dll", "libproj.so.0");
+  auto handle(BRIG_DL_LIBRARY("libproj-0.dll", "libproj.so.0"));
   if (  handle
     && (p_pj_free = BRIG_DL_FUNCTION(handle, pj_free))
     && (p_pj_get_release = BRIG_DL_FUNCTION(handle, pj_get_release))
-    && (p_pj_is_latlong = BRIG_DL_FUNCTION(handle, pj_is_latlong))
     && (p_pj_init_plus = BRIG_DL_FUNCTION(handle, pj_init_plus))
+    && (p_pj_is_latlong = BRIG_DL_FUNCTION(handle, pj_is_latlong))
      )  p_pj_transform = BRIG_DL_FUNCTION(handle, pj_transform);
 } // lib::
 

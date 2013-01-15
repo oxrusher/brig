@@ -7,11 +7,10 @@
 #include <brig/boost/envelope.hpp>
 #include <brig/boost/geom_from_wkb.hpp>
 #include <brig/database/detail/dialect.hpp>
-#include <brig/database/detail/get_columns.hpp>
 #include <brig/database/detail/get_iso_type.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
-#include <brig/database/detail/sql_regular_identifier.hpp>
-#include <brig/database/global.hpp>
+#include <brig/detail/get_columns.hpp>
+#include <brig/global.hpp>
 #include <brig/string_cast.hpp>
 #include <brig/unicode/transform.hpp>
 #include <brig/unicode/upper_case.hpp>
@@ -30,7 +29,7 @@ struct dialect_oracle : dialect {
   std::string sql_columns(const identifier& tbl) override;
   std::string sql_indexed_columns(const identifier& tbl) override;
   std::string sql_spatial_detail(const table_definition& tbl, const std::string& col) override;
-  column_type get_type(const identifier& dbms_type_lcase, int scale) override;
+  column_type get_type(const identifier& type_lcase, int scale) override;
 
   std::string sql_mbr(const table_definition& tbl, const std::string& col) override;
 
@@ -57,17 +56,19 @@ inline std::string dialect_oracle::sql_tables()
   return "\
 SELECT OWNER scm, TABLE_NAME tbl \
 FROM ALL_TABLES \
-WHERE OWNER NOT IN ('ANONYMOUS','APEX_040000','CTXSYS','DBSNMP','DIP','DMSYS','EXFSYS','MDDATA','MDSYS','MGMT_VIEW','OLAPSYS','ORDPLUGINS','ORDSYS','OUTLN','SI_INFORMTN_SCHEMA','SYS','SYSMAN','TSMSYS','WKSYS','WMSYS','XDB') \
-AND TABLE_NAME NOT LIKE '%$%'";
+WHERE OWNER NOT IN ('ANONYMOUS','APPQOSSYS','CTXSYS','DBSNMP','DIP','DMSYS','EXFSYS','LBACSYS','MDDATA','MDSYS','MGMT_VIEW','OLAPSYS','ORDDATA','ORDPLUGINS','ORDSYS','OUTLN','OWBSYS','SI_INFORMTN_SCHEMA','SYS','SYSMAN','TSMSYS','WKSYS','WMSYS','XDB') \
+AND OWNER NOT LIKE 'APEX_%' \
+AND TABLE_NAME NOT LIKE '%$%' \
+AND NOT (OWNER = 'SYSTEM' AND (TABLE_NAME LIKE 'LOGMNR%' OR TABLE_NAME LIKE 'SQLPLUS%' OR TABLE_NAME IN ('HELP','IMAGEREF')))";
 }
 
 inline std::string dialect_oracle::sql_geometries()
 {
   return "\
-SELECT g.scm scm, g.tbl tbl, g.col col \
+SELECT c.scm scm, c.tbl tbl, c.col col \
 FROM (SELECT OWNER scm, TABLE_NAME tbl, COLUMN_NAME col FROM MDSYS.ALL_SDO_GEOM_METADATA) g \
 JOIN (SELECT OWNER scm, TABLE_NAME tbl, COLUMN_NAME col FROM ALL_TAB_COLUMNS) c \
-ON g.scm = c.scm AND g.tbl = c.tbl AND g.col = c.col";
+ON g.scm = c.scm AND UPPER(g.tbl) = UPPER(c.tbl) AND UPPER(g.col) = UPPER(c.col)";
 }
 
 inline std::string dialect_oracle::sql_columns(const identifier& tbl)
@@ -100,22 +101,24 @@ inline std::string dialect_oracle::sql_spatial_detail(const table_definition& tb
 {
   return "\
 SELECT c.SRID, (CASE s.DATA_SOURCE WHEN 'EPSG' THEN s.SRID ELSE NULL END) epsg, s.COORD_REF_SYS_KIND \
-FROM (SELECT * FROM MDSYS.ALL_SDO_GEOM_METADATA WHERE OWNER = '" + tbl.id.schema + "' AND TABLE_NAME = '" + tbl.id.name + "' AND COLUMN_NAME = '" + col + "') c \
+FROM (SELECT * FROM MDSYS.ALL_SDO_GEOM_METADATA WHERE OWNER = '" + tbl.id.schema + "' AND UPPER(TABLE_NAME) = UPPER('" + tbl.id.name + "') AND UPPER(COLUMN_NAME) = UPPER('" + col + "')) c \
 LEFT JOIN MDSYS.SDO_COORD_REF_SYS s ON c.SRID = s.SRID";
 }
 
-inline column_type dialect_oracle::get_type(const identifier& dbms_type_lcase, int scale)
+inline column_type dialect_oracle::get_type(const identifier& type_lcase, int scale)
 {
-  if (dbms_type_lcase.schema.compare("mdsys") == 0 && (dbms_type_lcase.name.compare("sdo_geometry") == 0 || is_ogc_type(dbms_type_lcase.name))) return Geometry;
-  if (!dbms_type_lcase.schema.empty()) return VoidColumn;
-  if (dbms_type_lcase.name.compare("long") == 0) return String;
-  if (dbms_type_lcase.name.compare("bfile") == 0 || dbms_type_lcase.name.find("raw") != std::string::npos) return Blob;
-  return get_iso_type(dbms_type_lcase.name, scale);
+  if (type_lcase.schema.compare("mdsys") == 0 && (type_lcase.name.compare("sdo_geometry") == 0 || is_ogc_type(type_lcase.name))) return Geometry;
+  if (!type_lcase.schema.empty()) return VoidColumn;
+  if (type_lcase.name.compare("long") == 0) return String;
+  if (type_lcase.name.compare("bfile") == 0 || type_lcase.name.find("raw") != std::string::npos) return Blob;
+  return get_iso_type(type_lcase.name, scale);
 }
 
 inline std::string dialect_oracle::sql_mbr(const table_definition& tbl, const std::string& col)
 {
-  const std::string t("SELECT ROWNUM n, d.SDO_LB l, d.SDO_UB u FROM (SELECT * FROM ALL_SDO_GEOM_METADATA WHERE OWNER = '" + tbl.id.schema + "' AND TABLE_NAME = '" + tbl.id.name + "' AND COLUMN_NAME = '" + col + "') m, TABLE(m.DIMINFO) d");
+  const std::string t("\
+SELECT ROWNUM n, d.SDO_LB l, d.SDO_UB u \
+FROM (SELECT * FROM ALL_SDO_GEOM_METADATA WHERE OWNER = '" + tbl.id.schema + "' AND UPPER(TABLE_NAME) = UPPER('" + tbl.id.name + "') AND UPPER(COLUMN_NAME) = UPPER('" + col + "')) m, TABLE(m.DIMINFO) d");
   return "SELECT x.l, y.l, x.u, y.u FROM (SELECT * FROM (" + t + ") WHERE n = 1) x, (SELECT * FROM (" + t + ") WHERE n = 2) y";
 }
 
@@ -129,7 +132,7 @@ inline std::string dialect_oracle::fit_identifier(const std::string& id)
   // The TABLE_NAME and COLUMN_NAME values are always converted to uppercase when you insert them into the USER_SDO_GEOM_METADATA view
   using namespace std;
   using namespace brig::unicode;
-  u32string u32(transform<u32string>(id, upper_case));
+  u32string u32(transform<char32_t>(id, upper_case));
   transform(begin(u32), end(u32), begin(u32), [](char32_t ch) -> char32_t
   {
     switch (ch)
@@ -141,31 +144,29 @@ inline std::string dialect_oracle::fit_identifier(const std::string& id)
       return 0x5f; // underline
     }
   });
-  return transform<string>(u32);
+  return transform<char>(u32);
 }
 
 inline column_definition dialect_oracle::fit_column(const column_definition& col)
 {
-  using namespace std;
-
   column_definition res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn: throw runtime_error("datatype error");
-  case Blob: res.dbms_type_lcase.name = "blob"; break;
-  case Double: res.dbms_type_lcase.name = "binary_double"; break;
+  case VoidColumn: break;
+  case Blob: res.type_lcase.name = "blob"; break;
+  case Double: res.type_lcase.name = "binary_double"; break;
   case Geometry:
-    res.dbms_type_lcase.schema = "mdsys";
-    res.dbms_type_lcase.name = "sdo_geometry";
+    res.type_lcase.schema = "mdsys";
+    res.type_lcase.name = "sdo_geometry";
     res.epsg = col.epsg;
     res.query_value = (typeid(blob_t) == col.query_value.type())? col.query_value: blob_t();
     break;
-  case Integer: res.dbms_type_lcase.name = "number(19)"; break;
+  case Integer: res.type_lcase.name = "number(19)"; break;
   case String:
     res.chars = (col.chars > 0 && col.chars < CharsLimit)? col.chars: CharsLimit;
-    res.dbms_type_lcase.name = "nvarchar2(" + string_cast<char>(res.chars) + ")";
+    res.type_lcase.name = "nvarchar2(" + string_cast<char>(res.chars) + ")";
     break;
   }
   if (col.not_null) res.not_null = true;
@@ -183,7 +184,7 @@ inline table_definition dialect_oracle::fit_table(const table_definition& tbl, c
     column_definition col;
     col.name = fit_identifier("ID");
     col.type = String;
-    col.dbms_type_lcase.name = "nvarchar2(32) default sys_guid()";
+    col.type_lcase.name = "nvarchar2(32) default sys_guid()";
     col.chars = 32;
     col.not_null = true;
     res.columns.push_back(col);
@@ -236,8 +237,8 @@ inline std::string dialect_oracle::sql_parameter(const command_traits& trs, cons
   if (Geometry == param.type && !trs.writable_geometry)
   {
     string sql;
-    const bool conv(param.dbms_type_lcase.name.compare("sdo_geometry") != 0);
-    if (conv) sql += sql_regular_identifier(param.dbms_type_lcase) + "(";
+    const bool conv(param.type_lcase.name.compare("sdo_geometry") != 0);
+    if (conv) sql += param.type_lcase.to_string() + "(";
     sql += "MDSYS.SDO_GEOMETRY(TO_BLOB(" + marker + "), " + string_cast<char>(param.srid) + ")";
     if (conv) sql += ")";
     return sql;
@@ -251,9 +252,9 @@ inline std::string dialect_oracle::sql_column(const command_traits& trs, const c
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (String == col.type && col.dbms_type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
-  if (String == col.type && col.dbms_type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
-  if (Geometry == col.type && !trs.readable_geometry) return sql_regular_identifier(col.dbms_type_lcase) + ".GET_WKB(" + id + ") AS " + id;
+  if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
+  if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
+  if (Geometry == col.type && !trs.readable_geometry) return col.type_lcase.to_string() + ".GET_WKB(" + id + ") AS " + id;
   return id;
 }
 
@@ -266,7 +267,7 @@ inline void dialect_oracle::sql_limit(int rows, std::string& sql_infix, std::str
 
 inline bool dialect_oracle::need_to_normalize_hemisphere(const column_definition& col)
 {
-  return col.dbms_type_lcase.qualifier.find("geographic") != std::string::npos;
+  return col.type_lcase.qualifier.find("geographic") != std::string::npos;
 }
 
 inline void dialect_oracle::sql_intersect(const command_traits& trs, const table_definition& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_definition>& keys)
@@ -278,7 +279,7 @@ inline void dialect_oracle::sql_intersect(const command_traits& trs, const table
   auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_definition& i){ return Primary == i.type; }));
   if (idx == end(tbl.indexes)) idx = find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_definition& i){ return Unique == i.type; });
   if (idx == end(tbl.indexes)) throw runtime_error("unique columns error");
-  keys = get_columns(tbl.columns, idx->columns);
+  keys = brig::detail::get_columns(tbl.columns, idx->columns);
 
   std::string sql_prefix, sql_infix, sql_counter, sql_suffix;
   if (tbl.query_rows >= 0) sql_limit(tbl.query_rows, sql_infix, sql_counter, sql_suffix);

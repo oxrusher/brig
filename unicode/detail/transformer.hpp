@@ -7,19 +7,19 @@
 
 namespace brig { namespace unicode { namespace detail {
 
-template <typename OutputString, typename InputCodeUnit, bool Trivial>
+template <typename OutputCodeUnit, typename InputCodeUnit, bool Trivial>
 struct transformer;
 
-template <typename OutputString, typename InputCodeUnit>
-struct transformer<OutputString, InputCodeUnit, true>
+template <typename OutputCodeUnit, typename InputCodeUnit>
+struct transformer<OutputCodeUnit, InputCodeUnit, true>
 {
-  static OutputString apply(const InputCodeUnit* ptr)  { return (const typename OutputString::value_type*)ptr; }
+  static std::basic_string<OutputCodeUnit> apply(const InputCodeUnit* ptr)  { return (const OutputCodeUnit*)ptr; }
 };
 
-template <typename OutputString, typename InputCodeUnit>
-struct transformer<OutputString, InputCodeUnit, false>
+template <typename OutputCodeUnit, typename InputCodeUnit>
+struct transformer<OutputCodeUnit, InputCodeUnit, false>
 {
-  static OutputString apply(const InputCodeUnit* ptr)  { return transform_impl<OutputString>(ptr, [](uint32_t cp){ return cp; }); }
+  static std::basic_string<OutputCodeUnit> apply(const InputCodeUnit* ptr)  { return transform_impl<OutputCodeUnit>(ptr, [](uint32_t cp){ return cp; }); }
 };
 
 } } } // brig::unicode::detail

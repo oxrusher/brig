@@ -3,8 +3,8 @@
 #ifndef BRIG_DATABASE_DETAIL_GET_SCHEMA_HPP
 #define BRIG_DATABASE_DETAIL_GET_SCHEMA_HPP
 
-#include <brig/database/detail/dialect.hpp>
 #include <brig/database/command.hpp>
+#include <brig/database/detail/dialect.hpp>
 #include <brig/string_cast.hpp>
 #include <stdexcept>
 #include <string>

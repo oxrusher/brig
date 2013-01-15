@@ -5,8 +5,7 @@
 
 #include <brig/database/command.hpp>
 #include <brig/database/detail/dialect.hpp>
-#include <brig/database/numeric_cast.hpp>
-#include <stdexcept>
+#include <brig/numeric_cast.hpp>
 #include <string>
 
 namespace brig { namespace database { namespace detail {
@@ -18,10 +17,9 @@ inline int get_srid(dialect* dct, command* cmd, int epsg)
   const string sql(dct->sql_srid(epsg));
   if (sql.empty()) return epsg;
   cmd->exec(sql);
-  vector<variant> row;
   int srid(-1);
-  if (!cmd->fetch(row) || !numeric_cast(row[0], srid)) throw runtime_error("SRID error");
-  return srid;
+  vector<variant> row;
+  return (cmd->fetch(row) && numeric_cast(row[0], srid))? srid: -1;
 }
 
 } } } // brig::database::detail

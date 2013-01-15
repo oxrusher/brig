@@ -9,11 +9,11 @@
 #include <brig/boost/geometry.hpp>
 #include <brig/database/command_traits.hpp>
 #include <brig/database/detail/dialect.hpp>
-#include <brig/database/detail/get_columns.hpp>
 #include <brig/database/detail/normalize_hemisphere.hpp>
 #include <brig/database/detail/sql_select_list.hpp>
-#include <brig/database/global.hpp>
-#include <brig/database/table_definition.hpp>
+#include <brig/detail/get_columns.hpp>
+#include <brig/global.hpp>
+#include <brig/table_definition.hpp>
 #include <iterator>
 #include <string>
 #include <vector>
@@ -24,7 +24,7 @@ inline void sql_select(dialect* dct, const command_traits& trs, const table_defi
 {
   using namespace std;
 
-  vector<column_definition> cols = tbl.query_columns.empty()? tbl.columns: get_columns(tbl.columns, tbl.query_columns);
+  vector<column_definition> cols = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
   string sql_infix, sql_counter, sql_suffix, sql_conditions;
   if (tbl.query_rows >= 0) dct->sql_limit(tbl.query_rows, sql_infix, sql_counter, sql_suffix);
   for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)

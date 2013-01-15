@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <brig/database/detail/dialect.hpp>
 #include <brig/database/detail/get_iso_type.hpp>
-#include <brig/database/global.hpp>
+#include <brig/global.hpp>
 #include <brig/string_cast.hpp>
 #include <iterator>
 #include <stdexcept>
@@ -15,12 +15,12 @@ namespace brig { namespace database { namespace detail {
 
 struct dialect_cubrid : dialect {
   std::string sql_tables() override;
-  std::string sql_geometries() override  { throw std::runtime_error("DBMS error"); }
+  std::string sql_geometries() override  { return ""; }
 
   std::string sql_columns(const identifier& tbl) override;
   std::string sql_indexed_columns(const identifier& tbl) override;
   std::string sql_spatial_detail(const table_definition&, const std::string&)  { throw std::runtime_error("DBMS error"); }
-  column_type get_type(const identifier& dbms_type_lcase, int scale) override;
+  column_type get_type(const identifier& type_lcase, int scale) override;
 
   std::string sql_mbr(const table_definition&, const std::string&) override  { throw std::runtime_error("DBMS error"); }
 
@@ -59,13 +59,13 @@ WHERE c.owner.name = '" + tbl.schema + "' AND c.class_name = '" + tbl.name + "' 
 ORDER BY i.is_primary_key DESC, i.index_name, k.key_order";
 }
 
-inline column_type dialect_cubrid::get_type(const identifier& dbms_type_lcase, int scale)
+inline column_type dialect_cubrid::get_type(const identifier& type_lcase, int scale)
 {
-  if (!dbms_type_lcase.schema.empty()) return VoidColumn;
-  if (dbms_type_lcase.name.compare("short") == 0) return Integer;
-  if (dbms_type_lcase.name.find("bit") != std::string::npos) return Blob;
-  if (dbms_type_lcase.name.compare("string") == 0) return String;
-  return get_iso_type(dbms_type_lcase.name, scale);
+  if (!type_lcase.schema.empty()) return VoidColumn;
+  if (type_lcase.name.compare("short") == 0) return Integer;
+  if (type_lcase.name.find("bit") != std::string::npos) return Blob;
+  if (type_lcase.name.compare("string") == 0) return String;
+  return get_iso_type(type_lcase.name, scale);
 }
 
 inline std::string dialect_cubrid::sql_schema()
@@ -75,19 +75,17 @@ inline std::string dialect_cubrid::sql_schema()
 
 inline column_definition dialect_cubrid::fit_column(const column_definition& col)
 {
-  using namespace std;
-
   column_definition res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
   {
   case VoidColumn:
-  case Geometry: throw runtime_error("datatype error");
-  case Blob: res.dbms_type_lcase.name = "bit varying"; break;
-  case Double: res.dbms_type_lcase.name = "double"; break;
-  case Integer: res.dbms_type_lcase.name = "bigint"; break;
-  case String: res.dbms_type_lcase.name = "string"; break;
+  case Geometry: break;
+  case Blob: res.type_lcase.name = "bit varying"; break;
+  case Double: res.type_lcase.name = "double"; break;
+  case Integer: res.type_lcase.name = "bigint"; break;
+  case String: res.type_lcase.name = "string"; break;
   }
   if (col.not_null) res.not_null = true;
   return res;
@@ -105,8 +103,8 @@ inline std::string dialect_cubrid::sql_column(const command_traits& trs, const c
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (String == col.type && col.dbms_type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
-  if (String == col.type && col.dbms_type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
+  if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
+  if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
   if (Geometry == col.type && !trs.readable_geometry) throw runtime_error("datatype error");
   return id;
 }

@@ -6,10 +6,10 @@
 #include <boost/variant/apply_visitor.hpp>
 #include <boost/variant/static_visitor.hpp>
 #include <brig/blob_t.hpp>
-#include <brig/database/column_definition.hpp>
-#include <brig/database/null_t.hpp>
+#include <brig/column_definition.hpp>
 #include <brig/database/cubrid/detail/lib.hpp>
-#include <brig/database/variant.hpp>
+#include <brig/null_t.hpp>
+#include <brig/variant.hpp>
 #include <cstdint>
 #include <string>
 
@@ -53,7 +53,7 @@ inline int bind(int req, size_t order, const column_definition& param)
   case Double: visitor.type = CCI_U_TYPE_DOUBLE; break;
   case Integer: visitor.type = CCI_U_TYPE_BIGINT; break;
   case String: visitor.type
-    = (param.dbms_type_lcase.name.find("nchar") != std::string::npos || param.dbms_type_lcase.name.find("national") != std::string::npos)
+    = (param.type_lcase.name.find("nchar") != std::string::npos || param.type_lcase.name.find("national") != std::string::npos)
     ? CCI_U_TYPE_VARNCHAR
     : CCI_U_TYPE_STRING;
     break;

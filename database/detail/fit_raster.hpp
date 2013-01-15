@@ -5,7 +5,7 @@
 
 #include <brig/database/command.hpp>
 #include <brig/database/detail/dialect.hpp>
-#include <brig/database/raster_pyramid.hpp>
+#include <brig/raster_pyramid.hpp>
 #include <brig/string_cast.hpp>
 #include <string>
 

@@ -6,8 +6,7 @@
 #include <brig/database/detail/dialect.hpp>
 #include <brig/database/detail/get_iso_type.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
-#include <brig/database/detail/sql_regular_identifier.hpp>
-#include <brig/database/global.hpp>
+#include <brig/global.hpp>
 #include <brig/string_cast.hpp>
 #include <ios>
 #include <iterator>
@@ -24,7 +23,7 @@ struct dialect_db2 : dialect {
   std::string sql_columns(const identifier& tbl) override;
   std::string sql_indexed_columns(const identifier& tbl) override;
   std::string sql_spatial_detail(const table_definition& tbl, const std::string& col) override;
-  column_type get_type(const identifier& dbms_type_lcase, int scale) override;
+  column_type get_type(const identifier& type_lcase, int scale) override;
 
   std::string sql_mbr(const table_definition& tbl, const std::string& col) override;
 
@@ -81,14 +80,14 @@ FROM (SELECT SRS_ID FROM DB2GSE.ST_GEOMETRY_COLUMNS WHERE TABLE_SCHEMA = '" + tb
 LEFT JOIN DB2GSE.ST_SPATIAL_REFERENCE_SYSTEMS s ON c.SRS_ID = s.SRS_ID";
 }
 
-inline column_type dialect_db2::get_type(const identifier& dbms_type_lcase, int scale)
+inline column_type dialect_db2::get_type(const identifier& type_lcase, int scale)
 {
   using namespace std;
 
-  if (dbms_type_lcase.schema.compare("db2gse") == 0 && is_ogc_type(dbms_type_lcase.name)) return Geometry;
-  if (!dbms_type_lcase.schema.empty() && dbms_type_lcase.schema.compare("sysibm") != 0) return VoidColumn;
-  if (dbms_type_lcase.name.find("graphic") != string::npos) return String;
-  return get_iso_type(dbms_type_lcase.name, scale);
+  if (type_lcase.schema.compare("db2gse") == 0 && is_ogc_type(type_lcase.name)) return Geometry;
+  if (!type_lcase.schema.empty() && type_lcase.schema.compare("sysibm") != 0) return VoidColumn;
+  if (type_lcase.name.find("graphic") != string::npos) return String;
+  return get_iso_type(type_lcase.name, scale);
 }
 
 inline std::string dialect_db2::sql_mbr(const table_definition& tbl, const std::string& col)
@@ -108,25 +107,23 @@ inline std::string dialect_db2::sql_schema()
 
 inline column_definition dialect_db2::fit_column(const column_definition& col)
 {
-  using namespace std;
-
   column_definition res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn: throw runtime_error("datatype error");
-  case Blob: res.dbms_type_lcase.name = "blob"; break;
-  case Double: res.dbms_type_lcase.name = "double"; break;
+  case VoidColumn: break;
+  case Blob: res.type_lcase.name = "blob"; break;
+  case Double: res.type_lcase.name = "double"; break;
   case Geometry:
-    res.dbms_type_lcase.schema = "db2gse";
-    res.dbms_type_lcase.name = "st_geometry";
+    res.type_lcase.schema = "db2gse";
+    res.type_lcase.name = "st_geometry";
     res.epsg = col.epsg;
     break;
-  case Integer: res.dbms_type_lcase.name = "bigint"; break;
+  case Integer: res.type_lcase.name = "bigint"; break;
   case String:
     res.chars = (col.chars > 0 && col.chars < CharsLimit)? col.chars: CharsLimit;
-    res.dbms_type_lcase.name = "vargraphic(" + string_cast<char>(res.chars) + ")";
+    res.type_lcase.name = "vargraphic(" + string_cast<char>(res.chars) + ")";
     break;
   }
   if (col.not_null) res.not_null = true;
@@ -173,7 +170,7 @@ inline std::string dialect_db2::sql_create_spatial_index(const table_definition&
 inline std::string dialect_db2::sql_parameter(const command_traits& trs, const column_definition& param, size_t order)
 {
   const std::string marker(trs.sql_parameter_marker(order));
-  if (Geometry == param.type && !trs.writable_geometry) return sql_regular_identifier(param.dbms_type_lcase) + "(CAST(" + marker + " AS BLOB (100M)), " + string_cast<char>(param.srid) + ")";
+  if (Geometry == param.type && !trs.writable_geometry) return param.type_lcase.to_string() + "(CAST(" + marker + " AS BLOB (100M)), " + string_cast<char>(param.srid) + ")";
   return marker;
 }
 
@@ -183,8 +180,8 @@ inline std::string dialect_db2::sql_column(const command_traits& trs, const colu
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (String == col.type && col.dbms_type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
-  if (String == col.type && col.dbms_type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
+  if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
+  if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
   if (Geometry == col.type && !trs.readable_geometry) return "DB2GSE.ST_AsBinary(" + id + ") AS " + id;
   return id;
 }

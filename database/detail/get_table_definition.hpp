@@ -6,11 +6,12 @@
 #include <brig/database/command.hpp>
 #include <brig/database/detail/dialect.hpp>
 #include <brig/database/detail/get_table_definition_sqlite.hpp>
-#include <brig/database/detail/to_lcase.hpp>
-#include <brig/database/global.hpp>
-#include <brig/database/numeric_cast.hpp>
-#include <brig/database/table_definition.hpp>
+#include <brig/global.hpp>
+#include <brig/numeric_cast.hpp>
 #include <brig/string_cast.hpp>
+#include <brig/table_definition.hpp>
+#include <brig/unicode/lower_case.hpp>
+#include <brig/unicode/transform.hpp>
 #include <iterator>
 #include <stdexcept>
 
@@ -19,6 +20,7 @@ namespace brig { namespace database { namespace detail {
 inline table_definition get_table_definition(dialect* dct, command* cmd, const identifier& tbl)
 {
   using namespace std;
+  using namespace brig::unicode;
 
   if (cmd->system() == SQLite) return get_table_definition_sqlite(dct, cmd, tbl);
 
@@ -31,12 +33,12 @@ inline table_definition get_table_definition(dialect* dct, command* cmd, const i
   {
     column_definition col;
     col.name = string_cast<char>(row[0]);
-    col.dbms_type_lcase.schema = to_lcase(string_cast<char>(row[1]));
-    col.dbms_type_lcase.name = to_lcase(string_cast<char>(row[2]));
+    col.type_lcase.schema = transform<char>(string_cast<char>(row[1]), lower_case);
+    col.type_lcase.name = transform<char>(string_cast<char>(row[2]), lower_case);
     numeric_cast(row[3], col.chars);
     int scale(-1);
     numeric_cast(row[4], scale);
-    col.type = dct->get_type(col.dbms_type_lcase, scale);
+    col.type = dct->get_type(col.type_lcase, scale);
     int not_null(0);
     col.not_null = (numeric_cast(row[5], not_null) && not_null);
     res.columns.push_back(col);
@@ -88,7 +90,7 @@ inline table_definition get_table_definition(dialect* dct, command* cmd, const i
         numeric_cast(row[0], col->srid);
         if (row.size() > 1) numeric_cast(row[1], col->epsg);
         else col->epsg = col->srid;
-        if (row.size() > 2) col->dbms_type_lcase.qualifier = to_lcase(string_cast<char>(row[2]));
+        if (row.size() > 2) col->type_lcase.qualifier = transform<char>(string_cast<char>(row[2]), lower_case);
       }
     }
   return res;

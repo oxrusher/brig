@@ -3,9 +3,9 @@
 #ifndef BRIG_DATABASE_DETAIL_GET_TABLES_HPP
 #define BRIG_DATABASE_DETAIL_GET_TABLES_HPP
 
+#include <brig/identifier.hpp>
 #include <brig/database/command.hpp>
 #include <brig/database/detail/dialect.hpp>
-#include <brig/database/identifier.hpp>
 #include <brig/string_cast.hpp>
 #include <vector>
 

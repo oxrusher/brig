@@ -9,10 +9,10 @@
 #include <brig/database/detail/dialect.hpp>
 #include <brig/database/detail/get_iso_type.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
-#include <brig/database/detail/sql_regular_identifier.hpp>
-#include <brig/database/detail/to_lcase.hpp>
-#include <brig/database/global.hpp>
+#include <brig/global.hpp>
 #include <brig/string_cast.hpp>
+#include <brig/unicode/lower_case.hpp>
+#include <brig/unicode/transform.hpp>
 #include <ios>
 #include <iterator>
 #include <locale>
@@ -28,7 +28,7 @@ struct dialect_ingres : dialect {
   std::string sql_columns(const identifier& tbl) override;
   std::string sql_indexed_columns(const identifier& tbl) override;
   std::string sql_spatial_detail(const table_definition& tbl, const std::string& col) override;
-  column_type get_type(const identifier& dbms_type_lcase, int scale) override;
+  column_type get_type(const identifier& type_lcase, int scale) override;
 
   std::string sql_mbr(const table_definition& tbl, const std::string& col) override;
 
@@ -113,13 +113,13 @@ FROM (SELECT srid FROM geometry_columns WHERE f_table_schema = '" + tbl.id.schem
 LEFT JOIN spatial_ref_sys s ON c.srid = s.srid";
 }
 
-inline column_type dialect_ingres::get_type(const identifier& dbms_type_lcase, int scale)
+inline column_type dialect_ingres::get_type(const identifier& type_lcase, int scale)
 {
-  if (!dbms_type_lcase.schema.empty()) return VoidColumn;
-  if (is_ogc_type(dbms_type_lcase.name)) return Geometry;
-  if (dbms_type_lcase.name.find("byte") != std::string::npos) return Blob;
-  if (dbms_type_lcase.name.compare("c") == 0) return String;
-  return get_iso_type(dbms_type_lcase.name, scale);
+  if (!type_lcase.schema.empty()) return VoidColumn;
+  if (is_ogc_type(type_lcase.name)) return Geometry;
+  if (type_lcase.name.find("byte") != std::string::npos) return Blob;
+  if (type_lcase.name.compare("c") == 0) return String;
+  return get_iso_type(type_lcase.name, scale);
 }
 
 inline std::string dialect_ingres::sql_mbr(const table_definition& tbl, const std::string& col)
@@ -134,30 +134,29 @@ inline std::string dialect_ingres::sql_schema()
 
 inline std::string dialect_ingres::fit_identifier(const std::string& id)
 {
-  return to_lcase(id);
+  return brig::unicode::transform<char>(id, brig::unicode::lower_case);
 }
 
 inline column_definition dialect_ingres::fit_column(const column_definition& col)
 {
-  using namespace std;
-
   column_definition res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn: throw runtime_error("datatype error");
-  case Blob: res.dbms_type_lcase.name = "long byte"; break;
-  case Double: res.dbms_type_lcase.name = "double precision"; break;
+  case VoidColumn: break;
+  case Blob: res.type_lcase.name = "long byte"; break;
+  case Double: res.type_lcase.name = "double precision"; break;
   case Geometry:
-    res.dbms_type_lcase.name = "geometry";
+    res.type_lcase.name = "geometry";
     res.epsg = col.epsg;
-    // todo: res.query_value = (typeid(blob_t) == col.query_value.type())? col.query_value: blob_t();
+    // todo: invalid spatial index
+    // res.query_value = (typeid(blob_t) == col.query_value.type())? col.query_value: blob_t();
     break;
-  case Integer: res.dbms_type_lcase.name = "bigint"; break;
+  case Integer: res.type_lcase.name = "bigint"; break;
   case String:
     res.chars = (col.chars > 0 && col.chars < CharsLimit)? col.chars: CharsLimit;
-    res.dbms_type_lcase.name = "nvarchar(" + string_cast<char>(res.chars) + ")";
+    res.type_lcase.name = "nvarchar(" + string_cast<char>(res.chars) + ")";
     break;
   }
   if (col.not_null) res.not_null = true;
@@ -170,7 +169,7 @@ inline table_definition dialect_ingres::fit_table(const table_definition& tbl, c
 
   table_definition res(dialect::fit_table(tbl, schema));
 
-  // todo:
+  // todo: invalid spatial index
   auto new_end(remove_if(begin(res.indexes), end(res.indexes), [](const index_definition& idx){ return Spatial == idx.type; }));
   res.indexes.resize(distance(begin(res.indexes), new_end));
 
@@ -185,7 +184,7 @@ inline std::string dialect_ingres::sql_srid(int epsg)
 inline std::string dialect_ingres::sql_column_definition(const column_definition& col)
 {
   std::string str;
-  str += sql_identifier(col.name) + " " + sql_regular_identifier(col.dbms_type_lcase);
+  str += sql_identifier(col.name) + " " + col.type_lcase.to_string();
   if (Geometry == col.type) str += " SRID " + string_cast<char>(col.srid);
   if (col.not_null) str += " NOT NULL";
   return str;
@@ -218,8 +217,8 @@ inline std::string dialect_ingres::sql_column(const command_traits& trs, const c
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (String == col.type && (col.dbms_type_lcase.name.find("time") != string::npos || col.dbms_type_lcase.name.compare("ingresdate") == 0)) return "DATE_FORMAT(" + id + ", '%Y-%m-%dT%T') AS " + id;
-  if (String == col.type && col.dbms_type_lcase.name.find("date") != string::npos) return "DATE_FORMAT(" + id + ", '%Y-%m-%d') AS " + id;
+  if (String == col.type && (col.type_lcase.name.find("time") != string::npos || col.type_lcase.name.compare("ingresdate") == 0)) return "DATE_FORMAT(" + id + ", '%Y-%m-%dT%T') AS " + id;
+  if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "DATE_FORMAT(" + id + ", '%Y-%m-%d') AS " + id;
   if (Geometry == col.type && !trs.readable_geometry) return "AsBinary(" + id + ") AS " + id;
   return id;
 }

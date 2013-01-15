@@ -6,8 +6,7 @@
 #include <boost/variant/apply_visitor.hpp>
 #include <boost/variant/static_visitor.hpp>
 #include <brig/blob_t.hpp>
-#include <brig/database/column_definition.hpp>
-#include <brig/database/global.hpp>
+#include <brig/column_definition.hpp>
 #include <brig/database/oracle/detail/binding.hpp>
 #include <brig/database/oracle/detail/binding_blob.hpp>
 #include <brig/database/oracle/detail/binding_geometry.hpp>
@@ -15,7 +14,8 @@
 #include <brig/database/oracle/detail/binding_string.hpp>
 #include <brig/database/oracle/detail/get_charset_form.hpp>
 #include <brig/database/oracle/detail/handles.hpp>
-#include <brig/database/variant.hpp>
+#include <brig/global.hpp>
+#include <brig/variant.hpp>
 #include <cstdint>
 #include <stdexcept>
 #include <string>
@@ -33,7 +33,7 @@ struct binding_visitor : ::boost::static_visitor<binding*> {
   binding* operator()(int64_t v) const  { return new binding_impl<int64_t, SQLT_INT>(hnd, i, v); }
   binding* operator()(float v) const  { return new binding_impl<float, SQLT_FLT>(hnd, i, v); }
   binding* operator()(double v) const  { return new binding_impl<double, SQLT_FLT>(hnd, i, v); }
-  binding* operator()(const std::string& r) const  { return new binding_string(hnd, i, r, get_charset_form(param.dbms_type_lcase)); }
+  binding* operator()(const std::string& r) const  { return new binding_string(hnd, i, r, get_charset_form(param.type_lcase)); }
   binding* operator()(const blob_t&) const;
 }; // binding_visitor
 
@@ -46,7 +46,7 @@ inline binding* binding_visitor::operator()(const null_t&) const
     case Double: return new binding_impl<double, SQLT_FLT>(hnd, i);
     case Geometry: return new binding_geometry(hnd, i, blob_t(), param.srid);
     case Integer: return new binding_impl<int64_t, SQLT_INT>(hnd, i);
-    case String: return new binding_string(hnd, i, std::string(), get_charset_form(param.dbms_type_lcase));
+    case String: return new binding_string(hnd, i, std::string(), get_charset_form(param.type_lcase));
   };
 }
 

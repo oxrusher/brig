@@ -7,10 +7,11 @@
 #include <brig/database/detail/dialect.hpp>
 #include <brig/database/detail/get_iso_type.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
-#include <brig/database/detail/to_lcase.hpp>
-#include <brig/database/numeric_cast.hpp>
-#include <brig/database/global.hpp>
+#include <brig/global.hpp>
+#include <brig/numeric_cast.hpp>
 #include <brig/string_cast.hpp>
+#include <brig/unicode/lower_case.hpp>
+#include <brig/unicode/transform.hpp>
 #include <ios>
 #include <iterator>
 #include <locale>
@@ -60,7 +61,7 @@ inline std::string dialect_sqlite::sql_tables()
 
 inline std::string dialect_sqlite::sql_geometries()
 {
-  return "SELECT '' scm, g.f_table_name tbl, g.f_geometry_column col FROM geometry_columns g JOIN sqlite_master t ON g.f_table_name = t.name";
+  return "SELECT '' scm, t.name tbl, g.f_geometry_column col FROM geometry_columns g JOIN sqlite_master t ON LOWER(g.f_table_name) = LOWER(t.name)";
 }
 
 inline std::string dialect_sqlite::sql_mbr(const table_definition& tbl, const std::string& col)
@@ -71,27 +72,25 @@ inline std::string dialect_sqlite::sql_mbr(const table_definition& tbl, const st
 
 inline std::string dialect_sqlite::fit_identifier(const std::string& id)
 {
-  return to_lcase(id);
+  return brig::unicode::transform<char>(id, brig::unicode::lower_case);
 }
 
 inline column_definition dialect_sqlite::fit_column(const column_definition& col)
 {
-  using namespace std;
-
   column_definition res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn: throw runtime_error("datatype error");
-  case Blob: res.dbms_type_lcase.name = "blob"; break;
-  case Double: res.dbms_type_lcase.name = "real"; break; // real affinity
+  case VoidColumn: break;
+  case Blob: res.type_lcase.name = "blob"; break;
+  case Double: res.type_lcase.name = "real"; break; // real affinity
   case Geometry:
-    res.dbms_type_lcase.name = "geometry";
+    res.type_lcase.name = "geometry";
     res.epsg = col.epsg;
     break;
-  case Integer: res.dbms_type_lcase.name = "integer"; break; // integer affinity
-  case String: res.dbms_type_lcase.name = "text"; break; // text affinity
+  case Integer: res.type_lcase.name = "integer"; break; // integer affinity
+  case String: res.type_lcase.name = "text"; break; // text affinity
   }
   if (col.not_null) res.not_null = true;
   return res;
@@ -137,7 +136,7 @@ inline std::string dialect_sqlite::sql_rasters()
 {
   return "\
 SELECT '', (r.table_prefix || '_rasters') base_tbl, 'raster' base_col, r.pixel_x_size res_x, r.pixel_y_size res_y, '', (r.table_prefix || '_metadata'), 'geometry', 'raster' \
-FROM raster_pyramids r JOIN geometry_columns g ON g.f_table_name = (r.table_prefix || '_metadata') \
+FROM raster_pyramids r JOIN geometry_columns g ON LOWER(g.f_table_name) = LOWER(r.table_prefix || '_metadata') \
 ORDER BY base_tbl, base_col, res_x, res_y";
 }
 
@@ -199,7 +198,7 @@ inline void dialect_sqlite::sql_intersect(const command_traits&, const table_def
   column_definition key;
   key.name = "rowid";
   key.type = Integer;
-  key.dbms_type_lcase.name = "int";
+  key.type_lcase.name = "int";
   keys.push_back(key);
 
   sql += "SELECT pkid AS " + sql_identifier(key.name) + " FROM " + sql_identifier("idx_" + tbl.id.name + "_" + col) + " WHERE ";

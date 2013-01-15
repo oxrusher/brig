@@ -5,7 +5,6 @@
 
 #include <brig/string_cast.hpp>
 #include <string>
-#include <stdexcept>
 
 namespace brig { namespace database {
 

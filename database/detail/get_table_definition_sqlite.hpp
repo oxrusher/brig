@@ -8,10 +8,12 @@
 #include <brig/database/detail/dialect.hpp>
 #include <brig/database/detail/get_iso_type.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
-#include <brig/database/detail/to_lcase.hpp>
-#include <brig/database/global.hpp>
-#include <brig/database/numeric_cast.hpp>
+#include <brig/global.hpp>
+#include <brig/numeric_cast.hpp>
 #include <brig/string_cast.hpp>
+#include <brig/table_definition.hpp>
+#include <brig/unicode/lower_case.hpp>
+#include <brig/unicode/transform.hpp>
 #include <iterator>
 #include <stdexcept>
 
@@ -31,10 +33,10 @@ inline table_definition get_table_definition_sqlite(dialect* dct, command* cmd, 
   {
     column_definition col;
     col.name = string_cast<char>(row[1]);
-    col.dbms_type_lcase.name = to_lcase(string_cast<char>(row[2]));
+    col.type_lcase.name = brig::unicode::transform<char>(string_cast<char>(row[2]), brig::unicode::lower_case);
 
-    if (is_ogc_type(col.dbms_type_lcase.name)) col.type = Geometry;
-    else col.type = get_iso_type(col.dbms_type_lcase.name, -1);
+    if (is_ogc_type(col.type_lcase.name)) col.type = Geometry;
+    else col.type = get_iso_type(col.type_lcase.name, -1);
 
     int not_null(0);
     col.not_null = (numeric_cast(row[3], not_null) && not_null);

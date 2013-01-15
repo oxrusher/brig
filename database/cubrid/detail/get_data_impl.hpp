@@ -5,7 +5,7 @@
 
 #include <brig/database/cubrid/detail/get_data.hpp>
 #include <brig/database/cubrid/detail/lib.hpp>
-#include <brig/database/variant.hpp>
+#include <brig/variant.hpp>
 
 namespace brig { namespace database { namespace cubrid { namespace detail {
 
@@ -19,7 +19,7 @@ int get_data_impl<T, Type>::operator()(int req, size_t col, variant& var)
 {
   T data;
   int ind(-1);
-  const int r(lib::singleton().p_cci_get_data(req, col + 1, Type, &data, &ind));
+  const int r(lib::singleton().p_cci_get_data(req, int(col + 1), Type, &data, &ind));
   if (lib::error(r) || ind < 0) var = null_t();
   else var = data;
   return r;

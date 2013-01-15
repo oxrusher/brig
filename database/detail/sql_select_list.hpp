@@ -4,8 +4,8 @@
 #define BRIG_DATABASE_DETAIL_SQL_SELECT_LIST_HPP
 
 #include <brig/database/command_traits.hpp>
-#include <brig/database/column_definition.hpp>
 #include <brig/database/detail/dialect.hpp>
+#include <brig/column_definition.hpp>
 #include <iterator>
 #include <string>
 #include <vector>

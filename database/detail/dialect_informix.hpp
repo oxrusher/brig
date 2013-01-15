@@ -6,7 +6,7 @@
 #include <brig/database/detail/dialect.hpp>
 #include <brig/database/detail/get_iso_type.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
-#include <brig/database/global.hpp>
+#include <brig/global.hpp>
 #include <brig/string_cast.hpp>
 #include <ios>
 #include <iterator>
@@ -23,7 +23,7 @@ struct dialect_informix : dialect {
   std::string sql_columns(const identifier& tbl) override;
   std::string sql_indexed_columns(const identifier& tbl) override;
   std::string sql_spatial_detail(const table_definition& tbl, const std::string& col) override;
-  column_type get_type(const identifier& dbms_type_lcase, int scale) override;
+  column_type get_type(const identifier& type_lcase, int scale) override;
 
   std::string sql_mbr(const table_definition& tbl, const std::string& col) override;
 
@@ -153,13 +153,13 @@ FROM (SELECT srid FROM sde.geometry_columns WHERE f_table_schema = '" + tbl.id.s
 LEFT JOIN sde.spatial_references s ON c.srid = s.srid";
 }
 
-inline column_type dialect_informix::get_type(const identifier& dbms_type_lcase, int scale)
+inline column_type dialect_informix::get_type(const identifier& type_lcase, int scale)
 {
-  if (!dbms_type_lcase.schema.empty()) return VoidColumn;
-  if (is_ogc_type(dbms_type_lcase.name)) return Geometry;
-  if (dbms_type_lcase.name.find("serial") != std::string::npos) return Integer;
-  if (dbms_type_lcase.name.compare("byte") == 0) return Blob;
-  return get_iso_type(dbms_type_lcase.name, scale);
+  if (!type_lcase.schema.empty()) return VoidColumn;
+  if (is_ogc_type(type_lcase.name)) return Geometry;
+  if (type_lcase.name.find("serial") != std::string::npos) return Integer;
+  if (type_lcase.name.compare("byte") == 0) return Blob;
+  return get_iso_type(type_lcase.name, scale);
 }
 
 inline std::string dialect_informix::sql_mbr(const table_definition& tbl, const std::string& col)
@@ -176,24 +176,22 @@ inline std::string dialect_informix::sql_schema()
 
 inline column_definition dialect_informix::fit_column(const column_definition& col)
 {
-  using namespace std;
-
   column_definition res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn: throw runtime_error("datatype error");
-  case Blob: res.dbms_type_lcase.name = "byte"; break;
-  case Double: res.dbms_type_lcase.name = "double precision"; break;
+  case VoidColumn: break;
+  case Blob: res.type_lcase.name = "byte"; break;
+  case Double: res.type_lcase.name = "double precision"; break;
   case Geometry:
-    res.dbms_type_lcase.name = "st_geometry";
+    res.type_lcase.name = "st_geometry";
     res.epsg = col.epsg;
     break;
-  case Integer: res.dbms_type_lcase.name = "int8"; break;
+  case Integer: res.type_lcase.name = "int8"; break;
   case String:
     res.chars = (col.chars > 0 && col.chars < CharsLimit)? col.chars: CharsLimit;
-    res.dbms_type_lcase.name = "varchar(" + string_cast<char>(res.chars) + ")";
+    res.type_lcase.name = "varchar(" + string_cast<char>(res.chars) + ")";
     break;
   }
   if (col.not_null) res.not_null = true;
@@ -241,18 +239,18 @@ inline std::string dialect_informix::sql_parameter(const command_traits& trs, co
   if (Geometry == param.type && !trs.writable_geometry)
   {
     const string suffix("(" + marker + ", " + string_cast<char>(param.srid) + ")");
-         if ( param.dbms_type_lcase.name.compare("st_geometry") == 0
-           || param.dbms_type_lcase.name.compare("st_geomcollection") == 0 ) return "ST_GeomFromWKB" + suffix;
-    else if ( param.dbms_type_lcase.name.compare("st_point") == 0 ) return "ST_PointFromWKB" + suffix;
-    else if ( param.dbms_type_lcase.name.compare("st_curve") == 0
-           || param.dbms_type_lcase.name.compare("st_linestring") == 0 ) return "ST_LineFromWKB" + suffix;
-    else if ( param.dbms_type_lcase.name.compare("st_surface") == 0
-           || param.dbms_type_lcase.name.compare("st_polygon") == 0 ) return "ST_PolyFromWKB" + suffix;
-    else if ( param.dbms_type_lcase.name.compare("st_multipoint") == 0 ) return "ST_MPointFromWKB" + suffix;
-    else if ( param.dbms_type_lcase.name.compare("st_multicurve") == 0
-           || param.dbms_type_lcase.name.compare("st_multilinestring") == 0 ) return "ST_MLineFromWKB" + suffix;
-    else if ( param.dbms_type_lcase.name.compare("st_multisurface") == 0
-           || param.dbms_type_lcase.name.compare("st_multipolygon") == 0 ) return "ST_MPolyFromWKB" + suffix;
+         if ( param.type_lcase.name.compare("st_geometry") == 0
+           || param.type_lcase.name.compare("st_geomcollection") == 0 ) return "ST_GeomFromWKB" + suffix;
+    else if ( param.type_lcase.name.compare("st_point") == 0 ) return "ST_PointFromWKB" + suffix;
+    else if ( param.type_lcase.name.compare("st_curve") == 0
+           || param.type_lcase.name.compare("st_linestring") == 0 ) return "ST_LineFromWKB" + suffix;
+    else if ( param.type_lcase.name.compare("st_surface") == 0
+           || param.type_lcase.name.compare("st_polygon") == 0 ) return "ST_PolyFromWKB" + suffix;
+    else if ( param.type_lcase.name.compare("st_multipoint") == 0 ) return "ST_MPointFromWKB" + suffix;
+    else if ( param.type_lcase.name.compare("st_multicurve") == 0
+           || param.type_lcase.name.compare("st_multilinestring") == 0 ) return "ST_MLineFromWKB" + suffix;
+    else if ( param.type_lcase.name.compare("st_multisurface") == 0
+           || param.type_lcase.name.compare("st_multipolygon") == 0 ) return "ST_MPolyFromWKB" + suffix;
     else throw runtime_error("datatype error");
   }
   return marker;
@@ -264,8 +262,8 @@ inline std::string dialect_informix::sql_column(const command_traits& trs, const
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (String == col.type && col.dbms_type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", '%Y-%m-%d') || 'T' || TO_CHAR(" + id + ", '%H:%M:%S')) AS " + id;
-  if (String == col.type && col.dbms_type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", '%Y-%m-%d') AS " + id;
+  if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", '%Y-%m-%d') || 'T' || TO_CHAR(" + id + ", '%H:%M:%S')) AS " + id;
+  if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", '%Y-%m-%d') AS " + id;
   if (Geometry == col.type && !trs.readable_geometry) return "ST_AsBinary(" + id + ") AS " + id;
   return id;
 }

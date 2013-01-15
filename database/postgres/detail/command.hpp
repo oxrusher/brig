@@ -7,12 +7,14 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <brig/database/command.hpp>
-#include <brig/database/global.hpp>
-#include <brig/database/identifier.hpp>
 #include <brig/database/postgres/detail/binding_factory.hpp>
 #include <brig/database/postgres/detail/get_value_factory.hpp>
 #include <brig/database/postgres/detail/lib.hpp>
+#include <brig/global.hpp>
+#include <brig/identifier.hpp>
 #include <brig/string_cast.hpp>
+#include <brig/unicode/lower_case.hpp>
+#include <brig/unicode/transform.hpp>
 #include <locale>
 #include <sstream>
 #include <stdexcept>
@@ -23,11 +25,13 @@ namespace brig { namespace database { namespace postgres { namespace detail {
 class command : public brig::database::command {
   PGconn* m_con;
   PGresult* m_res;
+  bool m_fetch;
   ::boost::ptr_vector<get_value> m_cols;
   int m_row;
   bool m_autocommit;
 
   void check(bool r);
+  void check_command(PGresult* res);
   void close_result();
   void close_all();
 
@@ -52,13 +56,27 @@ inline void command::check(bool r)
   throw std::runtime_error(msg);
 }
 
+inline void command::check_command(PGresult* res)
+{
+  const ExecStatusType r(lib::singleton().p_PQresultStatus(res));
+  lib::singleton().p_PQclear(res);
+  check(r == PGRES_COMMAND_OK);
+}
+
 inline void command::close_result()
 {
-  if (!m_res) return;
   m_row = 0;
   m_cols.clear();
-  PGresult* res(0); std::swap(res, m_res);
-  lib::singleton().p_PQclear(res);
+  if (m_res)
+  {
+    PGresult* res(0); std::swap(res, m_res);
+    lib::singleton().p_PQclear(res);
+  }
+  if (m_fetch)
+  {
+    m_fetch = false;
+    lib::singleton().p_PQclear(lib::singleton().p_PQexec(m_con, "CLOSE BrigCursor; END;"));
+  }
 }
 
 inline void command::close_all()
@@ -68,7 +86,7 @@ inline void command::close_all()
 }
 
 inline command::command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd)
-  : m_con(0), m_res(0), m_row(0), m_autocommit(true)
+  : m_con(0), m_res(0), m_fetch(false), m_row(0), m_autocommit(true)
 {
   if (lib::singleton().empty()) throw std::runtime_error("Postgres error");
   m_con = lib::singleton().p_PQsetdbLogin((char*)host.c_str(), (char*)string_cast<char>(port).c_str(), 0, 0, (char*)db.c_str(), (char*)usr.c_str(), (char*)pwd.c_str());
@@ -82,6 +100,7 @@ inline void command::exec(const std::string& sql, const std::vector<column_defin
   using namespace std;
 
   close_result();
+
   ::boost::ptr_vector<binding> binds;
   vector<Oid> types;
   vector<char*> values;
@@ -96,9 +115,21 @@ inline void command::exec(const std::string& sql, const std::vector<column_defin
     lengths.push_back(bind->length());
     formats.push_back(bind->format());
   }
-  m_res = lib::singleton().p_PQexecParams(m_con, sql.c_str(), int(params.size()), types.data(), values.data(), lengths.data(), formats.data(), 1);
-  const ExecStatusType r(lib::singleton().p_PQresultStatus(m_res));
-  check(r == PGRES_COMMAND_OK || r == PGRES_TUPLES_OK);
+
+  if (m_autocommit && sql.size() > 6 && brig::unicode::transform<char>(sql.substr(0, 6), brig::unicode::lower_case).compare("select") == 0)
+  {
+    check_command(lib::singleton().p_PQexec(m_con, "BEGIN"));
+    m_fetch = true;
+    check_command(lib::singleton().p_PQexecParams(m_con, string("DECLARE BrigCursor BINARY NO SCROLL CURSOR FOR " + sql).c_str(), int(params.size()), types.data(), values.data(), lengths.data(), formats.data(), 1));
+    m_res = lib::singleton().p_PQexec(m_con, string("FETCH FORWARD " + string_cast<char>(PageSize) + " FROM BrigCursor").c_str());
+    check(PGRES_TUPLES_OK == lib::singleton().p_PQresultStatus(m_res));
+  }
+  else
+  {
+    m_res = lib::singleton().p_PQexecParams(m_con, sql.c_str(), int(params.size()), types.data(), values.data(), lengths.data(), formats.data(), 1);
+    const ExecStatusType r(lib::singleton().p_PQresultStatus(m_res));
+    check(r == PGRES_COMMAND_OK || r == PGRES_TUPLES_OK);
+  }
 }
 
 inline void command::exec_batch(const std::string& sql)
@@ -125,30 +156,46 @@ inline std::vector<std::string> command::columns()
 
 inline bool command::fetch(std::vector<variant>& row)
 {
-  if (!m_res || m_row >= lib::singleton().p_PQntuples(m_res)) return false;
+  if (!m_res) return false;
+
+  if (m_fetch && m_row >= lib::singleton().p_PQntuples(m_res))
+  {
+    m_row = 0;
+    lib::singleton().p_PQclear(m_res);
+    m_res = lib::singleton().p_PQexec(m_con, std::string("FETCH FORWARD " + string_cast<char>(PageSize) + " FROM BrigCursor").c_str());
+    check(PGRES_TUPLES_OK == lib::singleton().p_PQresultStatus(m_res));
+  }
+
+  if (m_row >= lib::singleton().p_PQntuples(m_res))
+  {
+    close_result();
+    return false;
+  }
+  
   if (m_cols.empty()) columns();
   row.resize(m_cols.size());
   const int i(m_row++);
   for (size_t j(0); j < m_cols.size(); ++j)
   {
-    if (lib::singleton().p_PQgetisnull(m_res, i, j)) row[j] = null_t();
-    else m_cols[j](m_res, i, j, row[j]);
+    if (lib::singleton().p_PQgetisnull(m_res, i, int(j))) row[j] = null_t();
+    else m_cols[j](m_res, i, int(j), row[j]);
   }
   return true;
 }
 
 inline void command::set_autocommit(bool autocommit)
 {
+  close_result();
   if (m_autocommit == autocommit) return;
-  exec(autocommit? "ROLLBACK": "BEGIN");
+  check_command(lib::singleton().p_PQexec(m_con, autocommit? "ROLLBACK": "BEGIN"));
   m_autocommit = autocommit;
 }
 
 inline void command::commit()
 {
+  close_result();
   if (m_autocommit) return;
-  exec("COMMIT");
-  exec("BEGIN");
+  check_command(lib::singleton().p_PQexec(m_con, "COMMIT; BEGIN;"));
 }
 
 inline command_traits command::traits()

@@ -6,11 +6,12 @@
 #include <algorithm>
 #include <brig/database/command.hpp>
 #include <brig/database/detail/is_ogc_type.hpp>
-#include <brig/database/detail/to_lcase.hpp>
 #include <brig/database/sqlite/detail/binding.hpp>
 #include <brig/database/sqlite/detail/column_geometry.hpp>
 #include <brig/database/sqlite/detail/db_handle.hpp>
 #include <brig/database/sqlite/detail/lib.hpp>
+#include <brig/unicode/lower_case.hpp>
+#include <brig/unicode/transform.hpp>
 #include <cstring>
 #include <exception>
 #include <memory>
@@ -95,8 +96,6 @@ inline void command::exec_batch(const std::string& sql)
 
 inline std::vector<std::string> command::columns()
 {
-  using namespace brig::database::detail;
-
   std::vector<std::string> cols;
   if (!m_stmt) return cols;
   m_sql = "";
@@ -109,7 +108,7 @@ inline std::vector<std::string> command::columns()
 
     column col;
     if (name_ptr) col.name = name_ptr;
-    col.geometry = (type_ptr && is_ogc_type(to_lcase(type_ptr)));
+    col.geometry = (type_ptr && brig::database::detail::is_ogc_type(brig::unicode::transform<char>(type_ptr, brig::unicode::lower_case)));
 
     m_cols.push_back(col);
     cols.push_back(col.name);
@@ -161,6 +160,7 @@ inline bool command::fetch(std::vector<variant>& row)
 
 inline void command::set_autocommit(bool autocommit)
 {
+  close_stmt();
   if (m_autocommit == autocommit) return;
   exec(autocommit? "ROLLBACK": "BEGIN");
   m_autocommit = autocommit;
@@ -168,6 +168,7 @@ inline void command::set_autocommit(bool autocommit)
 
 inline void command::commit()
 {
+  close_stmt();
   if (m_autocommit) return;
   exec("COMMIT");
   exec("BEGIN");

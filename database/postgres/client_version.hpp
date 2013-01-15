@@ -11,7 +11,7 @@ namespace brig { namespace database { namespace postgres {
 
 inline std::string client_version()
 {
-  if (detail::lib::singleton().empty()) return "";
+  if (detail::lib::singleton().empty()) return std::string();
   const int version(detail::lib::singleton().p_PQlibVersion());
   const int major_version(version / 10000);
   const int minor_version((version % 10000) / 100);

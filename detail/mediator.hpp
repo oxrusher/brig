@@ -53,8 +53,8 @@ public:
   void stop(const std::exception_ptr& exc = std::exception_ptr())  { set_state(AfterFinish, exc); }
   template<typename Result, typename Fun, typename... Args>
   Result call(Fun&& f, Args&&... args);
-  // GCC: decltype(std::bind(std::forward<Fun>(f), std::forward<Args>(args)...)(std::declval<Interface*>()));
-  // MSVC: typename std::result_of<Fun(Args...)>::type;
+  // todo: GCC - decltype(std::bind(std::forward<Fun>(f), std::forward<Args>(args)...)(std::declval<Interface*>()));
+  // todo: MSVC November 2012 CTP - typename std::result_of<Fun(Args...)>::type;
   bool handle(Interface*); // catch exception
 }; // mediator
 

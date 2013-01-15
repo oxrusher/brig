@@ -3,9 +3,10 @@
 #ifndef BRIG_DATABASE_DETAIL_SIMPLE_RASTERS_HPP
 #define BRIG_DATABASE_DETAIL_SIMPLE_RASTERS_HPP
 
-#include <brig/database/detail/to_lcase.hpp>
-#include <brig/database/global.hpp>
-#include <brig/database/table_definition.hpp>
+#include <brig/global.hpp>
+#include <brig/table_definition.hpp>
+#include <brig/unicode/lower_case.hpp>
+#include <brig/unicode/transform.hpp>
 
 namespace brig { namespace database { namespace detail {
 
@@ -51,14 +52,13 @@ inline table_definition simple_rasters_table(bool schema)
 inline std::vector<std::string> simple_rasters_columns(const table_definition& tbl)
 {
   using namespace std;
-  using namespace brig::unicode;
 
   vector<string> cols;
   cols.resize(9);
   for (size_t i(0); i < tbl.columns.size(); ++i)
   {
     const string& name(tbl.columns[i].name);
-    const string name_lcase(to_lcase(name));
+    const string name_lcase(brig::unicode::transform<char>(name, brig::unicode::lower_case));
 
     if (name_lcase.compare("schema") == 0) cols[0] = name;
     else if (name_lcase.compare("table") == 0) cols[1] = name;

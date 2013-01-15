@@ -21,11 +21,10 @@ class command : public brig::database::command {
 
   void check(int r);
   void close_request();
-  void close_all();
 
 public:
   command(const std::string& url, const std::string& usr, const std::string& pwd);
-  ~command() override  { close_all(); }
+  ~command() override;
   void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) override;
   void exec_batch(const std::string& sql) override;
   std::vector<std::string> columns() override;
@@ -50,7 +49,7 @@ inline void command::close_request()
   lib::singleton().p_cci_close_req_handle(req);
 }
 
-inline void command::close_all()
+inline command::~command()
 {
   close_request();
   if (lib::error(m_con)) return;
@@ -129,16 +128,16 @@ inline bool command::fetch(std::vector<variant>& row)
 
 inline void command::set_autocommit(bool autocommit)
 {
-  if (bool(lib::singleton().p_cci_get_autocommit(m_con)) == autocommit) return;
   close_request();
+  if (lib::singleton().p_cci_get_autocommit(m_con) == (autocommit? 1: 0)) return;
   if (autocommit) check(lib::singleton().p_cci_end_tran(m_con, CCI_TRAN_ROLLBACK, &m_err));
   if (lib::error(lib::singleton().p_cci_set_autocommit(m_con, autocommit? CCI_AUTOCOMMIT_TRUE: CCI_AUTOCOMMIT_FALSE))) throw std::runtime_error("CUBRID error");
 }
 
 inline void command::commit()
 {
-  if (lib::singleton().p_cci_get_autocommit(m_con)) return;
   close_request();
+  if (lib::singleton().p_cci_get_autocommit(m_con)) return;
   check(lib::singleton().p_cci_end_tran(m_con, CCI_TRAN_COMMIT, &m_err));
 } // command::
 

@@ -8,8 +8,9 @@
 #include <brig/database/detail/get_table_definition.hpp>
 #include <brig/database/detail/simple_rasters.hpp>
 #include <brig/database/detail/sql_create.hpp>
-#include <brig/database/raster_pyramid.hpp>
-#include <brig/database/table_definition.hpp>
+#include <brig/raster_pyramid.hpp>
+#include <brig/string_cast.hpp>
+#include <brig/table_definition.hpp>
 #include <ios>
 #include <iterator>
 #include <locale>

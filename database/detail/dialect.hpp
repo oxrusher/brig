@@ -4,14 +4,11 @@
 #define BRIG_DATABASE_DETAIL_DIALECT_HPP
 
 #include <brig/database/command_traits.hpp>
-#include <brig/database/detail/sql_regular_identifier.hpp>
-#include <brig/database/detail/to_lcase.hpp>
-#include <brig/database/numeric_cast.hpp>
-#include <brig/database/raster_pyramid.hpp>
-#include <brig/database/table_definition.hpp>
+#include <brig/numeric_cast.hpp>
+#include <brig/raster_pyramid.hpp>
 #include <brig/string_cast.hpp>
+#include <brig/table_definition.hpp>
 #include <iterator>
-#include <stdexcept>
 
 namespace brig { namespace database { namespace detail {
 
@@ -29,7 +26,7 @@ struct dialect {
   virtual std::string sql_columns(const identifier& tbl) = 0;
   virtual std::string sql_indexed_columns(const identifier& tbl) = 0;
   virtual std::string sql_spatial_detail(const table_definition& tbl, const std::string& col) = 0;
-  virtual column_type get_type(const identifier& dbms_type_lcase, int scale) = 0;
+  virtual column_type get_type(const identifier& type_lcase, int scale) = 0;
 
   virtual std::string sql_mbr(const table_definition& tbl, const std::string& col) = 0; // 1 - metadata, 2 - geodetic (no sql), 3 - aggregate
 
@@ -105,7 +102,7 @@ inline table_definition dialect::fit_table(const table_definition& tbl, const st
 inline std::string dialect::sql_column_definition(const column_definition& col)
 {
   std::string str;
-  str += sql_identifier(col.name) + " " + sql_regular_identifier(col.dbms_type_lcase);
+  str += sql_identifier(col.name) + " " + col.type_lcase.to_string();
   if (col.not_null) str += " NOT NULL";
   return str;
 } // dialect::

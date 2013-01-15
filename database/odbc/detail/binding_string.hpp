@@ -18,7 +18,7 @@ class binding_string : public binding {
 public:
   binding_string(SQLSMALLINT sql_type, const std::string& str)
     : m_sql_type(sql_type)
-    , m_str(brig::unicode::transform<decltype(m_str)>(str))
+    , m_str(brig::unicode::transform<SQLWCHAR>(str))
     { m_ind = m_str.size() * sizeof(SQLWCHAR); }
   SQLSMALLINT c_type() override  { return SQL_C_WCHAR; }
   SQLSMALLINT sql_type() override  { return m_sql_type; }

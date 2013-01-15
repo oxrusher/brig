@@ -5,7 +5,7 @@
 
 #include <boost/utility.hpp>
 #include <brig/database/mysql/detail/lib.hpp>
-#include <brig/database/variant.hpp>
+#include <brig/variant.hpp>
 
 namespace brig { namespace database { namespace mysql { namespace detail {
 
