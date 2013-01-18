@@ -1,19 +1,19 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_OSM_DETAIL_LAYER_MAPNIK_HPP
-#define BRIG_OSM_DETAIL_LAYER_MAPNIK_HPP
+#ifndef BRIG_OSM_DETAIL_LAYER_OSM_HPP
+#define BRIG_OSM_DETAIL_LAYER_OSM_HPP
 
 #include <brig/osm/detail/layer.hpp>
 #include <brig/string_cast.hpp>
 
 namespace brig { namespace osm { namespace detail {
 
-struct layer_mapnik : layer {
-  std::string get_name() override  { return "Mapnik"; }
+struct layer_osm : layer {
+  std::string get_name() override  { return "OpenStreetMap"; }
   std::string get_url(size_t order, const tile& tl) override;
-}; // layer_mapnik
+}; // layer_osm
 
-inline std::string layer_mapnik::get_url(size_t order, const tile& tl)
+inline std::string layer_osm::get_url(size_t order, const tile& tl)
 {
   std::string subdomain;
   switch (order % 3)
@@ -27,4 +27,4 @@ inline std::string layer_mapnik::get_url(size_t order, const tile& tl)
 
 } } } // brig::osm::detail
 
-#endif // BRIG_OSM_DETAIL_LAYER_MAPNIK_HPP
+#endif // BRIG_OSM_DETAIL_LAYER_OSM_HPP

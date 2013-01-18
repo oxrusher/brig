@@ -40,6 +40,8 @@ class rowset : public brig::rowset
   static void check(CURLcode r);
   static void check(CURLMcode r);
 
+  void add_files();
+
 public:
   rowset(std::shared_ptr<layer> lr, const std::vector<bool>& cols, int zoom, const brig::boost::box& env, int rows);
   ~rowset() override;
@@ -102,46 +104,53 @@ inline std::vector<std::string> rowset::columns()
   return cols;
 }
 
+inline void rowset::add_files()
+{
+  for (size_t i(0), count(PageSize - m_pg.size()); i < count; ++i)
+  {
+    if (m_rows == 0) break;
+    tile tl(0, 0, 0);
+    if (!m_iter.fetch(tl)) break;
+    if (m_rows > 0) --m_rows;
+
+    CURL* hnd(lib::singleton().p_curl_easy_init());
+    if (!hnd) throw std::runtime_error("cURL error");
+    auto raii_hnd = brig::detail::make_raii(hnd, lib::singleton().p_curl_easy_cleanup);
+
+    row_t data;
+    data.tl = tl;
+    data.rast = new blob_t();
+    m_pg[hnd] = data;
+    raii_hnd.reset();
+
+    const std::string url(m_lr->get_url(i, tl));
+
+    check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_URL, url.c_str()));
+    check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, &write));
+    check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_WRITEDATA, data.rast));
+    check(lib::singleton().p_curl_multi_add_handle(m_hnd, hnd));
+  }
+}
+
 inline bool rowset::fetch(std::vector<variant>& row)
 {
-  using namespace std;
-
   if (m_pg.size() < (PageSize / 4))
-    for (size_t i(0), count(PageSize - m_pg.size()); i < count; ++i)
-    {
-      if (m_rows == 0) break;
-      tile tl(0, 0, 0);
-      if (!m_iter.fetch(tl)) break;
-      if (m_rows > 0) --m_rows;
-
-      CURL* hnd(lib::singleton().p_curl_easy_init());
-      if (!hnd) throw runtime_error("cURL error");
-      auto raii_hnd = brig::detail::make_raii(hnd, lib::singleton().p_curl_easy_cleanup);
-
-      row_t data;
-      data.tl = tl;
-      data.rast = new blob_t();
-      m_pg[hnd] = data;
-      raii_hnd.reset();
-
-      const string url(m_lr->get_url(i, tl));
-
-      check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_URL, url.c_str()));
-      check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, &write));
-      check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_WRITEDATA, data.rast));
-      check(lib::singleton().p_curl_multi_add_handle(m_hnd, hnd));
-    }
+    add_files();
 
   if (m_pg.empty())
     return false;
 
-  int still_running(0);
-  do  { while (lib::singleton().p_curl_multi_perform(m_hnd, &still_running) == CURLM_CALL_MULTI_PERFORM); }
-  while (still_running == int(m_pg.size()));
+  while (true)
+  {
+    int still_running(0);
+    while (lib::singleton().p_curl_multi_perform(m_hnd, &still_running) == CURLM_CALL_MULTI_PERFORM);
+    if (still_running != int(m_pg.size())) break;
+    add_files();
+  }
 
   int msgs_in_queue(0);
   CURLMsg* msg(lib::singleton().p_curl_multi_info_read(m_hnd, &msgs_in_queue));
-  if (!msg || msg->msg != CURLMSG_DONE) throw runtime_error("cURL error");
+  if (!msg || msg->msg != CURLMSG_DONE) throw std::runtime_error("cURL error");
   CURL* hnd(msg->easy_handle);
 
   const size_t count(m_cols.size());
