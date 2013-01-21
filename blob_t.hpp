@@ -24,8 +24,6 @@ namespace std {
 template <typename CharT, typename TraitsT>
 basic_ostream<CharT, TraitsT>& operator<<(basic_ostream<CharT, TraitsT>& stream, const brig::blob_t& blob)
 {
-  using namespace std;
-
   if (stream.flags() & ios::hex)
   {
     const size_t width(size_t(stream.width()));
