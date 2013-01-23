@@ -203,7 +203,7 @@ inline std::string dialect_postgres::sql_create_spatial_index(const table_defini
 
 inline std::string dialect_postgres::sql_test_rasters()
 {
-  return sql_tables() + " AND TABLE_SCHEMA = 'public' AND TABLE_NAME = 'raster_columns'";
+  return "SELECT TABLE_SCHEMA scm, TABLE_NAME tbl FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'public' AND TABLE_NAME = 'raster_columns'";
 }
 
 inline std::string dialect_postgres::sql_rasters()
