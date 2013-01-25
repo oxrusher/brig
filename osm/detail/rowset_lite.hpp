@@ -26,7 +26,7 @@ public:
 }; // rowset
 
 inline rowset_lite::rowset_lite(size_t cols, int zoom, const brig::boost::box& env, int rows)
-  : m_cols(cols), m_iter(zoom, env), m_rows(rows)
+  : m_cols(cols), m_rows(rows), m_iter(zoom, env)
 {
 }
 

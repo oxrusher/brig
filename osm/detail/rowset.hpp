@@ -74,7 +74,7 @@ inline void rowset::check(CURLMcode r)
 }
 
 inline rowset::rowset(std::shared_ptr<layer> lr, const std::vector<bool>& cols, int zoom, const brig::boost::box& env, int rows)
-  : m_lr(lr), m_cols(cols), m_iter(zoom, env), m_rows(rows), m_hnd(0)
+  : m_lr(lr), m_cols(cols), m_rows(rows), m_iter(zoom, env), m_hnd(0)
 {
   if (lib::singleton().empty()) throw std::runtime_error("cURL error");
   m_hnd = lib::singleton().p_curl_multi_init();
@@ -115,7 +115,7 @@ inline void rowset::add_files()
 
     CURL* hnd(lib::singleton().p_curl_easy_init());
     if (!hnd) throw std::runtime_error("cURL error");
-    auto raii_hnd = brig::detail::make_raii(hnd, lib::singleton().p_curl_easy_cleanup);
+    auto raii_hnd(brig::detail::make_raii(hnd, lib::singleton().p_curl_easy_cleanup));
 
     row_t data;
     data.tl = tl;

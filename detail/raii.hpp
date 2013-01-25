@@ -16,6 +16,7 @@ class raii : ::boost::noncopyable {
   Close m_close;
 public:
   raii(Handle handle, Close close) : m_handle(handle), m_close(close)  {}
+  raii(raii&& r) : m_handle(r.m_handle), m_close(r.m_close)  { r.m_handle = 0; }
   ~raii()  { if (m_handle) m_close(m_handle); }
   operator Handle() const  { return m_handle; }
   operator bool() const  { return m_handle != 0; }
