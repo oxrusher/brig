@@ -26,23 +26,23 @@ struct dialect_mysql : dialect {
 
   std::string sql_columns(const identifier& tbl) override;
   std::string sql_indexed_columns(const identifier& tbl) override;
-  std::string sql_spatial_detail(const table_definition& tbl, const std::string& col) override;
+  std::string sql_spatial_detail(const table_def& tbl, const std::string& col) override;
   column_type get_type(const identifier& type_lcase, int scale) override;
 
-  std::string sql_mbr(const table_definition& tbl, const std::string& col) override;
+  std::string sql_mbr(const table_def& tbl, const std::string& col) override;
 
   std::string sql_schema() override;
   std::string fit_identifier(const std::string& id) override;
-  column_definition fit_column(const column_definition& col) override;
+  column_def fit_column(const column_def& col) override;
   std::string sql_srid(int) override  { return ""; }
 
   std::string sql_table_options() override;
-  std::string sql_create_spatial_index(const table_definition& tbl, const std::string& col) override;
+  std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
 
-  std::string sql_parameter(const command_traits& trs, const column_definition& param, size_t order) override;
-  std::string sql_column(const command_traits& trs, const column_definition& col) override;
+  std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) override;
+  std::string sql_column(const command_traits& trs, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
-  std::string sql_intersect(const table_definition& tbl, const std::string& col, const boost::box& box) override;
+  std::string sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box) override;
 }; // dialect_mysql
 
 inline std::string dialect_mysql::sql_tables()
@@ -77,7 +77,7 @@ WHERE TABLE_SCHEMA = '" + tbl.schema + "' AND TABLE_NAME = '" + tbl.name + "' \
 ORDER BY pri DESC, INDEX_NAME, SEQ_IN_INDEX";
 }
 
-inline std::string dialect_mysql::sql_spatial_detail(const table_definition& tbl, const std::string& col)
+inline std::string dialect_mysql::sql_spatial_detail(const table_def& tbl, const std::string& col)
 {
   return "SELECT SRID(" + sql_identifier(col) + ") FROM " + dialect::sql_identifier(tbl.id) + " LIMIT 1";
 }
@@ -90,7 +90,7 @@ inline column_type dialect_mysql::get_type(const identifier& type_lcase, int sca
   return get_iso_type(type_lcase.name, scale);
 }
 
-inline std::string dialect_mysql::sql_mbr(const table_definition& tbl, const std::string& col)
+inline std::string dialect_mysql::sql_mbr(const table_def& tbl, const std::string& col)
 {
   return "\
 SELECT Min(X(PointN(t.r, 1))), Min(Y(PointN(t.r, 1))), Max(X(PointN(t.r, 3))), Max(Y(PointN(t.r, 3))) \
@@ -107,9 +107,9 @@ inline std::string dialect_mysql::fit_identifier(const std::string& id)
   return brig::unicode::transform<char>(id, brig::unicode::lower_case);
 }
 
-inline column_definition dialect_mysql::fit_column(const column_definition& col)
+inline column_def dialect_mysql::fit_column(const column_def& col)
 {
-  column_definition res;
+  column_def res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
@@ -138,19 +138,19 @@ inline std::string dialect_mysql::sql_table_options()
   return "ENGINE = MyISAM";
 }
 
-inline std::string dialect_mysql::sql_create_spatial_index(const table_definition& tbl, const std::string& col)
+inline std::string dialect_mysql::sql_create_spatial_index(const table_def& tbl, const std::string& col)
 {
   return "CREATE SPATIAL INDEX " + sql_identifier(tbl.rtree(col)->id.name) + " ON " + sql_identifier(tbl.id.name) + " (" + sql_identifier(col) + ")";
 }
 
-inline std::string dialect_mysql::sql_parameter(const command_traits& trs, const column_definition& param, size_t order)
+inline std::string dialect_mysql::sql_parameter(const command_traits& trs, const column_def& param, size_t order)
 {
   const std::string marker(trs.sql_parameter_marker(order));
   if (Geometry == param.type && !trs.writable_geometry) return "GeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ")";
   return marker;
 }
 
-inline std::string dialect_mysql::sql_column(const command_traits& trs, const column_definition& col)
+inline std::string dialect_mysql::sql_column(const command_traits& trs, const column_def& col)
 {
   using namespace std;
 
@@ -167,7 +167,7 @@ inline void dialect_mysql::sql_limit(int rows, std::string&, std::string&, std::
   sql_suffix = "LIMIT " + string_cast<char>(rows);
 }
 
-inline std::string dialect_mysql::sql_intersect(const table_definition&, const std::string& col, const boost::box& box)
+inline std::string dialect_mysql::sql_intersect(const table_def&, const std::string& col, const boost::box& box)
 {
   using namespace std;
 

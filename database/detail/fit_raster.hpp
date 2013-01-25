@@ -3,30 +3,34 @@
 #ifndef BRIG_DATABASE_DETAIL_FIT_RASTER_HPP
 #define BRIG_DATABASE_DETAIL_FIT_RASTER_HPP
 
+#include <algorithm>
 #include <brig/database/command.hpp>
 #include <brig/database/detail/dialect.hpp>
-#include <brig/raster_pyramid.hpp>
+#include <brig/pyramid_def.hpp>
+#include <iterator>
 #include <locale>
 #include <sstream>
 #include <string>
 
 namespace brig { namespace database { namespace detail {
 
-inline raster_pyramid fit_raster(dialect* dct, const raster_pyramid& raster, const std::string& schema)
+inline pyramid_def fit_raster(dialect* dct, const pyramid_def& raster, const std::string& schema)
 {
   using namespace std;
-  raster_pyramid res;
+  pyramid_def res;
   res.id.schema = schema;
   res.id.name = dct->fit_identifier(raster.id.name);
-  const int width(raster.levels.size() < 10? 1: 2);
-  for (size_t i(0); i < raster.levels.size(); ++i)
+  vector<tiling_def> levels(raster.levels);
+  sort(begin(levels), end(levels), [](const tiling_def& a, const tiling_def& b){ return a.pixel_area() < b.pixel_area(); });
+  const int width(levels.size() < 10? 1: 2);
+  for (size_t i(0); i < levels.size(); ++i)
   {
-    raster_level lvl;
-    lvl.resolution_x = raster.levels[i].resolution_x;
-    lvl.resolution_y = raster.levels[i].resolution_y;
+    tiling_def lvl;
+    lvl.resolution_x = levels[i].resolution_x;
+    lvl.resolution_y = levels[i].resolution_y;
     lvl.geometry.schema = schema;
-    lvl.geometry.qualifier = dct->fit_identifier(raster.levels[i].geometry.qualifier);
-    lvl.raster = dct->fit_column(raster.levels[i].raster);
+    lvl.geometry.qualifier = dct->fit_identifier(levels[i].geometry.qualifier);
+    lvl.raster = dct->fit_column(levels[i].raster);
     if (i == 0)
     {
       lvl.geometry.name = res.id.name;

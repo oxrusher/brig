@@ -12,7 +12,7 @@
 #include <brig/database/detail/get_raster_layers.hpp>
 #include <brig/database/detail/get_schema.hpp>
 #include <brig/database/detail/get_srid.hpp>
-#include <brig/database/detail/get_table_definition.hpp>
+#include <brig/database/detail/get_table_def.hpp>
 #include <brig/database/detail/get_tables.hpp>
 #include <brig/database/detail/inserter.hpp>
 #include <brig/database/detail/pool.hpp>
@@ -40,28 +40,28 @@ public:
 
   std::vector<identifier> get_tables() override;
   std::vector<identifier> get_geometry_layers() override;
-  std::vector<raster_pyramid> get_raster_layers() override;
-  table_definition get_table_definition(const identifier& tbl) override;
+  std::vector<pyramid_def> get_raster_layers() override;
+  table_def get_table_def(const identifier& tbl) override;
 
-  brig::boost::box get_mbr(const table_definition& tbl, const std::string& col) override;
-  std::shared_ptr<rowset> select(const table_definition& tbl) override;
+  brig::boost::box get_mbr(const table_def& tbl, const std::string& col) override;
+  std::shared_ptr<rowset> select(const table_def& tbl) override;
 
   /*!
-  AFTER CALL: define bounding box with boost::as_binary() if column_definition.query_value is empty blob_t
+  AFTER CALL: define bounding box with boost::as_binary() if column_def.query_value is empty blob_t
   */
-  table_definition fit_to_create(const table_definition& tbl) override;
-  void create(const table_definition& tbl) override;
-  void drop(const table_definition& tbl) override;
+  table_def fit_to_create(const table_def& tbl) override;
+  void create(const table_def& tbl) override;
+  void drop(const table_def& tbl) override;
   
-  raster_pyramid fit_to_reg(const raster_pyramid& raster) override;
-  void reg(const raster_pyramid& raster) override;
-  void unreg(const raster_pyramid& raster) override;
+  pyramid_def fit_to_reg(const pyramid_def& raster) override;
+  void reg(const pyramid_def& raster) override;
+  void unreg(const pyramid_def& raster) override;
 
-  std::shared_ptr<inserter> get_inserter(const table_definition& tbl) override;
+  std::shared_ptr<inserter> get_inserter(const table_def& tbl) override;
 
   std::shared_ptr<command> get_command();
-  void create(const table_definition& tbl, std::vector<std::string>& sql);
-  void reg(const raster_pyramid& raster, std::vector<std::string>& sql);
+  void create(const table_def& tbl, std::vector<std::string>& sql);
+  void reg(const pyramid_def& raster, std::vector<std::string>& sql);
 }; // connection
 
 template <bool Threading>
@@ -91,17 +91,17 @@ std::vector<identifier> connection<Threading>::get_geometry_layers()
 }
 
 template <bool Threading>
-table_definition connection<Threading>::get_table_definition(const identifier& tbl)
+table_def connection<Threading>::get_table_def(const identifier& tbl)
 {
   using namespace std;
   using namespace detail;
   unique_ptr<command, deleter_t> cmd(m_pool->allocate(), deleter_t(m_pool));
   unique_ptr<dialect> dct(dialect_factory(cmd->system()));
-  return detail::get_table_definition(dct.get(), cmd.get(), tbl);
+  return detail::get_table_def(dct.get(), cmd.get(), tbl);
 }
 
 template <bool Threading>
-brig::boost::box connection<Threading>::get_mbr(const table_definition& tbl, const std::string& col)
+brig::boost::box connection<Threading>::get_mbr(const table_def& tbl, const std::string& col)
 {
   using namespace std;
   using namespace detail;
@@ -111,13 +111,13 @@ brig::boost::box connection<Threading>::get_mbr(const table_definition& tbl, con
 }
 
 template <bool Threading>
-table_definition connection<Threading>::fit_to_create(const table_definition& tbl)
+table_def connection<Threading>::fit_to_create(const table_def& tbl)
 {
   using namespace std;
   using namespace detail;
   unique_ptr<command, deleter_t> cmd(m_pool->allocate(), deleter_t(m_pool));
   unique_ptr<dialect> dct(dialect_factory(cmd->system()));
-  table_definition res(dct->fit_table(tbl, get_schema(dct.get(), cmd.get())));
+  table_def res(dct->fit_table(tbl, get_schema(dct.get(), cmd.get())));
   for (auto col(begin(res.columns)); col != end(res.columns); ++col)
     if (col->epsg >= 0)
       col->srid = get_srid(dct.get(), cmd.get(), col->epsg);
@@ -125,7 +125,7 @@ table_definition connection<Threading>::fit_to_create(const table_definition& tb
 }
 
 template <bool Threading>
-void connection<Threading>::create(const table_definition& tbl, std::vector<std::string>& sql)
+void connection<Threading>::create(const table_def& tbl, std::vector<std::string>& sql)
 {
   using namespace std;
   using namespace detail;
@@ -135,7 +135,7 @@ void connection<Threading>::create(const table_definition& tbl, std::vector<std:
 }
 
 template <bool Threading>
-void connection<Threading>::create(const table_definition& tbl)
+void connection<Threading>::create(const table_def& tbl)
 {
   using namespace std;
   using namespace detail;
@@ -148,7 +148,7 @@ void connection<Threading>::create(const table_definition& tbl)
 }
 
 template <bool Threading>
-void connection<Threading>::drop(const table_definition& tbl)
+void connection<Threading>::drop(const table_def& tbl)
 {
   using namespace std;
   using namespace detail;
@@ -161,7 +161,7 @@ void connection<Threading>::drop(const table_definition& tbl)
 }
 
 template <bool Threading>
-std::vector<raster_pyramid> connection<Threading>::get_raster_layers()
+std::vector<pyramid_def> connection<Threading>::get_raster_layers()
 {
   using namespace std;
   using namespace detail;
@@ -171,7 +171,7 @@ std::vector<raster_pyramid> connection<Threading>::get_raster_layers()
 }
 
 template <bool Threading>
-raster_pyramid connection<Threading>::fit_to_reg(const raster_pyramid& raster)
+pyramid_def connection<Threading>::fit_to_reg(const pyramid_def& raster)
 {
   using namespace std;
   using namespace detail;
@@ -181,7 +181,7 @@ raster_pyramid connection<Threading>::fit_to_reg(const raster_pyramid& raster)
 }
 
 template <bool Threading>
-void connection<Threading>::reg(const raster_pyramid& raster, std::vector<std::string>& sql)
+void connection<Threading>::reg(const pyramid_def& raster, std::vector<std::string>& sql)
 {
   using namespace std;
   using namespace detail;
@@ -191,7 +191,7 @@ void connection<Threading>::reg(const raster_pyramid& raster, std::vector<std::s
 }
 
 template <bool Threading>
-void connection<Threading>::reg(const raster_pyramid& raster)
+void connection<Threading>::reg(const pyramid_def& raster)
 {
   using namespace std;
   using namespace detail;
@@ -204,7 +204,7 @@ void connection<Threading>::reg(const raster_pyramid& raster)
 }
 
 template <bool Threading>
-void connection<Threading>::unreg(const raster_pyramid& raster)
+void connection<Threading>::unreg(const pyramid_def& raster)
 {
   using namespace std;
   using namespace detail;
@@ -217,21 +217,21 @@ void connection<Threading>::unreg(const raster_pyramid& raster)
 }
 
 template <bool Threading>
-std::shared_ptr<rowset> connection<Threading>::select(const table_definition& tbl)
+std::shared_ptr<rowset> connection<Threading>::select(const table_def& tbl)
 {
   using namespace std;
   using namespace detail;
   auto cmd(get_command());
   unique_ptr<dialect> dct(dialect_factory(cmd->system()));
   string sql;
-  vector<column_definition> params;
+  vector<column_def> params;
   sql_select(dct.get(), cmd->traits(), tbl, sql, params);
   cmd->exec(sql, params);
   return cmd;
 }
 
 template <bool Threading>
-std::shared_ptr<inserter> connection<Threading>::get_inserter(const table_definition& tbl)
+std::shared_ptr<inserter> connection<Threading>::get_inserter(const table_def& tbl)
 {
   return std::shared_ptr<inserter>(new detail::inserter<deleter_t>(m_pool->allocate(), deleter_t(m_pool), tbl));
 } // connection::

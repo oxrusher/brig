@@ -7,7 +7,7 @@
 #include <brig/database/detail/dialect_factory.hpp>
 #include <brig/detail/get_columns.hpp>
 #include <brig/inserter.hpp>
-#include <brig/table_definition.hpp>
+#include <brig/table_def.hpp>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -19,20 +19,20 @@ template <typename Deleter>
 class inserter : public brig::inserter {
   std::unique_ptr<command, Deleter> m_cmd;
   std::string m_sql;
-  std::vector<column_definition> m_params;
+  std::vector<column_def> m_params;
 public:
-  inserter(command* cmd, Deleter&& deleter, const table_definition& tbl);
+  inserter(command* cmd, Deleter&& deleter, const table_def& tbl);
   void insert(std::vector<variant>& row) override;
   void flush() override  { m_cmd->commit(); }
 }; // inserter
 
 template <typename Deleter>
-inserter<Deleter>::inserter(command* cmd, Deleter&& deleter, const table_definition& tbl) : m_cmd(cmd, std::move(deleter))
+inserter<Deleter>::inserter(command* cmd, Deleter&& deleter, const table_def& tbl) : m_cmd(cmd, std::move(deleter))
 {
   using namespace std;
   unique_ptr<dialect> dct(dialect_factory(m_cmd->system()));
   const command_traits trs(cmd->traits());
-  vector<column_definition> cols = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
+  vector<column_def> cols = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
   string prefix, suffix;
   for (auto col(begin(cols)); col != end(cols); ++col)
   {

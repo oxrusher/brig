@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_INDEX_DEFINITION_HPP
-#define BRIG_INDEX_DEFINITION_HPP
+#ifndef BRIG_INDEX_DEF_HPP
+#define BRIG_INDEX_DEF_HPP
 
 #include <brig/global.hpp>
 #include <brig/identifier.hpp>
@@ -10,14 +10,14 @@
 
 namespace brig {
 
-struct index_definition {
+struct index_def {
   identifier id;
   index_type type;
   std::vector<std::string> columns;
 
-  index_definition() : type(VoidIndex)  {}
-}; // index_definition
+  index_def() : type(VoidIndex)  {}
+}; // index_def
 
 } // brig
 
-#endif // BRIG_INDEX_DEFINITION_HPP
+#endif // BRIG_INDEX_DEF_HPP

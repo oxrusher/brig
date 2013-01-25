@@ -22,23 +22,23 @@ struct dialect_db2 : dialect {
 
   std::string sql_columns(const identifier& tbl) override;
   std::string sql_indexed_columns(const identifier& tbl) override;
-  std::string sql_spatial_detail(const table_definition& tbl, const std::string& col) override;
+  std::string sql_spatial_detail(const table_def& tbl, const std::string& col) override;
   column_type get_type(const identifier& type_lcase, int scale) override;
 
-  std::string sql_mbr(const table_definition& tbl, const std::string& col) override;
+  std::string sql_mbr(const table_def& tbl, const std::string& col) override;
 
   std::string sql_schema() override;
-  column_definition fit_column(const column_definition& col) override;
+  column_def fit_column(const column_def& col) override;
   std::string sql_srid(int epsg) override;
 
-  void sql_register_spatial_column(const table_definition& tbl, const std::string& col, std::vector<std::string>& sql) override;
+  void sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql) override;
   void sql_unregister_spatial_column(const identifier& layer, std::vector<std::string>& sql) override;
-  std::string sql_create_spatial_index(const table_definition& tbl, const std::string& col) override;
+  std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
 
-  std::string sql_parameter(const command_traits& trs, const column_definition& param, size_t order) override;
-  std::string sql_column(const command_traits& trs, const column_definition& col) override;
+  std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) override;
+  std::string sql_column(const command_traits& trs, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
-  std::string sql_intersect(const table_definition& tbl, const std::string& col, const boost::box& box) override;
+  std::string sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box) override;
 }; // dialect_db2
 
 inline std::string dialect_db2::sql_tables()
@@ -72,7 +72,7 @@ WHERE i.INDSCHEMA = c.INDSCHEMA AND i.INDNAME = c.INDNAME AND i.TABSCHEMA = '" +
 ORDER BY pri DESC, i.INDSCHEMA, i.INDNAME, c.COLSEQ";
 }
 
-inline std::string dialect_db2::sql_spatial_detail(const table_definition& tbl, const std::string& col)
+inline std::string dialect_db2::sql_spatial_detail(const table_def& tbl, const std::string& col)
 {
   return "\
 SELECT c.SRS_ID, (CASE s.ORGANIZATION WHEN 'EPSG' THEN s.ORGANIZATION_COORDSYS_ID ELSE NULL END) epsg \
@@ -90,7 +90,7 @@ inline column_type dialect_db2::get_type(const identifier& type_lcase, int scale
   return get_iso_type(type_lcase.name, scale);
 }
 
-inline std::string dialect_db2::sql_mbr(const table_definition& tbl, const std::string& col)
+inline std::string dialect_db2::sql_mbr(const table_def& tbl, const std::string& col)
 {
   using namespace std;
 
@@ -105,9 +105,9 @@ inline std::string dialect_db2::sql_schema()
   return "VALUES RTRIM(CURRENT_SCHEMA)";
 }
 
-inline column_definition dialect_db2::fit_column(const column_definition& col)
+inline column_def dialect_db2::fit_column(const column_def& col)
 {
-  column_definition res;
+  column_def res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
@@ -135,7 +135,7 @@ inline std::string dialect_db2::sql_srid(int epsg)
   return "SELECT SRS_ID FROM DB2GSE.ST_SPATIAL_REFERENCE_SYSTEMS WHERE ORGANIZATION LIKE 'EPSG' AND ORGANIZATION_COORDSYS_ID = " + string_cast<char>(epsg) + " ORDER BY SRS_ID FETCH FIRST 1 ROWS ONLY";
 }
 
-inline void dialect_db2::sql_register_spatial_column(const table_definition& tbl, const std::string& col, std::vector<std::string>& sql)
+inline void dialect_db2::sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql)
 {
   sql.push_back("\
 BEGIN ATOMIC \
@@ -162,19 +162,19 @@ call DB2GSE.ST_unregister_spatial_column('" + sql_identifier(layer.schema) + "',
 END");
 }
 
-inline std::string dialect_db2::sql_create_spatial_index(const table_definition& tbl, const std::string& col)
+inline std::string dialect_db2::sql_create_spatial_index(const table_def& tbl, const std::string& col)
 {
   return "CREATE INDEX " + sql_identifier(tbl.rtree(col)->id.name) + " ON " + sql_identifier(tbl.id.name) + " (" + sql_identifier(col) + ") EXTEND USING DB2GSE.SPATIAL_INDEX (1, 0, 0)";
 }
 
-inline std::string dialect_db2::sql_parameter(const command_traits& trs, const column_definition& param, size_t order)
+inline std::string dialect_db2::sql_parameter(const command_traits& trs, const column_def& param, size_t order)
 {
   const std::string marker(trs.sql_parameter_marker(order));
   if (Geometry == param.type && !trs.writable_geometry) return param.type_lcase.to_string() + "(CAST(" + marker + " AS BLOB (100M)), " + string_cast<char>(param.srid) + ")";
   return marker;
 }
 
-inline std::string dialect_db2::sql_column(const command_traits& trs, const column_definition& col)
+inline std::string dialect_db2::sql_column(const command_traits& trs, const column_def& col)
 {
   using namespace std;
 
@@ -192,7 +192,7 @@ inline void dialect_db2::sql_limit(int rows, std::string&, std::string&, std::st
   sql_suffix = "FETCH FIRST " + sql_rows + " ROWS ONLY OPTIMIZE FOR " + sql_rows + " ROWS";
 }
 
-inline std::string dialect_db2::sql_intersect(const table_definition& tbl, const std::string& col, const boost::box& box)
+inline std::string dialect_db2::sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box)
 {
   using namespace std;
 

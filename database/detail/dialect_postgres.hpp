@@ -22,29 +22,29 @@ struct dialect_postgres : dialect {
   std::string sql_geometries() override;
   std::string sql_test_rasters() override;
   std::string sql_rasters() override;
-  void init_raster(raster_pyramid& raster) override;
+  void init_raster(pyramid_def& raster) override;
 
   std::string sql_columns(const identifier& tbl) override;
   std::string sql_indexed_columns(const identifier& tbl) override;
-  std::string sql_spatial_detail(const table_definition& tbl, const std::string& col) override;
+  std::string sql_spatial_detail(const table_def& tbl, const std::string& col) override;
   column_type get_type(const identifier& type_lcase, int scale) override;
 
-  std::string sql_mbr(const table_definition& tbl, const std::string& col) override;
+  std::string sql_mbr(const table_def& tbl, const std::string& col) override;
 
   std::string sql_schema() override;
-  column_definition fit_column(const column_definition& col) override;
+  column_def fit_column(const column_def& col) override;
   std::string sql_srid(int epsg) override;
 
-  std::string sql_column_definition(const column_definition& col) override;
-  void sql_register_spatial_column(const table_definition& tbl, const std::string& col, std::vector<std::string>& sql) override;
+  std::string sql_column_def(const column_def& col) override;
+  void sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql) override;
   void sql_unregister_spatial_column(const identifier& layer, std::vector<std::string>& sql) override;
-  std::string sql_create_spatial_index(const table_definition& tbl, const std::string& col) override;
+  std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
 
-  std::string sql_parameter(const command_traits& trs, const column_definition& param, size_t order) override;
-  std::string sql_column(const command_traits& trs, const column_definition& col) override;
+  std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) override;
+  std::string sql_column(const command_traits& trs, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
-  bool need_to_normalize_hemisphere(const column_definition& col) override;
-  std::string sql_intersect(const table_definition& tbl, const std::string& col, const boost::box& box) override;
+  bool need_to_normalize_hemisphere(const column_def& col) override;
+  std::string sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box) override;
 }; // dialect_postgres
 
 inline std::string dialect_postgres::sql_tables()
@@ -94,7 +94,7 @@ WHERE m.oid = mth AND a.attrelid = tbl AND a.attnum = key \
 ORDER BY pri DESC, scm, name, gs";
 }
 
-inline std::string dialect_postgres::sql_spatial_detail(const table_definition& tbl, const std::string& col)
+inline std::string dialect_postgres::sql_spatial_detail(const table_def& tbl, const std::string& col)
 {
   const std::string& dbms_type_name_lcase(tbl[col]->type_lcase.name);
   if (dbms_type_name_lcase.compare("raster") == 0)
@@ -131,7 +131,7 @@ inline column_type dialect_postgres::get_type(const identifier& type_lcase, int 
   return get_iso_type(type_lcase.name, scale);
 }
 
-inline std::string dialect_postgres::sql_mbr(const table_definition& tbl, const std::string& col)
+inline std::string dialect_postgres::sql_mbr(const table_def& tbl, const std::string& col)
 {
   const std::string& dbms_type_name_lcase(tbl[col]->type_lcase.name);
   if (dbms_type_name_lcase.compare("raster") == 0)
@@ -151,9 +151,9 @@ inline std::string dialect_postgres::sql_schema()
   return "SELECT current_schema()";
 }
 
-inline column_definition dialect_postgres::fit_column(const column_definition& col)
+inline column_def dialect_postgres::fit_column(const column_def& col)
 {
-  column_definition res;
+  column_def res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
@@ -181,12 +181,12 @@ inline std::string dialect_postgres::sql_srid(int epsg)
   return "SELECT srid FROM public.spatial_ref_sys WHERE auth_name = 'EPSG' AND auth_srid = " + string_cast<char>(epsg) + " ORDER BY srid FETCH FIRST 1 ROWS ONLY";
 }
 
-inline std::string dialect_postgres::sql_column_definition(const column_definition& col)
+inline std::string dialect_postgres::sql_column_def(const column_def& col)
 {
-  return Geometry == col.type? "": dialect::sql_column_definition(col);
+  return Geometry == col.type? "": dialect::sql_column_def(col);
 }
 
-inline void dialect_postgres::sql_register_spatial_column(const table_definition& tbl, const std::string& col, std::vector<std::string>& sql)
+inline void dialect_postgres::sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql)
 {
   sql.push_back("SELECT AddGeometryColumn('" + tbl.id.name + "', '" + col + "', " + string_cast<char>(tbl[col]->srid) + ", 'GEOMETRY', 2)");
 }
@@ -196,7 +196,7 @@ inline void dialect_postgres::sql_unregister_spatial_column(const identifier& la
   sql.push_back("SELECT DropGeometryColumn('" + layer.schema + "', '" + layer.name + "', '" + layer.qualifier + "')");
 }
 
-inline std::string dialect_postgres::sql_create_spatial_index(const table_definition& tbl, const std::string& col)
+inline std::string dialect_postgres::sql_create_spatial_index(const table_def& tbl, const std::string& col)
 {
   return "CREATE INDEX " + sql_identifier(tbl.rtree(col)->id.name) + " ON " + sql_identifier(tbl.id.name) + " USING GIST(" + sql_identifier(col) + ")";
 }
@@ -227,7 +227,7 @@ ON r.r_table_schema = o.o_table_schema AND r.r_table_name = o.o_table_name AND r
 ORDER BY base_scm, base_tbl, base_col, res_x, res_y";
 }
 
-inline void dialect_postgres::init_raster(raster_pyramid& raster)
+inline void dialect_postgres::init_raster(pyramid_def& raster)
 {
   using namespace std;
 
@@ -240,7 +240,7 @@ inline void dialect_postgres::init_raster(raster_pyramid& raster)
   }
 }
 
-inline std::string dialect_postgres::sql_parameter(const command_traits& trs, const column_definition& param, size_t order)
+inline std::string dialect_postgres::sql_parameter(const command_traits& trs, const column_def& param, size_t order)
 {
   using namespace std;
 
@@ -258,7 +258,7 @@ inline std::string dialect_postgres::sql_parameter(const command_traits& trs, co
   return marker;
 }
 
-inline std::string dialect_postgres::sql_column(const command_traits& trs, const column_definition& col)
+inline std::string dialect_postgres::sql_column(const command_traits& trs, const column_def& col)
 {
   using namespace std;
 
@@ -280,12 +280,12 @@ inline void dialect_postgres::sql_limit(int rows, std::string&, std::string&, st
   sql_suffix = "FETCH FIRST " + string_cast<char>(rows) + " ROWS ONLY"; // SQL:2008
 }
 
-inline bool dialect_postgres::need_to_normalize_hemisphere(const column_definition& col)
+inline bool dialect_postgres::need_to_normalize_hemisphere(const column_def& col)
 {
   return col.type_lcase.name.compare("geography") == 0;
 }
 
-inline std::string dialect_postgres::sql_intersect(const table_definition& tbl, const std::string& col, const boost::box& box)
+inline std::string dialect_postgres::sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box)
 {
   using namespace std;
 

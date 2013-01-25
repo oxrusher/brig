@@ -6,7 +6,7 @@
 #include <boost/variant/apply_visitor.hpp>
 #include <boost/variant/static_visitor.hpp>
 #include <brig/blob_t.hpp>
-#include <brig/column_definition.hpp>
+#include <brig/column_def.hpp>
 #include <brig/database/cubrid/detail/lib.hpp>
 #include <brig/null_t.hpp>
 #include <brig/variant.hpp>
@@ -38,7 +38,7 @@ inline int binding_visitor::operator()(const blob_t& r) const
   return lib::singleton().p_cci_bind_param(req, i, CCI_A_TYPE_BIT, &bit, type != CCI_U_TYPE_NULL? type: CCI_U_TYPE_BIT, 0);
 }
 
-inline int bind(int req, size_t order, const column_definition& param)
+inline int bind(int req, size_t order, const column_def& param)
 {
   binding_visitor visitor;
   visitor.req = req;

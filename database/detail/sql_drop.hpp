@@ -5,14 +5,14 @@
 
 #include <brig/database/detail/dialect.hpp>
 #include <brig/global.hpp>
-#include <brig/table_definition.hpp>
+#include <brig/table_def.hpp>
 #include <iterator>
 #include <string>
 #include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-inline void sql_drop(dialect* dct, const table_definition& tbl, std::vector<std::string>& sql)
+inline void sql_drop(dialect* dct, const table_def& tbl, std::vector<std::string>& sql)
 {
   using namespace std;
 

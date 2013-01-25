@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_DETAIL_GET_TABLE_DEFINITION_SQLITE_HPP
-#define BRIG_DATABASE_DETAIL_GET_TABLE_DEFINITION_SQLITE_HPP
+#ifndef BRIG_DATABASE_DETAIL_GET_TABLE_DEF_SQLITE_HPP
+#define BRIG_DATABASE_DETAIL_GET_TABLE_DEF_SQLITE_HPP
 
 #include <algorithm>
 #include <brig/database/command.hpp>
@@ -11,7 +11,7 @@
 #include <brig/global.hpp>
 #include <brig/numeric_cast.hpp>
 #include <brig/string_cast.hpp>
-#include <brig/table_definition.hpp>
+#include <brig/table_def.hpp>
 #include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
 #include <iterator>
@@ -19,19 +19,19 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline table_definition get_table_definition_sqlite(dialect* dct, command* cmd, const identifier& tbl)
+inline table_def get_table_def_sqlite(dialect* dct, command* cmd, const identifier& tbl)
 {
   using namespace std;
 
   // columns
-  table_definition res;
+  table_def res;
   res.id = tbl;
   vector<string> keys;
   vector<variant> row;
   cmd->exec("PRAGMA TABLE_INFO(" + dct->sql_identifier(tbl.name) + ")");
   while (cmd->fetch(row))
   {
-    column_definition col;
+    column_def col;
     col.name = string_cast<char>(row[1]);
     col.type_lcase.name = brig::unicode::transform<char>(string_cast<char>(row[2]), brig::unicode::lower_case);
 
@@ -49,7 +49,7 @@ inline table_definition get_table_definition_sqlite(dialect* dct, command* cmd, 
 
   if (!keys.empty())
   {
-    index_definition pri_idx;
+    index_def pri_idx;
     pri_idx.type = Primary;
     pri_idx.columns = keys;
     res.indexes.push_back(pri_idx);
@@ -60,7 +60,7 @@ inline table_definition get_table_definition_sqlite(dialect* dct, command* cmd, 
   cmd->exec("PRAGMA INDEX_LIST(" + dct->sql_identifier(tbl.name) + ")");
   while (cmd->fetch(row))
   {
-    index_definition idx;
+    index_def idx;
     idx.id.name = string_cast<char>(row[1]);
     int unique(0);
     idx.type = (numeric_cast(row[2], unique) && !unique)? Duplicate: Unique;
@@ -97,7 +97,7 @@ inline table_definition get_table_definition_sqlite(dialect* dct, command* cmd, 
       res.indexes[0].columns = move(res.indexes[i].columns);
     }
   }
-  auto new_end(remove_if(begin(res.indexes), end(res.indexes), [](const index_definition& idx){ return VoidIndex == idx.type; }));
+  auto new_end(remove_if(begin(res.indexes), end(res.indexes), [](const index_def& idx){ return VoidIndex == idx.type; }));
   res.indexes.resize(distance(begin(res.indexes), new_end));
 
   // srid, epsg, spatial index
@@ -116,7 +116,7 @@ LEFT JOIN SPATIAL_REF_SYS s ON c.SRID = s.SRID");
         int indexed(0);
         if (numeric_cast(row[2], indexed) && indexed == 1)
         {
-          index_definition idx;
+          index_def idx;
           idx.type = Spatial;
           idx.columns.push_back(res.columns[i].name);
           res.indexes.push_back(idx);
@@ -129,4 +129,4 @@ LEFT JOIN SPATIAL_REF_SYS s ON c.SRID = s.SRID");
 
 } } } // brig::database::detail
 
-#endif // BRIG_DATABASE_DETAIL_GET_TABLE_DEFINITION_SQLITE_HPP
+#endif // BRIG_DATABASE_DETAIL_GET_TABLE_DEF_SQLITE_HPP

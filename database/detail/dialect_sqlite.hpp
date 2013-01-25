@@ -27,31 +27,31 @@ struct dialect_sqlite : dialect {
   std::string sql_geometries() override;
   std::string sql_test_rasters() override;
   std::string sql_rasters() override;
-  void init_raster(raster_pyramid& raster) override;
+  void init_raster(pyramid_def& raster) override;
 
   std::string sql_columns(const identifier&) override  { throw std::runtime_error("DBMS error"); }
   std::string sql_indexed_columns(const identifier&) override  { throw std::runtime_error("DBMS error"); }
-  std::string sql_spatial_detail(const table_definition&, const std::string&) override  { throw std::runtime_error("DBMS error"); }
+  std::string sql_spatial_detail(const table_def&, const std::string&) override  { throw std::runtime_error("DBMS error"); }
   column_type get_type(const identifier&, int) override  { throw std::runtime_error("DBMS error"); }
 
-  std::string sql_mbr(const table_definition& tbl, const std::string& col) override;
+  std::string sql_mbr(const table_def& tbl, const std::string& col) override;
 
   std::string sql_schema() override  { return ""; }
   std::string fit_identifier(const std::string& id) override;
-  column_definition fit_column(const column_definition& col) override;
+  column_def fit_column(const column_def& col) override;
   std::string sql_srid(int epsg) override;
 
-  std::string sql_column_definition(const column_definition& col) override;
-  void sql_register_spatial_column(const table_definition& tbl, const std::string& col, std::vector<std::string>& sql) override;
+  std::string sql_column_def(const column_def& col) override;
+  void sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql) override;
   void sql_unregister_spatial_column(const identifier& layer, std::vector<std::string>& sql) override;
-  std::string sql_create_spatial_index(const table_definition& tbl, const std::string& col) override;
+  std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
   void sql_drop_spatial_index(const identifier& layer, std::vector<std::string>& sql) override;
 
-  std::string sql_parameter(const command_traits& trs, const column_definition& param, size_t order) override;
-  std::string sql_column(const command_traits& trs, const column_definition& col) override;
+  std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) override;
+  std::string sql_column(const command_traits& trs, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
-  void sql_intersect(const command_traits& trs, const table_definition& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_definition>& keys) override;
-  std::string sql_intersect(const table_definition& tbl, const std::string& col, const boost::box& box) override;
+  void sql_intersect(const command_traits& trs, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys) override;
+  std::string sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box) override;
 }; // dialect_sqlite
 
 inline std::string dialect_sqlite::sql_tables()
@@ -64,7 +64,7 @@ inline std::string dialect_sqlite::sql_geometries()
   return "SELECT '' scm, t.name tbl, g.f_geometry_column col FROM geometry_columns g JOIN sqlite_master t ON LOWER(g.f_table_name) = LOWER(t.name)";
 }
 
-inline std::string dialect_sqlite::sql_mbr(const table_definition& tbl, const std::string& col)
+inline std::string dialect_sqlite::sql_mbr(const table_def& tbl, const std::string& col)
 {
   const std::string c(sql_identifier(col));
   return "SELECT Min(MbrMinX(" + c + ")), Min(MbrMinY(" + c + ")), Max(MbrMaxX(" + c + ")), Max(MbrMaxY(" + c + ")) FROM " + sql_identifier(tbl.id.name);
@@ -75,9 +75,9 @@ inline std::string dialect_sqlite::fit_identifier(const std::string& id)
   return brig::unicode::transform<char>(id, brig::unicode::lower_case);
 }
 
-inline column_definition dialect_sqlite::fit_column(const column_definition& col)
+inline column_def dialect_sqlite::fit_column(const column_def& col)
 {
-  column_definition res;
+  column_def res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
@@ -101,12 +101,12 @@ inline std::string dialect_sqlite::sql_srid(int epsg)
   return "SELECT srid FROM spatial_ref_sys WHERE auth_name = 'epsg' AND auth_srid = " + string_cast<char>(epsg) + " ORDER BY srid LIMIT 1";
 }
 
-inline std::string dialect_sqlite::sql_column_definition(const column_definition& col)
+inline std::string dialect_sqlite::sql_column_def(const column_def& col)
 {
-  return Geometry == col.type? "": dialect::sql_column_definition(col);
+  return Geometry == col.type? "": dialect::sql_column_def(col);
 }
 
-inline void dialect_sqlite::sql_register_spatial_column(const table_definition& tbl, const std::string& col, std::vector<std::string>& sql)
+inline void dialect_sqlite::sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql)
 {
   sql.push_back("SELECT AddGeometryColumn('" + tbl.id.name + "', '" + col + "', " + string_cast<char>(tbl[col]->srid) + ", 'GEOMETRY', 2)");
 }
@@ -116,7 +116,7 @@ inline void dialect_sqlite::sql_unregister_spatial_column(const identifier& laye
   sql.push_back("SELECT DiscardGeometryColumn('" + layer.name + "', '" + layer.qualifier + "')");
 }
 
-inline std::string dialect_sqlite::sql_create_spatial_index(const table_definition& tbl, const std::string& col)
+inline std::string dialect_sqlite::sql_create_spatial_index(const table_def& tbl, const std::string& col)
 {
   return "SELECT CreateSpatialIndex('" + tbl.id.name + "', '" + col + "')";
 }
@@ -140,16 +140,16 @@ FROM raster_pyramids r JOIN geometry_columns g ON LOWER(g.f_table_name) = LOWER(
 ORDER BY base_tbl, base_col, res_x, res_y";
 }
 
-inline void dialect_sqlite::init_raster(raster_pyramid& raster)
+inline void dialect_sqlite::init_raster(pyramid_def& raster)
 {
   const std::string tbl(sql_identifier(raster.id.name));
   for (size_t i(0); i < raster.levels.size(); ++i)
   {
     const bool hint((i * 6) < raster.levels.size());
-    raster_level& lvl(raster.levels[i]);
+    tiling_def& lvl(raster.levels[i]);
     lvl.raster.query_expression = "(SELECT r FROM (SELECT id i, raster r FROM " + tbl + ") t WHERE t.i = " + "id)";
     {
-      column_definition col;
+      column_def col;
       col.name = "pixel_x_size";
       col.type = Double;
       col.query_expression = hint? "+pixel_x_size": "";
@@ -157,7 +157,7 @@ inline void dialect_sqlite::init_raster(raster_pyramid& raster)
       lvl.query_conditions.push_back(col);
     }
     {
-      column_definition col;
+      column_def col;
       col.name = "pixel_y_size";
       col.type = Double;
       col.query_expression = hint? "+pixel_y_size": "";
@@ -167,14 +167,14 @@ inline void dialect_sqlite::init_raster(raster_pyramid& raster)
   }
 }
 
-inline std::string dialect_sqlite::sql_parameter(const command_traits& trs, const column_definition& param, size_t order)
+inline std::string dialect_sqlite::sql_parameter(const command_traits& trs, const column_def& param, size_t order)
 {
   const std::string marker(trs.sql_parameter_marker(order));
   if (Geometry == param.type && !trs.writable_geometry) return "GeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ")";
   return marker;
 }
 
-inline std::string dialect_sqlite::sql_column(const command_traits& trs, const column_definition& col)
+inline std::string dialect_sqlite::sql_column(const command_traits& trs, const column_def& col)
 {
   using namespace std;
 
@@ -189,13 +189,13 @@ inline void dialect_sqlite::sql_limit(int rows, std::string&, std::string&, std:
   sql_suffix = "LIMIT " + string_cast<char>(rows);
 }
 
-inline void dialect_sqlite::sql_intersect(const command_traits&, const table_definition& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_definition>& keys)
+inline void dialect_sqlite::sql_intersect(const command_traits&, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys)
 {
   using namespace std;
 
   if (!tbl.rtree(col)) return;
 
-  column_definition key;
+  column_def key;
   key.name = "rowid";
   key.type = Integer;
   key.type_lcase.name = "int";
@@ -212,7 +212,7 @@ inline void dialect_sqlite::sql_intersect(const command_traits&, const table_def
   }
 }
 
-inline std::string dialect_sqlite::sql_intersect(const table_definition& tbl, const std::string& col, const boost::box& box)
+inline std::string dialect_sqlite::sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box)
 {
   using namespace std;
 

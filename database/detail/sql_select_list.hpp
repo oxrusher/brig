@@ -5,14 +5,14 @@
 
 #include <brig/database/command_traits.hpp>
 #include <brig/database/detail/dialect.hpp>
-#include <brig/column_definition.hpp>
+#include <brig/column_def.hpp>
 #include <iterator>
 #include <string>
 #include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-inline std::string sql_select_list(dialect* dct, const command_traits& trs, const std::vector<column_definition>& cols)
+inline std::string sql_select_list(dialect* dct, const command_traits& trs, const std::vector<column_def>& cols)
 {
   using namespace std;
 

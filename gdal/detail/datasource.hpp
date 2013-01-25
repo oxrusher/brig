@@ -13,7 +13,7 @@
 #include <brig/proj/shared_pj.hpp>
 #include <brig/rowset.hpp>
 #include <brig/string_cast.hpp>
-#include <brig/table_definition.hpp>
+#include <brig/table_def.hpp>
 #include <cstdlib>
 #include <cstring>
 #include <stdexcept>
@@ -36,16 +36,16 @@ public:
 
   std::vector<identifier> get_tables();
   std::vector<identifier> get_geometry_layers();
-  table_definition get_table_definition(const identifier& tbl);
+  table_def get_table_def(const identifier& tbl);
 
-  brig::boost::box get_mbr(const table_definition& tbl, const std::string& col);
-  void select(const table_definition& tbl);
+  brig::boost::box get_mbr(const table_def& tbl, const std::string& col);
+  void select(const table_def& tbl);
 
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
 
-  void create(const table_definition& tbl);
-  void drop(const table_definition& tbl);
+  void create(const table_def& tbl);
+  void drop(const table_def& tbl);
 }; // datasource
 
 inline datasource::datasource(const std::string& ds, bool writable) : m_ds(0), m_lr(0), m_rows(-1)
@@ -95,17 +95,17 @@ inline std::vector<identifier> datasource::get_geometry_layers()
   return res;
 }
 
-inline table_definition datasource::get_table_definition(const identifier& tbl)
+inline table_def datasource::get_table_def(const identifier& tbl)
 {
   using namespace std;
 
   OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayerByName(m_ds, tbl.name.c_str()));
   if (!lr) throw runtime_error("GDAL error");
 
-  table_definition res;
+  table_def res;
   res.id.name = tbl.name;
 
-  column_definition col;
+  column_def col;
   col.name = lib::ogr_geom_wkb();
   col.type = Geometry;
   OGRSpatialReferenceH sr(lib::singleton().p_OGR_L_GetSpatialRef(lr));
@@ -152,7 +152,7 @@ inline table_definition datasource::get_table_definition(const identifier& tbl)
   return res;
 }
 
-inline brig::boost::box datasource::get_mbr(const table_definition& tbl, const std::string&)
+inline brig::boost::box datasource::get_mbr(const table_def& tbl, const std::string&)
 {
   using namespace std;
   using namespace brig::boost;
@@ -165,7 +165,7 @@ inline brig::boost::box datasource::get_mbr(const table_definition& tbl, const s
   return box(point(env.MinX, env.MinY), point(env.MaxX, env.MaxY));
 }
 
-inline void datasource::select(const table_definition& tbl)
+inline void datasource::select(const table_def& tbl)
 {
   using namespace std;
   using namespace brig::boost;
@@ -178,7 +178,7 @@ inline void datasource::select(const table_definition& tbl)
   if (!lr) throw runtime_error("GDAL error");
   OGRFeatureDefnH feature_def(lib::singleton().p_OGR_L_GetLayerDefn(lr));
   if (!feature_def) throw runtime_error("GDAL error");
-  vector<column_definition> cols = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
+  vector<column_def> cols = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
   for (auto col(begin(cols)); col != end(cols); ++col)
   {
     if (Geometry == col->type)
@@ -303,11 +303,11 @@ inline bool datasource::fetch(std::vector<variant>& row)
   return true;
 }
 
-inline void datasource::create(const table_definition& tbl)
+inline void datasource::create(const table_def& tbl)
 {
   using namespace std;
 
-  auto geom_col(find_if(begin(tbl.columns), end(tbl.columns), [](const column_definition& col){ return Geometry == col.type; }));
+  auto geom_col(find_if(begin(tbl.columns), end(tbl.columns), [](const column_def& col){ return Geometry == col.type; }));
   if (geom_col == end(tbl.columns)) throw runtime_error("GDAL error");
   auto srs(brig::detail::make_raii
     ( lib::singleton().p_OSRNewSpatialReference("GEOGCS[\"WGS 84\", DATUM[\"WGS_1984\", SPHEROID[\"WGS 84\",6378137,298.257223563]], PRIMEM[\"Greenwich\",0], UNIT[\"degree\",0.01745329251994328]]")
@@ -348,7 +348,7 @@ inline void datasource::create(const table_definition& tbl)
   lib::check(lib::singleton().p_OGR_DS_SyncToDisk(m_ds));
 }
 
-inline void datasource::drop(const table_definition& tbl)
+inline void datasource::drop(const table_def& tbl)
 {
   for (int i(0), count(lib::singleton().p_OGR_DS_GetLayerCount(m_ds)); i < count; ++i)
   {

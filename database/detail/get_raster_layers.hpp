@@ -5,21 +5,21 @@
 
 #include <brig/database/command.hpp>
 #include <brig/database/detail/dialect.hpp>
-#include <brig/database/detail/get_table_definition.hpp>
+#include <brig/database/detail/get_table_def.hpp>
 #include <brig/database/detail/simple_rasters.hpp>
 #include <brig/global.hpp>
-#include <brig/raster_pyramid.hpp>
+#include <brig/pyramid_def.hpp>
 #include <brig/string_cast.hpp>
 #include <iterator>
 #include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-inline std::vector<raster_pyramid> get_rasters(rowset* rs)
+inline std::vector<pyramid_def> get_rasters(rowset* rs)
 {
   using namespace std;
 
-  vector<raster_pyramid> res;
+  vector<pyramid_def> res;
   vector<variant> row;
   identifier prev_id;
   while (rs->fetch(row))
@@ -30,12 +30,12 @@ inline std::vector<raster_pyramid> get_rasters(rowset* rs)
     cur_id.qualifier = string_cast<char>(row[2]);
     if (cur_id.schema != prev_id.schema || cur_id.name != prev_id.name || cur_id.qualifier != prev_id.qualifier)
     {
-      res.push_back(raster_pyramid());
+      res.push_back(pyramid_def());
       res.back().id = cur_id;
       prev_id = cur_id;
     }
 
-    raster_level lvl;
+    tiling_def lvl;
     numeric_cast(row[3], lvl.resolution_x);
     numeric_cast(row[4], lvl.resolution_y);
     lvl.geometry.schema = string_cast<char>(row[5]);
@@ -48,11 +48,11 @@ inline std::vector<raster_pyramid> get_rasters(rowset* rs)
   return res;
 }
 
-inline std::vector<raster_pyramid> get_raster_layers(dialect* dct, command* cmd)
+inline std::vector<pyramid_def> get_raster_layers(dialect* dct, command* cmd)
 {
   using namespace std;
 
-  vector<raster_pyramid> native;
+  vector<pyramid_def> native;
   string sql(dct->sql_test_rasters());
   if (!sql.empty())
   {
@@ -67,17 +67,17 @@ inline std::vector<raster_pyramid> get_raster_layers(dialect* dct, command* cmd)
     }
   }
 
-  vector<raster_pyramid> simple;
+  vector<pyramid_def> simple;
   cmd->exec("SELECT t.scm, t.tbl FROM (" + dct->sql_tables() + ") t WHERE LOWER(t.tbl) = 'simple_rasters'");
   vector<variant> row;
   if (cmd->fetch(row))
   {
-    table_definition tbl;
+    table_def tbl;
     tbl.id.schema = string_cast<char>(row[0]);
     tbl.id.name = string_cast<char>(row[1]);
     if (cmd->fetch(row)) throw runtime_error("ambiguous simple_rasters error");
     
-    tbl = get_table_definition(dct, cmd, tbl.id);
+    tbl = get_table_def(dct, cmd, tbl.id);
     auto cols = simple_rasters_columns(tbl);
 
     sql.clear();
@@ -92,8 +92,8 @@ inline std::vector<raster_pyramid> get_raster_layers(dialect* dct, command* cmd)
     simple = get_rasters(cmd);
   }
 
-  vector<raster_pyramid> res;
-  auto cmp([](const raster_pyramid& a, const raster_pyramid& b){ return a.id.schema < b.id.schema || a.id.name < b.id.name || a.id.qualifier < b.id.qualifier; });
+  vector<pyramid_def> res;
+  auto cmp([](const pyramid_def& a, const pyramid_def& b){ return a.id.schema < b.id.schema || a.id.name < b.id.name || a.id.qualifier < b.id.qualifier; });
   merge(begin(native), end(native), begin(simple), end(simple), back_inserter(res), cmp);
   return res;
 }

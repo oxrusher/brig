@@ -19,7 +19,7 @@ class threaded_command : public command {
 public:
   explicit threaded_command(std::shared_ptr<command_allocator> allocator);
   ~threaded_command() override  { m_med->stop(); }
-  void exec(const std::string& sql, const std::vector<column_definition>& params) override;
+  void exec(const std::string& sql, const std::vector<column_def>& params) override;
   void exec_batch(const std::string& sql) override;
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
@@ -44,7 +44,7 @@ inline threaded_command::threaded_command(std::shared_ptr<command_allocator> all
   t.detach();
 }
 
-inline void threaded_command::exec(const std::string& sql, const std::vector<column_definition>& params)
+inline void threaded_command::exec(const std::string& sql, const std::vector<column_def>& params)
 {
   m_med->dpg.clear();
   m_med->call<void>(&command::exec, std::placeholders::_1, std::cref(sql), std::cref(params));

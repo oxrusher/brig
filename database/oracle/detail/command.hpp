@@ -34,7 +34,7 @@ class command : public brig::database::command {
 public:
   command(const std::string& srv, const std::string& usr, const std::string& pwd);
   ~command() override  { close_all(); }
-  void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) override;
+  void exec(const std::string& sql, const std::vector<column_def>& params = std::vector<column_def>()) override;
   void exec_batch(const std::string& sql) override;
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
@@ -101,7 +101,7 @@ inline command::command(const std::string& srv_, const std::string& usr_, const 
   catch (const exception&)  { close_all(); throw; }
 }
 
-inline void command::exec(const std::string& sql_, const std::vector<column_definition>& params)
+inline void command::exec(const std::string& sql_, const std::vector<column_def>& params)
 {
   using namespace std;
 

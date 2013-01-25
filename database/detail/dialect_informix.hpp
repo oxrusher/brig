@@ -22,23 +22,23 @@ struct dialect_informix : dialect {
 
   std::string sql_columns(const identifier& tbl) override;
   std::string sql_indexed_columns(const identifier& tbl) override;
-  std::string sql_spatial_detail(const table_definition& tbl, const std::string& col) override;
+  std::string sql_spatial_detail(const table_def& tbl, const std::string& col) override;
   column_type get_type(const identifier& type_lcase, int scale) override;
 
-  std::string sql_mbr(const table_definition& tbl, const std::string& col) override;
+  std::string sql_mbr(const table_def& tbl, const std::string& col) override;
 
   std::string sql_schema() override;
-  column_definition fit_column(const column_definition& col) override;
+  column_def fit_column(const column_def& col) override;
   std::string sql_srid(int epsg) override;
 
-  void sql_register_spatial_column(const table_definition& tbl, const std::string& col, std::vector<std::string>& sql) override;
+  void sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql) override;
   void sql_unregister_spatial_column(const identifier& layer, std::vector<std::string>& sql) override;
-  std::string sql_create_spatial_index(const table_definition& tbl, const std::string& col) override;
+  std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
 
-  std::string sql_parameter(const command_traits& trs, const column_definition& param, size_t order) override;
-  std::string sql_column(const command_traits& trs, const column_definition& col) override;
+  std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) override;
+  std::string sql_column(const command_traits& trs, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
-  std::string sql_intersect(const table_definition& tbl, const std::string& col, const boost::box& box) override;
+  std::string sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box) override;
 
   static std::string sql_catalog();
 }; // dialect_informix
@@ -145,7 +145,7 @@ WHERE i.tabid = t.tabid AND i.amid = m.am_id AND i.tabid = c.tabid AND i.colno =
   return stream.str();
 }
 
-inline std::string dialect_informix::sql_spatial_detail(const table_definition& tbl, const std::string& col)
+inline std::string dialect_informix::sql_spatial_detail(const table_def& tbl, const std::string& col)
 {
   return "\
 SELECT c.srid, (CASE s.auth_name WHEN 'EPSG' THEN s.auth_srid ELSE NULL END) epsg \
@@ -162,7 +162,7 @@ inline column_type dialect_informix::get_type(const identifier& type_lcase, int 
   return get_iso_type(type_lcase.name, scale);
 }
 
-inline std::string dialect_informix::sql_mbr(const table_definition& tbl, const std::string& col)
+inline std::string dialect_informix::sql_mbr(const table_def& tbl, const std::string& col)
 {
   const std::string c(sql_identifier(col));
   const std::string t(sql_identifier(tbl.id));
@@ -174,9 +174,9 @@ inline std::string dialect_informix::sql_schema()
   return "SELECT RTRIM(USER) FROM sysmaster:systables WHERE tabid = 1";
 }
 
-inline column_definition dialect_informix::fit_column(const column_definition& col)
+inline column_def dialect_informix::fit_column(const column_def& col)
 {
-  column_definition res;
+  column_def res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
@@ -203,7 +203,7 @@ inline std::string dialect_informix::sql_srid(int epsg)
   return "SELECT FIRST 1 srid FROM sde.spatial_references WHERE auth_name = 'EPSG' AND auth_srid = " + string_cast<char>(epsg) + " ORDER BY srid";
 }
 
-inline void dialect_informix::sql_register_spatial_column(const table_definition& tbl, const std::string& col, std::vector<std::string>& sql)
+inline void dialect_informix::sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql)
 {
   sql.push_back("\
 DELETE FROM sde.geometry_columns \
@@ -226,12 +226,12 @@ AND f_table_name = '" + layer.name + "' \
 AND f_geometry_column = '" + layer.qualifier + "'");
 }
 
-inline std::string dialect_informix::sql_create_spatial_index(const table_definition& tbl, const std::string& col)
+inline std::string dialect_informix::sql_create_spatial_index(const table_def& tbl, const std::string& col)
 {
   return "CREATE INDEX " + sql_identifier(tbl.rtree(col)->id.name) + " ON " + sql_identifier(tbl.id.name) + " (" + sql_identifier(col) + " ST_Geometry_Ops) USING RTREE";
 }
 
-inline std::string dialect_informix::sql_parameter(const command_traits& trs, const column_definition& param, size_t order)
+inline std::string dialect_informix::sql_parameter(const command_traits& trs, const column_def& param, size_t order)
 {
   using namespace std;
 
@@ -256,7 +256,7 @@ inline std::string dialect_informix::sql_parameter(const command_traits& trs, co
   return marker;
 }
 
-inline std::string dialect_informix::sql_column(const command_traits& trs, const column_definition& col)
+inline std::string dialect_informix::sql_column(const command_traits& trs, const column_def& col)
 {
   using namespace std;
 
@@ -273,7 +273,7 @@ inline void dialect_informix::sql_limit(int rows, std::string& sql_infix, std::s
   sql_infix = "FIRST " + string_cast<char>(rows);
 }
 
-inline std::string dialect_informix::sql_intersect(const table_definition& tbl, const std::string& col, const boost::box& box)
+inline std::string dialect_informix::sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box)
 {
   using namespace std;
 

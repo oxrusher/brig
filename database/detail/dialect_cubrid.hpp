@@ -19,21 +19,21 @@ struct dialect_cubrid : dialect {
 
   std::string sql_columns(const identifier& tbl) override;
   std::string sql_indexed_columns(const identifier& tbl) override;
-  std::string sql_spatial_detail(const table_definition&, const std::string&)  { throw std::runtime_error("DBMS error"); }
+  std::string sql_spatial_detail(const table_def&, const std::string&)  { throw std::runtime_error("DBMS error"); }
   column_type get_type(const identifier& type_lcase, int scale) override;
 
-  std::string sql_mbr(const table_definition&, const std::string&) override  { throw std::runtime_error("DBMS error"); }
+  std::string sql_mbr(const table_def&, const std::string&) override  { throw std::runtime_error("DBMS error"); }
 
   std::string sql_schema() override;
-  column_definition fit_column(const column_definition& col) override;
+  column_def fit_column(const column_def& col) override;
   std::string sql_srid(int) override  { throw std::runtime_error("DBMS error"); }
 
-  std::string sql_create_spatial_index(const table_definition&, const std::string&) override  { throw std::runtime_error("DBMS error"); }
+  std::string sql_create_spatial_index(const table_def&, const std::string&) override  { throw std::runtime_error("DBMS error"); }
 
-  std::string sql_parameter(const command_traits& trs, const column_definition& param, size_t order) override;
-  std::string sql_column(const command_traits& trs, const column_definition& col) override;
+  std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) override;
+  std::string sql_column(const command_traits& trs, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
-  std::string sql_intersect(const table_definition&, const std::string&, const boost::box&) override  { throw std::runtime_error("DBMS error"); }
+  std::string sql_intersect(const table_def&, const std::string&, const boost::box&) override  { throw std::runtime_error("DBMS error"); }
 }; // dialect_cubrid
 
 inline std::string dialect_cubrid::sql_tables()
@@ -73,9 +73,9 @@ inline std::string dialect_cubrid::sql_schema()
   return "SELECT current_user";
 }
 
-inline column_definition dialect_cubrid::fit_column(const column_definition& col)
+inline column_def dialect_cubrid::fit_column(const column_def& col)
 {
-  column_definition res;
+  column_def res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
@@ -91,13 +91,13 @@ inline column_definition dialect_cubrid::fit_column(const column_definition& col
   return res;
 }
 
-inline std::string dialect_cubrid::sql_parameter(const command_traits& trs, const column_definition& param, size_t order)
+inline std::string dialect_cubrid::sql_parameter(const command_traits& trs, const column_def& param, size_t order)
 {
   if (Geometry == param.type && !trs.writable_geometry) throw std::runtime_error("datatype error");
   return trs.sql_parameter_marker(order);
 }
 
-inline std::string dialect_cubrid::sql_column(const command_traits& trs, const column_definition& col)
+inline std::string dialect_cubrid::sql_column(const command_traits& trs, const column_def& col)
 {
   using namespace std;
 

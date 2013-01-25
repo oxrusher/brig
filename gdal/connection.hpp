@@ -28,21 +28,21 @@ public:
 
   std::vector<identifier> get_tables() override;
   std::vector<identifier> get_geometry_layers() override;
-  std::vector<raster_pyramid> get_raster_layers() override  { return std::vector<raster_pyramid>(); }
-  table_definition get_table_definition(const identifier& tbl) override;
+  std::vector<pyramid_def> get_raster_layers() override  { return std::vector<pyramid_def>(); }
+  table_def get_table_def(const identifier& tbl) override;
 
-  brig::boost::box get_mbr(const table_definition& tbl, const std::string& col) override;
-  std::shared_ptr<rowset> select(const table_definition& tbl) override;
+  brig::boost::box get_mbr(const table_def& tbl, const std::string& col) override;
+  std::shared_ptr<rowset> select(const table_def& tbl) override;
 
-  table_definition fit_to_create(const table_definition& tbl) override;
-  void create(const table_definition& tbl) override;
-  void drop(const table_definition& tbl) override;
+  table_def fit_to_create(const table_def& tbl) override;
+  void create(const table_def& tbl) override;
+  void drop(const table_def& tbl) override;
   
-  raster_pyramid fit_to_reg(const raster_pyramid&) override  { throw std::runtime_error("GDAL error"); }
-  void reg(const raster_pyramid&) override  { throw std::runtime_error("GDAL error"); }
-  void unreg(const raster_pyramid&) override  { throw std::runtime_error("GDAL error"); }
+  pyramid_def fit_to_reg(const pyramid_def&) override  { throw std::runtime_error("GDAL error"); }
+  void reg(const pyramid_def&) override  { throw std::runtime_error("GDAL error"); }
+  void unreg(const pyramid_def&) override  { throw std::runtime_error("GDAL error"); }
 
-  std::shared_ptr<inserter> get_inserter(const table_definition& tbl) override;
+  std::shared_ptr<inserter> get_inserter(const table_def& tbl) override;
 }; // connection
 
 template <bool Threading>
@@ -60,21 +60,21 @@ std::vector<identifier> connection<Threading>::get_geometry_layers()
 }
 
 template <bool Threading>
-table_definition connection<Threading>::get_table_definition(const identifier& tbl)
+table_def connection<Threading>::get_table_def(const identifier& tbl)
 {
   std::unique_ptr<detail::datasource> ds(m_allocator->allocate(false));
-  return ds->get_table_definition(tbl);
+  return ds->get_table_def(tbl);
 }
 
 template <bool Threading>
-brig::boost::box connection<Threading>::get_mbr(const table_definition& tbl, const std::string& col)
+brig::boost::box connection<Threading>::get_mbr(const table_def& tbl, const std::string& col)
 {
   std::unique_ptr<detail::datasource> ds(m_allocator->allocate(false));
   return ds->get_mbr(tbl, col);
 }
 
 template <>
-inline std::shared_ptr<rowset> connection<false>::select(const table_definition& tbl)
+inline std::shared_ptr<rowset> connection<false>::select(const table_def& tbl)
 {
   std::shared_ptr<detail::datasource> ds(m_allocator->allocate(false));
   ds->select(tbl);
@@ -82,21 +82,21 @@ inline std::shared_ptr<rowset> connection<false>::select(const table_definition&
 }
 
 template <>
-inline std::shared_ptr<rowset> connection<true>::select(const table_definition& tbl)
+inline std::shared_ptr<rowset> connection<true>::select(const table_def& tbl)
 {
   return std::make_shared<detail::threaded_rowset>(m_allocator, tbl);
 }
 
 template <bool Threading>
-table_definition connection<Threading>::fit_to_create(const table_definition& tbl)
+table_def connection<Threading>::fit_to_create(const table_def& tbl)
 {
   using namespace std;
 
-  table_definition res;
+  table_def res;
   res.id.name = m_fit_identifier.empty()? tbl.id.name: m_fit_identifier;
   for (auto col_iter(begin(tbl.columns)); col_iter != end(tbl.columns); ++col_iter)
   {
-    column_definition col;
+    column_def col;
     col.type = col_iter->type;
     switch (col.type)
     {
@@ -115,21 +115,21 @@ table_definition connection<Threading>::fit_to_create(const table_definition& tb
 }
 
 template <bool Threading>
-void connection<Threading>::create(const table_definition& tbl)
+void connection<Threading>::create(const table_def& tbl)
 {
   std::unique_ptr<detail::datasource> ds(m_allocator->allocate(true));
   ds->create(tbl);
 }
 
 template <bool Threading>
-void connection<Threading>::drop(const table_definition& tbl)
+void connection<Threading>::drop(const table_def& tbl)
 {
   std::unique_ptr<detail::datasource> ds(m_allocator->allocate(true));
   ds->drop(tbl);
 }
 
 template <bool Threading>
-std::shared_ptr<inserter> connection<Threading>::get_inserter(const table_definition& tbl)
+std::shared_ptr<inserter> connection<Threading>::get_inserter(const table_def& tbl)
 {
   return std::shared_ptr<inserter>(new detail::inserter(m_allocator->allocate(true), tbl));
 } // connection<Threading>::

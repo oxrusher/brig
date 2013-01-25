@@ -28,26 +28,26 @@ struct dialect_oracle : dialect {
 
   std::string sql_columns(const identifier& tbl) override;
   std::string sql_indexed_columns(const identifier& tbl) override;
-  std::string sql_spatial_detail(const table_definition& tbl, const std::string& col) override;
+  std::string sql_spatial_detail(const table_def& tbl, const std::string& col) override;
   column_type get_type(const identifier& type_lcase, int scale) override;
 
-  std::string sql_mbr(const table_definition& tbl, const std::string& col) override;
+  std::string sql_mbr(const table_def& tbl, const std::string& col) override;
 
   std::string sql_schema() override;
   std::string fit_identifier(const std::string& id)  override;
-  column_definition fit_column(const column_definition& col) override;
-  table_definition fit_table(const table_definition& tbl, const std::string& schema) override;
+  column_def fit_column(const column_def& col) override;
+  table_def fit_table(const table_def& tbl, const std::string& schema) override;
   std::string sql_srid(int epsg) override;
 
-  void sql_register_spatial_column(const table_definition& tbl, const std::string& col, std::vector<std::string>& sql) override;
-  std::string sql_create_spatial_index(const table_definition& tbl, const std::string& col) override;
+  void sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql) override;
+  std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
 
-  std::string sql_parameter(const command_traits& trs, const column_definition& param, size_t order) override;
-  std::string sql_column(const command_traits& trs, const column_definition& col) override;
+  std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) override;
+  std::string sql_column(const command_traits& trs, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
-  bool need_to_normalize_hemisphere(const column_definition& col) override;
-  void sql_intersect(const command_traits& trs, const table_definition& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_definition>& keys) override;
-  std::string sql_intersect(const table_definition& tbl, const std::string& col, const boost::box& box) override;
+  bool need_to_normalize_hemisphere(const column_def& col) override;
+  void sql_intersect(const command_traits& trs, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys) override;
+  std::string sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box) override;
 }; // dialect_oracle
 
 inline std::string dialect_oracle::sql_tables()
@@ -97,7 +97,7 @@ JOIN ALL_IND_COLUMNS c ON i.OWNER = c.INDEX_OWNER AND i.INDEX_NAME = c.INDEX_NAM
 ORDER BY pri DESC, i.OWNER, i.INDEX_NAME, c.COLUMN_POSITION";
 }
 
-inline std::string dialect_oracle::sql_spatial_detail(const table_definition& tbl, const std::string& col)
+inline std::string dialect_oracle::sql_spatial_detail(const table_def& tbl, const std::string& col)
 {
   return "\
 SELECT c.SRID, (CASE s.DATA_SOURCE WHEN 'EPSG' THEN s.SRID ELSE NULL END) epsg, s.COORD_REF_SYS_KIND \
@@ -114,7 +114,7 @@ inline column_type dialect_oracle::get_type(const identifier& type_lcase, int sc
   return get_iso_type(type_lcase.name, scale);
 }
 
-inline std::string dialect_oracle::sql_mbr(const table_definition& tbl, const std::string& col)
+inline std::string dialect_oracle::sql_mbr(const table_def& tbl, const std::string& col)
 {
   const std::string t("\
 SELECT ROWNUM n, d.SDO_LB l, d.SDO_UB u \
@@ -147,9 +147,9 @@ inline std::string dialect_oracle::fit_identifier(const std::string& id)
   return transform<char>(u32);
 }
 
-inline column_definition dialect_oracle::fit_column(const column_definition& col)
+inline column_def dialect_oracle::fit_column(const column_def& col)
 {
-  column_definition res;
+  column_def res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
@@ -173,15 +173,15 @@ inline column_definition dialect_oracle::fit_column(const column_definition& col
   return res;
 }
 
-inline table_definition dialect_oracle::fit_table(const table_definition& tbl, const std::string& schema)
+inline table_def dialect_oracle::fit_table(const table_def& tbl, const std::string& schema)
 {
   using namespace std;
 
-  table_definition res(dialect::fit_table(tbl, schema));
+  table_def res(dialect::fit_table(tbl, schema));
 
-  if (find_if(begin(res.indexes), end(res.indexes), [&](const index_definition& idx){ return Primary == idx.type || Unique == idx.type; }) == end(res.indexes))
+  if (find_if(begin(res.indexes), end(res.indexes), [&](const index_def& idx){ return Primary == idx.type || Unique == idx.type; }) == end(res.indexes))
   {
-    column_definition col;
+    column_def col;
     col.name = fit_identifier("ID");
     col.type = String;
     col.type_lcase.name = "nvarchar2(32) default sys_guid()";
@@ -189,7 +189,7 @@ inline table_definition dialect_oracle::fit_table(const table_definition& tbl, c
     col.not_null = true;
     res.columns.push_back(col);
 
-    index_definition idx;
+    index_def idx;
     idx.type = Primary;
     idx.columns.push_back(fit_identifier("ID"));
     res.indexes.push_back(idx);
@@ -203,7 +203,7 @@ inline std::string dialect_oracle::sql_srid(int epsg)
   return "SELECT SRID FROM MDSYS.SDO_COORD_REF_SYS WHERE DATA_SOURCE = 'EPSG' AND SRID = " + string_cast<char>(epsg);
 }
 
-inline void dialect_oracle::sql_register_spatial_column(const table_definition& tbl, const std::string& col, std::vector<std::string>& sql)
+inline void dialect_oracle::sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql)
 {
   using namespace std;
   using namespace brig::boost;
@@ -224,12 +224,12 @@ END;";
   sql.push_back(stream.str());
 }
 
-inline std::string dialect_oracle::sql_create_spatial_index(const table_definition& tbl, const std::string& col)
+inline std::string dialect_oracle::sql_create_spatial_index(const table_def& tbl, const std::string& col)
 {
   return "CREATE INDEX " + sql_identifier(tbl.rtree(col)->id.name) + " ON " + sql_identifier(tbl.id.name) + " (" + sql_identifier(col) + ") INDEXTYPE IS MDSYS.SPATIAL_INDEX";
 }
 
-inline std::string dialect_oracle::sql_parameter(const command_traits& trs, const column_definition& param, size_t order)
+inline std::string dialect_oracle::sql_parameter(const command_traits& trs, const column_def& param, size_t order)
 {
   using namespace std;
 
@@ -246,7 +246,7 @@ inline std::string dialect_oracle::sql_parameter(const command_traits& trs, cons
   return marker;
 }
 
-inline std::string dialect_oracle::sql_column(const command_traits& trs, const column_definition& col)
+inline std::string dialect_oracle::sql_column(const command_traits& trs, const column_def& col)
 {
   using namespace std;
 
@@ -265,19 +265,19 @@ inline void dialect_oracle::sql_limit(int rows, std::string& sql_infix, std::str
   sql_counter = "ROWNUM <= " + sql_rows;
 }
 
-inline bool dialect_oracle::need_to_normalize_hemisphere(const column_definition& col)
+inline bool dialect_oracle::need_to_normalize_hemisphere(const column_def& col)
 {
   return col.type_lcase.qualifier.find("geographic") != std::string::npos;
 }
 
-inline void dialect_oracle::sql_intersect(const command_traits& trs, const table_definition& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_definition>& keys)
+inline void dialect_oracle::sql_intersect(const command_traits& trs, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys)
 {
   using namespace std;
 
   if (!tbl.rtree(col) || boxes.size() < 2) return;
 
-  auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_definition& i){ return Primary == i.type; }));
-  if (idx == end(tbl.indexes)) idx = find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_definition& i){ return Unique == i.type; });
+  auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_def& i){ return Primary == i.type; }));
+  if (idx == end(tbl.indexes)) idx = find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_def& i){ return Unique == i.type; });
   if (idx == end(tbl.indexes)) throw runtime_error("unique columns error");
   keys = brig::detail::get_columns(tbl.columns, idx->columns);
 
@@ -297,7 +297,7 @@ inline void dialect_oracle::sql_intersect(const command_traits& trs, const table
   sql += ")";
 }
 
-inline std::string dialect_oracle::sql_intersect(const table_definition& tbl, const std::string& col, const boost::box& box)
+inline std::string dialect_oracle::sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box)
 {
   using namespace std;
 

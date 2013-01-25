@@ -1,15 +1,15 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_DETAIL_GET_TABLE_DEFINITION_HPP
-#define BRIG_DATABASE_DETAIL_GET_TABLE_DEFINITION_HPP
+#ifndef BRIG_DATABASE_DETAIL_GET_TABLE_DEF_HPP
+#define BRIG_DATABASE_DETAIL_GET_TABLE_DEF_HPP
 
 #include <brig/database/command.hpp>
 #include <brig/database/detail/dialect.hpp>
-#include <brig/database/detail/get_table_definition_sqlite.hpp>
+#include <brig/database/detail/get_table_def_sqlite.hpp>
 #include <brig/global.hpp>
 #include <brig/numeric_cast.hpp>
 #include <brig/string_cast.hpp>
-#include <brig/table_definition.hpp>
+#include <brig/table_def.hpp>
 #include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
 #include <iterator>
@@ -17,21 +17,21 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline table_definition get_table_definition(dialect* dct, command* cmd, const identifier& tbl)
+inline table_def get_table_def(dialect* dct, command* cmd, const identifier& tbl)
 {
   using namespace std;
   using namespace brig::unicode;
 
-  if (cmd->system() == SQLite) return get_table_definition_sqlite(dct, cmd, tbl);
+  if (cmd->system() == SQLite) return get_table_def_sqlite(dct, cmd, tbl);
 
   // columns
-  table_definition res;
+  table_def res;
   res.id = tbl;
   cmd->exec(dct->sql_columns(res.id));
   vector<variant> row;
   while (cmd->fetch(row))
   {
-    column_definition col;
+    column_def col;
     col.name = string_cast<char>(row[0]);
     col.type_lcase.schema = transform<char>(string_cast<char>(row[1]), lower_case);
     col.type_lcase.name = transform<char>(string_cast<char>(row[2]), lower_case);
@@ -47,7 +47,7 @@ inline table_definition get_table_definition(dialect* dct, command* cmd, const i
 
   // indexes
   cmd->exec(dct->sql_indexed_columns(res.id));
-  index_definition idx;
+  index_def idx;
   while (cmd->fetch(row))
   {
     identifier id;
@@ -58,7 +58,7 @@ inline table_definition get_table_definition(dialect* dct, command* cmd, const i
     {
       if (VoidIndex != idx.type) res.indexes.push_back(move(idx));
 
-      idx = index_definition();
+      idx = index_def();
       idx.id = id;
       int primary(0), unique(0), spatial(0);
       numeric_cast(row[2], primary);
@@ -98,4 +98,4 @@ inline table_definition get_table_definition(dialect* dct, command* cmd, const i
 
 } } } // brig::database::detail
 
-#endif // BRIG_DATABASE_DETAIL_GET_TABLE_DEFINITION_HPP
+#endif // BRIG_DATABASE_DETAIL_GET_TABLE_DEF_HPP

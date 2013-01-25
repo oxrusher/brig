@@ -28,25 +28,25 @@ struct dialect_ms_sql : dialect {
 
   std::string sql_columns(const identifier& tbl) override;
   std::string sql_indexed_columns(const identifier& tbl) override;
-  std::string sql_spatial_detail(const table_definition& tbl, const std::string& col) override;
+  std::string sql_spatial_detail(const table_def& tbl, const std::string& col) override;
   column_type get_type(const identifier& type_lcase, int scale) override;
 
-  std::string sql_mbr(const table_definition& tbl, const std::string& col) override;
+  std::string sql_mbr(const table_def& tbl, const std::string& col) override;
 
   std::string sql_schema() override;
-  column_definition fit_column(const column_definition& col) override;
-  table_definition fit_table(const table_definition& tbl, const std::string& schema) override;
+  column_def fit_column(const column_def& col) override;
+  table_def fit_table(const table_def& tbl, const std::string& schema) override;
   std::string sql_srid(int) override  { return ""; }
 
-  std::string sql_create_spatial_index(const table_definition& tbl, const std::string& col) override;
+  std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
 
-  std::string sql_parameter(const command_traits& trs, const column_definition& param, size_t order) override;
-  std::string sql_column(const command_traits& trs, const column_definition& col) override;
+  std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) override;
+  std::string sql_column(const command_traits& trs, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
-  std::string sql_hint(const table_definition& tbl, const std::string& col) override;
-  bool need_to_normalize_hemisphere(const column_definition& col) override;
-  void sql_intersect(const command_traits& trs, const table_definition& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_definition>& keys) override;
-  std::string sql_intersect(const table_definition& tbl, const std::string& col, const boost::box& box) override;
+  std::string sql_hint(const table_def& tbl, const std::string& col) override;
+  bool need_to_normalize_hemisphere(const column_def& col) override;
+  void sql_intersect(const command_traits& trs, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys) override;
+  std::string sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box) override;
 }; // dialect_ms_sql
 
 inline std::string dialect_ms_sql::sql_tables()
@@ -77,7 +77,7 @@ WHERE i.object_id = OBJECT_ID('\"" + tbl.schema + "\".\"" + tbl.name + "\"') AND
 ORDER BY i.is_primary_key DESC, i.name, c.key_ordinal";
 }
 
-inline std::string dialect_ms_sql::sql_spatial_detail(const table_definition& tbl, const std::string& col)
+inline std::string dialect_ms_sql::sql_spatial_detail(const table_def& tbl, const std::string& col)
 {
   return "SELECT TOP 1 " + sql_identifier(col) + ".STSrid FROM " + dialect::sql_identifier(tbl.id);
 }
@@ -91,7 +91,7 @@ inline column_type dialect_ms_sql::get_type(const identifier& type_lcase, int sc
   return get_iso_type(type_lcase.name, scale);
 }
 
-inline std::string dialect_ms_sql::sql_mbr(const table_definition& tbl, const std::string& col)
+inline std::string dialect_ms_sql::sql_mbr(const table_def& tbl, const std::string& col)
 {
   if (tbl[col]->type_lcase.name.compare("geography") == 0) return "";
   return "\
@@ -105,9 +105,9 @@ inline std::string dialect_ms_sql::sql_schema()
   return "SELECT SCHEMA_NAME()";
 }
 
-inline column_definition dialect_ms_sql::fit_column(const column_definition& col)
+inline column_def dialect_ms_sql::fit_column(const column_def& col)
 {
-  column_definition res;
+  column_def res;
   res.name = fit_identifier(col.name);
   res.type = col.type;
   switch (res.type)
@@ -131,25 +131,25 @@ inline column_definition dialect_ms_sql::fit_column(const column_definition& col
   return res;
 }
 
-inline table_definition dialect_ms_sql::fit_table(const table_definition& tbl, const std::string& schema)
+inline table_def dialect_ms_sql::fit_table(const table_def& tbl, const std::string& schema)
 {
   using namespace std;
 
-  table_definition res(dialect::fit_table(tbl, schema));
+  table_def res(dialect::fit_table(tbl, schema));
 
-  if (find_if(begin(res.indexes), end(res.indexes), [&](const index_definition& idx){ return Primary == idx.type; }) == end(res.indexes))
+  if (find_if(begin(res.indexes), end(res.indexes), [&](const index_def& idx){ return Primary == idx.type; }) == end(res.indexes))
   {
-    auto unq_idx(find_if(begin(res.indexes), end(res.indexes), [&](const index_definition& idx){ return Unique == idx.type; }));
+    auto unq_idx(find_if(begin(res.indexes), end(res.indexes), [&](const index_def& idx){ return Unique == idx.type; }));
     if (unq_idx == end(res.indexes))
     {
-      column_definition col;
+      column_def col;
       col.name = fit_identifier("id");
       col.type = Integer;
       col.type_lcase.name = "bigint identity";
       col.not_null = true;
       res.columns.push_back(col);
 
-      index_definition idx;
+      index_def idx;
       idx.type = Primary;
       idx.columns.push_back(fit_identifier("id"));
       res.indexes.push_back(idx);
@@ -161,7 +161,7 @@ inline table_definition dialect_ms_sql::fit_table(const table_definition& tbl, c
   return res;
 }
 
-inline std::string dialect_ms_sql::sql_create_spatial_index(const table_definition& tbl, const std::string& col)
+inline std::string dialect_ms_sql::sql_create_spatial_index(const table_def& tbl, const std::string& col)
 {
   using namespace std;
   using namespace brig::boost;
@@ -175,14 +175,14 @@ USING GEOMETRY_GRID WITH (BOUNDING_BOX = (" << xmin << ", " << ymin << ", " << x
   return stream.str();
 }
 
-inline std::string dialect_ms_sql::sql_parameter(const command_traits& trs, const column_definition& param, size_t order)
+inline std::string dialect_ms_sql::sql_parameter(const command_traits& trs, const column_def& param, size_t order)
 {
   const std::string marker(trs.sql_parameter_marker(order));
   if (Geometry == param.type && !trs.writable_geometry) return param.type_lcase.name + "::STGeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ").MakeValid()";
   return marker;
 }
 
-inline std::string dialect_ms_sql::sql_column(const command_traits& trs, const column_definition& col)
+inline std::string dialect_ms_sql::sql_column(const command_traits& trs, const column_def& col)
 {
   using namespace std;
 
@@ -199,25 +199,25 @@ inline void dialect_ms_sql::sql_limit(int rows, std::string& sql_infix, std::str
   sql_infix = "TOP " + string_cast<char>(rows);
 }
 
-inline std::string dialect_ms_sql::sql_hint(const table_definition& tbl, const std::string& col)
+inline std::string dialect_ms_sql::sql_hint(const table_def& tbl, const std::string& col)
 {
   auto idx(tbl.rtree(col));
   if (idx == 0) return "";
   else return "WITH(INDEX(" + sql_identifier(idx->id.name) + "))";
 }
 
-inline bool dialect_ms_sql::need_to_normalize_hemisphere(const column_definition& col)
+inline bool dialect_ms_sql::need_to_normalize_hemisphere(const column_def& col)
 {
   return col.type_lcase.name.compare("geography") == 0;
 }
 
-inline void dialect_ms_sql::sql_intersect(const command_traits& trs, const table_definition& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_definition>& keys)
+inline void dialect_ms_sql::sql_intersect(const command_traits& trs, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys)
 {
   using namespace std;
 
   if (!tbl.rtree(col) || boxes.size() < 2) return;
 
-  auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_definition& i){ return Primary == i.type; }));
+  auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_def& i){ return Primary == i.type; }));
   if (idx == end(tbl.indexes)) throw runtime_error("unique columns error");
   keys = brig::detail::get_columns(tbl.columns, idx->columns);
   
@@ -231,7 +231,7 @@ inline void dialect_ms_sql::sql_intersect(const command_traits& trs, const table
   }
 }
 
-inline std::string dialect_ms_sql::sql_intersect(const table_definition& tbl, const std::string& col, const boost::box& box)
+inline std::string dialect_ms_sql::sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box)
 {
   using namespace std;
 

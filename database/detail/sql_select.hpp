@@ -13,18 +13,18 @@
 #include <brig/database/detail/sql_select_list.hpp>
 #include <brig/detail/get_columns.hpp>
 #include <brig/global.hpp>
-#include <brig/table_definition.hpp>
+#include <brig/table_def.hpp>
 #include <iterator>
 #include <string>
 #include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-inline void sql_select(dialect* dct, const command_traits& trs, const table_definition& tbl, std::string& sql, std::vector<column_definition>& params)
+inline void sql_select(dialect* dct, const command_traits& trs, const table_def& tbl, std::string& sql, std::vector<column_def>& params)
 {
   using namespace std;
 
-  vector<column_definition> cols = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
+  vector<column_def> cols = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
   string sql_infix, sql_counter, sql_suffix, sql_conditions;
   if (tbl.query_rows >= 0) dct->sql_limit(tbl.query_rows, sql_infix, sql_counter, sql_suffix);
   for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
@@ -37,7 +37,7 @@ inline void sql_select(dialect* dct, const command_traits& trs, const table_defi
     }
 
   // not spatial first
-  auto geom_col(find_if(begin(tbl.columns), end(tbl.columns), [](const column_definition& col){ return Geometry == col.type && typeid(null_t) != col.query_value.type(); }));
+  auto geom_col(find_if(begin(tbl.columns), end(tbl.columns), [](const column_def& col){ return Geometry == col.type && typeid(null_t) != col.query_value.type(); }));
   if (geom_col == end(tbl.columns))
   {
     if (!sql_counter.empty()) sql += "SELECT * FROM (";
@@ -52,7 +52,7 @@ inline void sql_select(dialect* dct, const command_traits& trs, const table_defi
   vector<brig::boost::box> boxes(1, brig::boost::envelope(brig::boost::geom_from_wkb(::boost::get<blob_t>(geom_col->query_value))));
   if (dct->need_to_normalize_hemisphere(*geom_col)) normalize_hemisphere(boxes);
   string sql_keys;
-  vector<column_definition> keys;
+  vector<column_def> keys;
   dct->sql_intersect(trs, tbl, geom_col->name, boxes, sql_keys, keys);
   const string sql_tbl(dct->sql_identifier(tbl.id));
 

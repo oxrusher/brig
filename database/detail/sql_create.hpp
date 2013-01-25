@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <brig/database/detail/dialect.hpp>
 #include <brig/global.hpp>
-#include <brig/table_definition.hpp>
+#include <brig/table_def.hpp>
 #include <iterator>
 #include <stdexcept>
 #include <string>
@@ -14,7 +14,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline void sql_create(dialect* dct, const table_definition& tbl, std::vector<std::string>& sql)
+inline void sql_create(dialect* dct, const table_def& tbl, std::vector<std::string>& sql)
 {
   using namespace std;
 
@@ -25,14 +25,14 @@ inline void sql_create(dialect* dct, const table_definition& tbl, std::vector<st
     bool first(true);
     for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
     {
-      const string col_def(dct->sql_column_definition(*col));
+      const string col_def(dct->sql_column_def(*col));
       if (col_def.empty()) continue;
       if (first) first = false;
       else str += ", ";
       str += col_def;
     }
 
-    auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_definition& idx_){ return Primary == idx_.type; }));
+    auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_def& idx_){ return Primary == idx_.type; }));
     if (idx != end(tbl.indexes))
     {
       str += ", PRIMARY KEY (";

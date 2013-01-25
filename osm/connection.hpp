@@ -35,21 +35,21 @@ public:
 
   std::vector<identifier> get_tables() override;
   std::vector<identifier> get_geometry_layers() override;
-  std::vector<raster_pyramid> get_raster_layers() override;
-  table_definition get_table_definition(const identifier& tbl) override;
+  std::vector<pyramid_def> get_raster_layers() override;
+  table_def get_table_def(const identifier& tbl) override;
 
-  brig::boost::box get_mbr(const table_definition& tbl, const std::string& col) override;
-  std::shared_ptr<rowset> select(const table_definition& tbl) override;
+  brig::boost::box get_mbr(const table_def& tbl, const std::string& col) override;
+  std::shared_ptr<rowset> select(const table_def& tbl) override;
 
-  table_definition fit_to_create(const table_definition&) override  { throw std::runtime_error("OSM error"); }
-  void create(const table_definition&) override  { throw std::runtime_error("OSM error"); }
-  void drop(const table_definition&) override  { throw std::runtime_error("OSM error"); }
+  table_def fit_to_create(const table_def&) override  { throw std::runtime_error("OSM error"); }
+  void create(const table_def&) override  { throw std::runtime_error("OSM error"); }
+  void drop(const table_def&) override  { throw std::runtime_error("OSM error"); }
   
-  raster_pyramid fit_to_reg(const raster_pyramid&) override  { throw std::runtime_error("OSM error"); }
-  void reg(const raster_pyramid&) override  { throw std::runtime_error("OSM error"); }
-  void unreg(const raster_pyramid&) override  { throw std::runtime_error("OSM error"); }
+  pyramid_def fit_to_reg(const pyramid_def&) override  { throw std::runtime_error("OSM error"); }
+  void reg(const pyramid_def&) override  { throw std::runtime_error("OSM error"); }
+  void unreg(const pyramid_def&) override  { throw std::runtime_error("OSM error"); }
 
-  std::shared_ptr<inserter> get_inserter(const table_definition&) override  { throw std::runtime_error("OSM error"); }
+  std::shared_ptr<inserter> get_inserter(const table_def&) override  { throw std::runtime_error("OSM error"); }
 }; // connection
 
 inline void connection::parse_table(const std::string& tbl, size_t& lr, int& z)
@@ -101,20 +101,21 @@ inline std::vector<identifier> connection::get_geometry_layers()
   return res;
 }
 
-inline std::vector<raster_pyramid> connection::get_raster_layers()
+inline std::vector<pyramid_def> connection::get_raster_layers()
 {
   using namespace detail;
-  std::vector<raster_pyramid> res;
+  std::vector<pyramid_def> res;
   for (size_t lr(0); lr < m_lrs.size(); ++lr)
   {
-    raster_pyramid pyramid;
+    pyramid_def pyramid;
     pyramid.id.name = m_lrs[lr]->zoom_to_table(m_lrs[lr]->max_zoom());
     pyramid.id.qualifier = layer::column_raster();
     for (int z(m_lrs[lr]->max_zoom()); z >= 0; --z)
     {
       auto env(tile(0, 0, z).get_mbr());
-      raster_level lvl;
-      lvl.resolution_x = lvl.resolution_y = (env.max_corner().get<0>() - env.min_corner().get<0>()) / double(layer::Pixels);
+      tiling_def lvl;
+      lvl.resolution_x = (env.max_corner().get<0>() - env.min_corner().get<0>()) / double(layer::Pixels);
+      lvl.resolution_y = (env.max_corner().get<1>() - env.min_corner().get<1>()) / double(layer::Pixels);
       lvl.geometry.name = m_lrs[lr]->zoom_to_table(z);
       lvl.geometry.qualifier = layer::column_geometry();
       lvl.raster.name = layer::column_raster();
@@ -126,7 +127,7 @@ inline std::vector<raster_pyramid> connection::get_raster_layers()
   return res;
 }
 
-inline table_definition connection::get_table_definition(const identifier& tbl)
+inline table_def connection::get_table_def(const identifier& tbl)
 {
   using namespace detail;
 
@@ -134,11 +135,11 @@ inline table_definition connection::get_table_definition(const identifier& tbl)
   int z(0);
   parse_table(tbl.name, lr, z);
 
-  table_definition res;
+  table_def res;
   res.id = tbl;
 
   {
-    column_definition col;
+    column_def col;
     col.name = layer::column_geometry();
     col.type = Geometry;
     col.epsg = 3395;
@@ -146,13 +147,13 @@ inline table_definition connection::get_table_definition(const identifier& tbl)
   }
 
   {
-    column_definition col;
+    column_def col;
     col.name = layer::column_raster();
     col.type = Blob;
     res.columns.push_back(col);
   }
 
-  index_definition idx;
+  index_def idx;
   idx.type = Spatial;
   idx.columns.push_back(layer::column_geometry());
   res.indexes.push_back(idx);
@@ -160,7 +161,7 @@ inline table_definition connection::get_table_definition(const identifier& tbl)
   return res;
 }
 
-inline brig::boost::box connection::get_mbr(const table_definition& tbl, const std::string&)
+inline brig::boost::box connection::get_mbr(const table_def& tbl, const std::string&)
 {
   size_t lr(0);
   int z(0);
@@ -168,7 +169,7 @@ inline brig::boost::box connection::get_mbr(const table_definition& tbl, const s
   return detail::tile(0, 0, 0).get_mbr();
 }
 
-inline std::shared_ptr<rowset> connection::select(const table_definition& tbl)
+inline std::shared_ptr<rowset> connection::select(const table_def& tbl)
 {
   using namespace std;
   using namespace brig::boost;
@@ -179,7 +180,7 @@ inline std::shared_ptr<rowset> connection::select(const table_definition& tbl)
   parse_table(tbl.id.name, lr, z);
   if (typeid(null_t) != tbl[layer::column_raster()]->query_value.type()) throw runtime_error("OSM error");
 
-  vector<column_definition> col_defs = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
+  vector<column_def> col_defs = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
   vector<bool> cols;
   bool lite(true);
   for (auto iter(begin(col_defs)); iter != end(col_defs); ++iter)

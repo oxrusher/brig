@@ -6,7 +6,7 @@
 #include <boost/variant/apply_visitor.hpp>
 #include <boost/variant/static_visitor.hpp>
 #include <brig/blob_t.hpp>
-#include <brig/column_definition.hpp>
+#include <brig/column_def.hpp>
 #include <brig/database/odbc/detail/binding.hpp>
 #include <brig/database/odbc/detail/binding_blob.hpp>
 #include <brig/database/odbc/detail/binding_impl.hpp>
@@ -24,13 +24,13 @@ namespace brig { namespace database { namespace odbc { namespace detail {
 
 class binding_visitor : public ::boost::static_visitor<binding*> {
   const DBMS m_sys;
-  const column_definition& m_param;
+  const column_def& m_param;
 
   SQLSMALLINT c_type() const;
   SQLSMALLINT sql_type() const;
 
 public:
-  explicit binding_visitor(DBMS sys, const column_definition& param) : m_sys(sys), m_param(param)  {}
+  explicit binding_visitor(DBMS sys, const column_def& param) : m_sys(sys), m_param(param)  {}
   binding* operator()(const null_t&) const  { return new binding_null(c_type(), sql_type()); }
   binding* operator()(int16_t v) const  { return new binding_impl<int16_t, SQL_C_SSHORT, SQL_SMALLINT>(v); }
   binding* operator()(int32_t v) const  { return new binding_impl<int32_t, SQL_C_SLONG, SQL_INTEGER>(v); }
@@ -88,7 +88,7 @@ inline SQLSMALLINT binding_visitor::sql_type() const
   };
 } // binding_visitor::
 
-inline binding* binding_factory(DBMS sys, const column_definition& param)
+inline binding* binding_factory(DBMS sys, const column_def& param)
 {
   return ::boost::apply_visitor(binding_visitor(sys, param), param.query_value);
 }

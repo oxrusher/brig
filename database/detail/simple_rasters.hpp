@@ -4,15 +4,15 @@
 #define BRIG_DATABASE_DETAIL_SIMPLE_RASTERS_HPP
 
 #include <brig/global.hpp>
-#include <brig/table_definition.hpp>
+#include <brig/table_def.hpp>
 #include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
 
 namespace brig { namespace database { namespace detail {
 
-inline column_definition simple_rasters_column(const std::string& name, column_type type)
+inline column_def simple_rasters_column(const std::string& name, column_type type)
 {
-  column_definition col;
+  column_def col;
   col.name = name;
   col.type = type;
   col.not_null = true;
@@ -25,13 +25,13 @@ inline column_definition simple_rasters_column(const std::string& name, column_t
   return col;
 }
 
-inline table_definition simple_rasters_table(bool schema)
+inline table_def simple_rasters_table(bool schema)
 {
-  table_definition tbl;
+  table_def tbl;
   tbl.id.name = "simple_rasters";
 
-  tbl.indexes.push_back(index_definition());
-  index_definition& idx(tbl.indexes.back());
+  tbl.indexes.push_back(index_def());
+  index_def& idx(tbl.indexes.back());
   idx.type = Primary;
 
   if (schema)  { tbl.columns.push_back( simple_rasters_column("schema", String) ); idx.columns.push_back("schema"); }
@@ -49,7 +49,7 @@ inline table_definition simple_rasters_table(bool schema)
   return tbl;
 }
 
-inline std::vector<std::string> simple_rasters_columns(const table_definition& tbl)
+inline std::vector<std::string> simple_rasters_columns(const table_def& tbl)
 {
   using namespace std;
 

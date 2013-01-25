@@ -8,13 +8,13 @@
 #include <brig/database/detail/dialect.hpp>
 #include <brig/global.hpp>
 #include <brig/numeric_cast.hpp>
-#include <brig/table_definition.hpp>
+#include <brig/table_def.hpp>
 #include <stdexcept>
 #include <string>
 
 namespace brig { namespace database { namespace detail {
 
-inline brig::boost::box get_mbr(dialect* dct, command* cmd, const table_definition& tbl, const std::string& col)
+inline brig::boost::box get_mbr(dialect* dct, command* cmd, const table_def& tbl, const std::string& col)
 {
   using namespace std;
   using namespace brig::boost;

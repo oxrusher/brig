@@ -16,16 +16,16 @@ class threaded_rowset : public brig::rowset {
   struct mediator : brig::detail::mediator<brig::rowset>  { brig::detail::double_page dpg; };
   std::shared_ptr<mediator> m_med;
 public:
-  threaded_rowset(std::shared_ptr<datasource_allocator> allocator, table_definition tbl);
+  threaded_rowset(std::shared_ptr<datasource_allocator> allocator, table_def tbl);
   ~threaded_rowset() override  { m_med->stop(); }
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
 }; // threaded_rowset
 
-inline threaded_rowset::threaded_rowset(std::shared_ptr<datasource_allocator> allocator, table_definition tbl) : m_med(new mediator())
+inline threaded_rowset::threaded_rowset(std::shared_ptr<datasource_allocator> allocator, table_def tbl) : m_med(new mediator())
 {
   using namespace std;
-  auto worker = [](shared_ptr<datasource_allocator> allocator, table_definition tbl, shared_ptr<mediator> med)
+  auto worker = [](shared_ptr<datasource_allocator> allocator, table_def tbl, shared_ptr<mediator> med)
   {
     unique_ptr<datasource> ds;
     try

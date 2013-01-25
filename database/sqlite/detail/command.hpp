@@ -35,7 +35,7 @@ class command : public brig::database::command
 public:
   explicit command(const std::string& file) : m_db(file), m_stmt(0), m_done(false), m_autocommit(true)  {}
   ~command() override;
-  void exec(const std::string& sql, const std::vector<column_definition>& params = std::vector<column_definition>()) override;
+  void exec(const std::string& sql, const std::vector<column_def>& params = std::vector<column_def>()) override;
   void exec_batch(const std::string& sql) override;
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
@@ -62,7 +62,7 @@ inline command::~command()
   close_stmt();
 }
 
-inline void command::exec(const std::string& sql, const std::vector<column_definition>& params)
+inline void command::exec(const std::string& sql, const std::vector<column_def>& params)
 {
   if (!m_stmt || sql.empty() || sql != m_sql || !m_done)
   {

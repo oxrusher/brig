@@ -9,7 +9,7 @@
 #include <brig/gdal/detail/lib.hpp>
 #include <brig/inserter.hpp>
 #include <brig/numeric_cast.hpp>
-#include <brig/table_definition.hpp>
+#include <brig/table_def.hpp>
 #include <iterator>
 #include <memory>
 #include <stdexcept>
@@ -25,12 +25,12 @@ class inserter : public brig::inserter {
   OGRSpatialReferenceH m_sr;
   std::vector<int> m_fields;
 public:
-  inserter(datasource* ds, const table_definition& tbl);
+  inserter(datasource* ds, const table_def& tbl);
   void insert(std::vector<variant>& row) override;
   void flush() override;
 }; // inserter
 
-inline inserter::inserter(datasource* ds, const table_definition& tbl) : m_ds(ds)
+inline inserter::inserter(datasource* ds, const table_def& tbl) : m_ds(ds)
 {
   using namespace std;
 
@@ -40,7 +40,7 @@ inline inserter::inserter(datasource* ds, const table_definition& tbl) : m_ds(ds
   if (!m_feature_def) throw runtime_error("GDAL error");
   m_sr = lib::singleton().p_OGR_L_GetSpatialRef(m_lr);
 
-  vector<column_definition> cols = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
+  vector<column_def> cols = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
   m_fields.resize(cols.size(), -1);
 
   for (int i(0), count(lib::singleton().p_OGR_FD_GetFieldCount(m_feature_def)); i < count; ++i)

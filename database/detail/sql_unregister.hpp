@@ -5,11 +5,11 @@
 
 #include <brig/database/command.hpp>
 #include <brig/database/detail/dialect.hpp>
-#include <brig/database/detail/get_table_definition.hpp>
+#include <brig/database/detail/get_table_def.hpp>
 #include <brig/database/detail/simple_rasters.hpp>
-#include <brig/raster_pyramid.hpp>
+#include <brig/pyramid_def.hpp>
 #include <brig/string_cast.hpp>
-#include <brig/table_definition.hpp>
+#include <brig/table_def.hpp>
 #include <iterator>
 #include <stdexcept>
 #include <string>
@@ -17,18 +17,18 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline void sql_unregister(dialect* dct, command* cmd, const raster_pyramid& raster, std::vector<std::string>& sql)
+inline void sql_unregister(dialect* dct, command* cmd, const pyramid_def& raster, std::vector<std::string>& sql)
 {
   using namespace std;
 
   cmd->exec("SELECT t.scm, t.tbl FROM (" + dct->sql_tables() + ") t WHERE LOWER(t.tbl) = 'simple_rasters'");
   vector<variant> row;
   if (!cmd->fetch(row)) throw runtime_error("simple_rasters error");
-  table_definition tbl;
+  table_def tbl;
   tbl.id.schema = string_cast<char>(row[0]);
   tbl.id.name = string_cast<char>(row[1]);
   if (cmd->fetch(row)) throw runtime_error("ambiguous simple_rasters error");
-  tbl = get_table_definition(dct, cmd, tbl.id);
+  tbl = get_table_def(dct, cmd, tbl.id);
   auto cols(simple_rasters_columns(tbl));
 
   for (auto lvl(begin(raster.levels)); lvl != end(raster.levels); ++lvl)
