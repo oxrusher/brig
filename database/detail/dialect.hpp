@@ -3,7 +3,7 @@
 #ifndef BRIG_DATABASE_DETAIL_DIALECT_HPP
 #define BRIG_DATABASE_DETAIL_DIALECT_HPP
 
-#include <brig/database/command_traits.hpp>
+#include <brig/database/command.hpp>
 #include <brig/numeric_cast.hpp>
 #include <brig/pyramid_def.hpp>
 #include <brig/string_cast.hpp>
@@ -43,13 +43,13 @@ struct dialect {
   virtual std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) = 0;
   virtual void sql_drop_spatial_index(const identifier& /*layer*/, std::vector<std::string>& /*sql*/)  {}
 
-  virtual std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) = 0;
-  virtual std::string sql_column(const command_traits& trs, const column_def& col) = 0;
+  virtual std::string sql_parameter(command* cmd, const column_def& param, size_t order) = 0;
+  virtual std::string sql_column(command* cmd, const column_def& col) = 0;
   virtual void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) = 0;
   virtual std::string sql_hint(const table_def& /*tbl*/, const std::string& /*col*/)  { return ""; }
   virtual bool need_to_normalize_hemisphere(const column_def& /*col*/)  { return false; }
   virtual void sql_intersect
-    ( const command_traits& /*trs*/, const table_def& /*tbl*/, const std::string& /*col*/, const std::vector<brig::boost::box>& /*boxes*/
+    ( command* /*cmd*/, const table_def& /*tbl*/, const std::string& /*col*/, const std::vector<brig::boost::box>& /*boxes*/
     , std::string& /*sql*/, std::vector<column_def>& /*keys*/
     )
     {}

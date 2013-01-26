@@ -42,7 +42,7 @@ public:
   void set_autocommit(bool autocommit) override;
   void commit() override;
   DBMS system() override  { return SQLite; }
-  command_traits traits() override;
+  bool readable_geom() override { return true; }
 }; // command
 
 inline void command::close_stmt()
@@ -172,13 +172,6 @@ inline void command::commit()
   if (m_autocommit) return;
   exec("COMMIT");
   exec("BEGIN");
-}
-
-inline command_traits command::traits()
-{
-  command_traits trs;
-  trs.readable_geometry = true;
-  return trs;
 } // command::
 
 } } } } // brig::database::sqlite::detail

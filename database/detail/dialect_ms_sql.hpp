@@ -40,12 +40,12 @@ struct dialect_ms_sql : dialect {
 
   std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
 
-  std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) override;
-  std::string sql_column(const command_traits& trs, const column_def& col) override;
+  std::string sql_parameter(command* cmd, const column_def& param, size_t order) override;
+  std::string sql_column(command* cmd, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
   std::string sql_hint(const table_def& tbl, const std::string& col) override;
   bool need_to_normalize_hemisphere(const column_def& col) override;
-  void sql_intersect(const command_traits& trs, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys) override;
+  void sql_intersect(command* cmd, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys) override;
   std::string sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box) override;
 }; // dialect_ms_sql
 
@@ -175,14 +175,14 @@ USING GEOMETRY_GRID WITH (BOUNDING_BOX = (" << xmin << ", " << ymin << ", " << x
   return stream.str();
 }
 
-inline std::string dialect_ms_sql::sql_parameter(const command_traits& trs, const column_def& param, size_t order)
+inline std::string dialect_ms_sql::sql_parameter(command* cmd, const column_def& param, size_t order)
 {
-  const std::string marker(trs.sql_parameter_marker(order));
-  if (Geometry == param.type && !trs.writable_geometry) return param.type_lcase.name + "::STGeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ").MakeValid()";
+  const std::string marker(cmd->sql_param(order));
+  if (Geometry == param.type && !cmd->writable_geom()) return param.type_lcase.name + "::STGeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ").MakeValid()";
   return marker;
 }
 
-inline std::string dialect_ms_sql::sql_column(const command_traits& trs, const column_def& col)
+inline std::string dialect_ms_sql::sql_column(command* cmd, const column_def& col)
 {
   using namespace std;
 
@@ -190,7 +190,7 @@ inline std::string dialect_ms_sql::sql_column(const command_traits& trs, const c
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
   if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "CONVERT(CHAR(19), " + id + ", 126) AS " + id;
   if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "CONVERT(CHAR(10), " + id + ", 126) AS " + id;
-  if (Geometry == col.type && !trs.readable_geometry) return id + ".STAsBinary() AS " + id;
+  if (Geometry == col.type && !cmd->readable_geom()) return id + ".STAsBinary() AS " + id;
   return id;
 }
 
@@ -211,7 +211,7 @@ inline bool dialect_ms_sql::need_to_normalize_hemisphere(const column_def& col)
   return col.type_lcase.name.compare("geography") == 0;
 }
 
-inline void dialect_ms_sql::sql_intersect(const command_traits& trs, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys)
+inline void dialect_ms_sql::sql_intersect(command* cmd, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys)
 {
   using namespace std;
 
@@ -221,7 +221,7 @@ inline void dialect_ms_sql::sql_intersect(const command_traits& trs, const table
   if (idx == end(tbl.indexes)) throw runtime_error("unique columns error");
   keys = brig::detail::get_columns(tbl.columns, idx->columns);
   
-  const string sql_prefix("(SELECT " + sql_select_list(this, trs, keys) + " FROM " + dialect::sql_identifier(tbl.id) + " " + sql_hint(tbl, col) + " WHERE (");
+  const string sql_prefix("(SELECT " + sql_select_list(this, cmd, keys) + " FROM " + dialect::sql_identifier(tbl.id) + " " + sql_hint(tbl, col) + " WHERE (");
   const string sql_suffix("))");
   
   for (auto box(begin(boxes)); box != end(boxes); ++box)

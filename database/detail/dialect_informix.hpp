@@ -35,8 +35,8 @@ struct dialect_informix : dialect {
   void sql_unregister_spatial_column(const identifier& layer, std::vector<std::string>& sql) override;
   std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
 
-  std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) override;
-  std::string sql_column(const command_traits& trs, const column_def& col) override;
+  std::string sql_parameter(command* cmd, const column_def& param, size_t order) override;
+  std::string sql_column(command* cmd, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
   std::string sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box) override;
 
@@ -231,12 +231,12 @@ inline std::string dialect_informix::sql_create_spatial_index(const table_def& t
   return "CREATE INDEX " + sql_identifier(tbl.rtree(col)->id.name) + " ON " + sql_identifier(tbl.id.name) + " (" + sql_identifier(col) + " ST_Geometry_Ops) USING RTREE";
 }
 
-inline std::string dialect_informix::sql_parameter(const command_traits& trs, const column_def& param, size_t order)
+inline std::string dialect_informix::sql_parameter(command* cmd, const column_def& param, size_t order)
 {
   using namespace std;
 
-  const string marker(trs.sql_parameter_marker(order));
-  if (Geometry == param.type && !trs.writable_geometry)
+  const string marker(cmd->sql_param(order));
+  if (Geometry == param.type && !cmd->writable_geom())
   {
     const string suffix("(" + marker + ", " + string_cast<char>(param.srid) + ")");
          if ( param.type_lcase.name.compare("st_geometry") == 0
@@ -256,7 +256,7 @@ inline std::string dialect_informix::sql_parameter(const command_traits& trs, co
   return marker;
 }
 
-inline std::string dialect_informix::sql_column(const command_traits& trs, const column_def& col)
+inline std::string dialect_informix::sql_column(command* cmd, const column_def& col)
 {
   using namespace std;
 
@@ -264,7 +264,7 @@ inline std::string dialect_informix::sql_column(const command_traits& trs, const
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
   if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", '%Y-%m-%d') || 'T' || TO_CHAR(" + id + ", '%H:%M:%S')) AS " + id;
   if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", '%Y-%m-%d') AS " + id;
-  if (Geometry == col.type && !trs.readable_geometry) return "ST_AsBinary(" + id + ") AS " + id;
+  if (Geometry == col.type && !cmd->readable_geom()) return "ST_AsBinary(" + id + ") AS " + id;
   return id;
 }
 

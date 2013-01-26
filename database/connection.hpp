@@ -225,7 +225,7 @@ std::shared_ptr<rowset> connection<Threading>::select(const table_def& tbl)
   unique_ptr<dialect> dct(dialect_factory(cmd->system()));
   string sql;
   vector<column_def> params;
-  sql_select(dct.get(), cmd->traits(), tbl, sql, params);
+  sql_select(dct.get(), cmd.get(), tbl, sql, params);
   cmd->exec(sql, params);
   return cmd;
 }

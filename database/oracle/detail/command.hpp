@@ -41,7 +41,9 @@ public:
   void set_autocommit(bool autocommit) override;
   void commit() override;
   DBMS system() override  { return Oracle; }
-  command_traits traits() override;
+  std::string sql_param(size_t order) override  { return ":" + string_cast<char>(order + 1); }
+  bool readable_geom() override { return true; }
+  bool writable_geom() override { return true; }
 }; // command
 
 inline void command::close_stmt()
@@ -201,16 +203,6 @@ inline void command::commit()
   close_stmt();
   if (m_autocommit) return;
   m_hnd.check(lib::singleton().p_OCITransCommit(m_hnd.svc, m_hnd.err, OCI_DEFAULT));
-}
-
-inline command_traits command::traits()
-{
-  command_traits trs;
-  trs.parameter_prefix = ':';
-  trs.parameter_suffix = true;
-  trs.readable_geometry = true;
-  trs.writable_geometry = true;
-  return trs;
 } // command::
 
 } } } } // brig::database::oracle::detail

@@ -4,7 +4,6 @@
 #define BRIG_DATABASE_COMMAND_HPP
 
 #include <brig/column_def.hpp>
-#include <brig/database/command_traits.hpp>
 #include <brig/database/dbms.hpp>
 #include <brig/rowset.hpp>
 #include <string>
@@ -20,7 +19,9 @@ struct command : rowset {
   virtual void commit() = 0;
 
   virtual DBMS system() = 0;
-  virtual command_traits traits()  { return command_traits(); }
+  virtual std::string sql_param(size_t /*order*/)  { return "?"; }
+  virtual bool readable_geom()  { return false; }
+  virtual bool writable_geom()  { return false; }
 }; // command
 
 } } // brig::database

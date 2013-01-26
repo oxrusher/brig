@@ -45,7 +45,7 @@ public:
   void set_autocommit(bool autocommit) override;
   void commit() override;
   DBMS system() override  { return Postgres; }
-  command_traits traits() override;
+  std::string sql_param(size_t order) override  { return "$" + string_cast<char>(order + 1); }
 }; // command
 
 inline void command::check(bool r)
@@ -196,14 +196,6 @@ inline void command::commit()
   close_result();
   if (m_autocommit) return;
   check_command(lib::singleton().p_PQexec(m_con, "COMMIT; BEGIN;"));
-}
-
-inline command_traits command::traits()
-{
-  command_traits trs;
-  trs.parameter_prefix = '$';
-  trs.parameter_suffix = true;
-  return trs;
 } // command::
 
 } } } } // brig::database::postgres::detail

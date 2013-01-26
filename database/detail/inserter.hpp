@@ -31,7 +31,6 @@ inserter<Deleter>::inserter(command* cmd, Deleter&& deleter, const table_def& tb
 {
   using namespace std;
   unique_ptr<dialect> dct(dialect_factory(m_cmd->system()));
-  const command_traits trs(cmd->traits());
   vector<column_def> cols = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
   string prefix, suffix;
   for (auto col(begin(cols)); col != end(cols); ++col)
@@ -42,7 +41,7 @@ inserter<Deleter>::inserter(command* cmd, Deleter&& deleter, const table_def& tb
       suffix += ", ";
     }
     prefix += dct->sql_identifier(col->name);
-    suffix += dct->sql_parameter(trs, *col, m_params.size());
+    suffix += dct->sql_parameter(cmd, *col, m_params.size());
     m_params.push_back(*col);
   }
   m_sql = "INSERT INTO " + dct->sql_identifier(tbl.id) + "(" + prefix + ") VALUES(" + suffix + ")";

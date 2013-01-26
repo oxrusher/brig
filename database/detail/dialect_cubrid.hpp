@@ -30,8 +30,8 @@ struct dialect_cubrid : dialect {
 
   std::string sql_create_spatial_index(const table_def&, const std::string&) override  { throw std::runtime_error("DBMS error"); }
 
-  std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) override;
-  std::string sql_column(const command_traits& trs, const column_def& col) override;
+  std::string sql_parameter(command* cmd, const column_def& param, size_t order) override;
+  std::string sql_column(command* cmd, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
   std::string sql_intersect(const table_def&, const std::string&, const boost::box&) override  { throw std::runtime_error("DBMS error"); }
 }; // dialect_cubrid
@@ -91,13 +91,13 @@ inline column_def dialect_cubrid::fit_column(const column_def& col)
   return res;
 }
 
-inline std::string dialect_cubrid::sql_parameter(const command_traits& trs, const column_def& param, size_t order)
+inline std::string dialect_cubrid::sql_parameter(command* cmd, const column_def& param, size_t order)
 {
-  if (Geometry == param.type && !trs.writable_geometry) throw std::runtime_error("datatype error");
-  return trs.sql_parameter_marker(order);
+  if (Geometry == param.type && !cmd->writable_geom()) throw std::runtime_error("datatype error");
+  return cmd->sql_param(order);
 }
 
-inline std::string dialect_cubrid::sql_column(const command_traits& trs, const column_def& col)
+inline std::string dialect_cubrid::sql_column(command* cmd, const column_def& col)
 {
   using namespace std;
 
@@ -105,7 +105,7 @@ inline std::string dialect_cubrid::sql_column(const command_traits& trs, const c
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
   if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
   if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
-  if (Geometry == col.type && !trs.readable_geometry) throw runtime_error("datatype error");
+  if (Geometry == col.type && !cmd->readable_geom()) throw runtime_error("datatype error");
   return id;
 }
 

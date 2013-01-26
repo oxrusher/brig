@@ -26,7 +26,9 @@ public:
   void set_autocommit(bool autocommit) override;
   void commit() override;
   DBMS system() override;
-  command_traits traits() override;
+  std::string sql_param(size_t order) override;
+  bool readable_geom() override;
+  bool writable_geom() override;
 }; // threaded_command
 
 inline threaded_command::threaded_command(std::shared_ptr<command_allocator> allocator) : m_med(new mediator())
@@ -82,9 +84,19 @@ inline DBMS threaded_command::system()
   return m_med->call<DBMS>(&command::system, std::placeholders::_1);
 }
 
-inline command_traits threaded_command::traits()
+inline std::string threaded_command::sql_param(size_t order)
 {
-  return m_med->call<command_traits>(&command::traits, std::placeholders::_1);
+  return m_med->call<std::string>(&command::sql_param, std::placeholders::_1, order);
+}
+
+inline bool threaded_command::readable_geom()
+{
+  return m_med->call<bool>(&command::readable_geom, std::placeholders::_1);
+}
+
+inline bool threaded_command::writable_geom()
+{
+  return m_med->call<bool>(&command::writable_geom, std::placeholders::_1);
 } // threaded_command::
 
 } } } // brig::database::detail

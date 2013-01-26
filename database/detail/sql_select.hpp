@@ -7,7 +7,7 @@
 #include <brig/boost/envelope.hpp>
 #include <brig/boost/geom_from_wkb.hpp>
 #include <brig/boost/geometry.hpp>
-#include <brig/database/command_traits.hpp>
+#include <brig/database/command.hpp>
 #include <brig/database/detail/dialect.hpp>
 #include <brig/database/detail/normalize_hemisphere.hpp>
 #include <brig/database/detail/sql_select_list.hpp>
@@ -20,7 +20,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline void sql_select(dialect* dct, const command_traits& trs, const table_def& tbl, std::string& sql, std::vector<column_def>& params)
+inline void sql_select(dialect* dct, command* cmd, const table_def& tbl, std::string& sql, std::vector<column_def>& params)
 {
   using namespace std;
 
@@ -32,7 +32,7 @@ inline void sql_select(dialect* dct, const command_traits& trs, const table_def&
     {
       if (!sql_conditions.empty()) sql_conditions += "AND ";
       sql_conditions += col->query_expression.empty()? col->name: col->query_expression;
-      sql_conditions += " = (" + dct->sql_parameter(trs, *col, params.size()) + ")"; // Oracle workaround
+      sql_conditions += " = (" + dct->sql_parameter(cmd, *col, params.size()) + ")"; // Oracle workaround
       params.push_back(*col);
     }
 
@@ -41,7 +41,7 @@ inline void sql_select(dialect* dct, const command_traits& trs, const table_def&
   if (geom_col == end(tbl.columns))
   {
     if (!sql_counter.empty()) sql += "SELECT * FROM (";
-    sql += "SELECT " + sql_infix + " " + sql_select_list(dct, trs, cols) + " FROM " + dct->sql_identifier(tbl.id);
+    sql += "SELECT " + sql_infix + " " + sql_select_list(dct, cmd, cols) + " FROM " + dct->sql_identifier(tbl.id);
     if (!sql_conditions.empty()) sql += " WHERE " + sql_conditions;
     if (!sql_counter.empty()) sql += ") WHERE " + sql_counter;
     sql += " " + sql_suffix;
@@ -53,14 +53,14 @@ inline void sql_select(dialect* dct, const command_traits& trs, const table_def&
   if (dct->need_to_normalize_hemisphere(*geom_col)) normalize_hemisphere(boxes);
   string sql_keys;
   vector<column_def> keys;
-  dct->sql_intersect(trs, tbl, geom_col->name, boxes, sql_keys, keys);
+  dct->sql_intersect(cmd, tbl, geom_col->name, boxes, sql_keys, keys);
   const string sql_tbl(dct->sql_identifier(tbl.id));
 
   if (!sql_counter.empty()) sql += "SELECT * FROM (";
   sql += "SELECT " + sql_infix + " ";
   if (sql_keys.empty())
   {
-    sql += sql_select_list(dct, trs, cols) + " FROM " + sql_tbl + " " + dct->sql_hint(tbl, geom_col->name) + " WHERE (";
+    sql += sql_select_list(dct, cmd, cols) + " FROM " + sql_tbl + " " + dct->sql_hint(tbl, geom_col->name) + " WHERE (";
     for (auto box(begin(boxes)); box != end(boxes); ++box)
     {
       if (box != begin(boxes)) sql += " OR ";
@@ -77,10 +77,10 @@ inline void sql_select(dialect* dct, const command_traits& trs, const table_def&
       const string id(dct->sql_identifier(col->name));
       sql += "v." + id + " AS " + id;
     }
-    sql += " FROM (" + sql_keys + ") k JOIN (SELECT " + sql_select_list(dct, trs, cols);
+    sql += " FROM (" + sql_keys + ") k JOIN (SELECT " + sql_select_list(dct, cmd, cols);
     for (auto key(begin(keys)); key != end(keys); ++key)
       if (!find_column(begin(cols), end(cols), key->name))
-        sql += ", " + dct->sql_column(trs, *key);
+        sql += ", " + dct->sql_column(cmd, *key);
     sql += " FROM " + sql_tbl;
     if (!sql_conditions.empty()) sql += " WHERE " + sql_conditions;
     sql += ") v ON ";

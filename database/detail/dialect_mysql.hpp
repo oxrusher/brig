@@ -39,8 +39,8 @@ struct dialect_mysql : dialect {
   std::string sql_table_options() override;
   std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
 
-  std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) override;
-  std::string sql_column(const command_traits& trs, const column_def& col) override;
+  std::string sql_parameter(command* cmd, const column_def& param, size_t order) override;
+  std::string sql_column(command* cmd, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
   std::string sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box) override;
 }; // dialect_mysql
@@ -143,14 +143,14 @@ inline std::string dialect_mysql::sql_create_spatial_index(const table_def& tbl,
   return "CREATE SPATIAL INDEX " + sql_identifier(tbl.rtree(col)->id.name) + " ON " + sql_identifier(tbl.id.name) + " (" + sql_identifier(col) + ")";
 }
 
-inline std::string dialect_mysql::sql_parameter(const command_traits& trs, const column_def& param, size_t order)
+inline std::string dialect_mysql::sql_parameter(command* cmd, const column_def& param, size_t order)
 {
-  const std::string marker(trs.sql_parameter_marker(order));
-  if (Geometry == param.type && !trs.writable_geometry) return "GeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ")";
+  const std::string marker(cmd->sql_param(order));
+  if (Geometry == param.type && !cmd->writable_geom()) return "GeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ")";
   return marker;
 }
 
-inline std::string dialect_mysql::sql_column(const command_traits& trs, const column_def& col)
+inline std::string dialect_mysql::sql_column(command* cmd, const column_def& col)
 {
   using namespace std;
 
@@ -158,7 +158,7 @@ inline std::string dialect_mysql::sql_column(const command_traits& trs, const co
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
   if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "DATE_FORMAT(" + id + ", '%Y-%m-%dT%T') AS " + id;
   if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "DATE_FORMAT(" + id + ", '%Y-%m-%d') AS " + id;
-  if (Geometry == col.type && !trs.readable_geometry) return "AsBinary(" + id + ") AS " + id;
+  if (Geometry == col.type && !cmd->readable_geom()) return "AsBinary(" + id + ") AS " + id;
   return id;
 }
 

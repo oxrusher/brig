@@ -40,8 +40,8 @@ struct dialect_postgres : dialect {
   void sql_unregister_spatial_column(const identifier& layer, std::vector<std::string>& sql) override;
   std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
 
-  std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) override;
-  std::string sql_column(const command_traits& trs, const column_def& col) override;
+  std::string sql_parameter(command* cmd, const column_def& param, size_t order) override;
+  std::string sql_column(command* cmd, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
   bool need_to_normalize_hemisphere(const column_def& col) override;
   std::string sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box) override;
@@ -240,12 +240,12 @@ inline void dialect_postgres::init_raster(pyramid_def& raster)
   }
 }
 
-inline std::string dialect_postgres::sql_parameter(const command_traits& trs, const column_def& param, size_t order)
+inline std::string dialect_postgres::sql_parameter(command* cmd, const column_def& param, size_t order)
 {
   using namespace std;
 
-  const string marker(trs.sql_parameter_marker(order));
-  if (Geometry == param.type && !trs.writable_geometry)
+  const string marker(cmd->sql_param(order));
+  if (Geometry == param.type && !cmd->writable_geom())
   {
     if (param.type_lcase.name.compare("geography") == 0)
     {
@@ -258,7 +258,7 @@ inline std::string dialect_postgres::sql_parameter(const command_traits& trs, co
   return marker;
 }
 
-inline std::string dialect_postgres::sql_column(const command_traits& trs, const column_def& col)
+inline std::string dialect_postgres::sql_column(command* cmd, const column_def& col)
 {
   using namespace std;
 
@@ -266,7 +266,7 @@ inline std::string dialect_postgres::sql_column(const command_traits& trs, const
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
   if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
   if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
-  if (Geometry == col.type && !trs.readable_geometry)
+  if (Geometry == col.type && !cmd->readable_geom())
   {
     if (col.type_lcase.name.compare("raster") == 0) return "ST_AsBinary(ST_Envelope(" + id + ")) AS " + id;
     if (col.type_lcase.name.compare("geography") == 0 || col.type_lcase.name.compare("geometry") == 0) return "ST_AsBinary(" + id + ") AS " + id;

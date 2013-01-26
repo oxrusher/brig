@@ -42,11 +42,11 @@ struct dialect_oracle : dialect {
   void sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql) override;
   std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
 
-  std::string sql_parameter(const command_traits& trs, const column_def& param, size_t order) override;
-  std::string sql_column(const command_traits& trs, const column_def& col) override;
+  std::string sql_parameter(command* cmd, const column_def& param, size_t order) override;
+  std::string sql_column(command* cmd, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
   bool need_to_normalize_hemisphere(const column_def& col) override;
-  void sql_intersect(const command_traits& trs, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys) override;
+  void sql_intersect(command* cmd, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys) override;
   std::string sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box) override;
 }; // dialect_oracle
 
@@ -229,12 +229,12 @@ inline std::string dialect_oracle::sql_create_spatial_index(const table_def& tbl
   return "CREATE INDEX " + sql_identifier(tbl.rtree(col)->id.name) + " ON " + sql_identifier(tbl.id.name) + " (" + sql_identifier(col) + ") INDEXTYPE IS MDSYS.SPATIAL_INDEX";
 }
 
-inline std::string dialect_oracle::sql_parameter(const command_traits& trs, const column_def& param, size_t order)
+inline std::string dialect_oracle::sql_parameter(command* cmd, const column_def& param, size_t order)
 {
   using namespace std;
 
-  const string marker(trs.sql_parameter_marker(order));
-  if (Geometry == param.type && !trs.writable_geometry)
+  const string marker(cmd->sql_param(order));
+  if (Geometry == param.type && !cmd->writable_geom())
   {
     string sql;
     const bool conv(param.type_lcase.name.compare("sdo_geometry") != 0);
@@ -246,7 +246,7 @@ inline std::string dialect_oracle::sql_parameter(const command_traits& trs, cons
   return marker;
 }
 
-inline std::string dialect_oracle::sql_column(const command_traits& trs, const column_def& col)
+inline std::string dialect_oracle::sql_column(command* cmd, const column_def& col)
 {
   using namespace std;
 
@@ -254,7 +254,7 @@ inline std::string dialect_oracle::sql_column(const command_traits& trs, const c
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
   if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
   if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
-  if (Geometry == col.type && !trs.readable_geometry) return col.type_lcase.to_string() + ".GET_WKB(" + id + ") AS " + id;
+  if (Geometry == col.type && !cmd->readable_geom()) return col.type_lcase.to_string() + ".GET_WKB(" + id + ") AS " + id;
   return id;
 }
 
@@ -270,7 +270,7 @@ inline bool dialect_oracle::need_to_normalize_hemisphere(const column_def& col)
   return col.type_lcase.qualifier.find("geographic") != std::string::npos;
 }
 
-inline void dialect_oracle::sql_intersect(const command_traits& trs, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys)
+inline void dialect_oracle::sql_intersect(command* cmd, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys)
 {
   using namespace std;
 
@@ -283,7 +283,7 @@ inline void dialect_oracle::sql_intersect(const command_traits& trs, const table
 
   std::string sql_prefix, sql_infix, sql_counter, sql_suffix;
   if (tbl.query_rows >= 0) sql_limit(tbl.query_rows, sql_infix, sql_counter, sql_suffix);
-  sql_prefix = "(SELECT " + sql_infix + " " + sql_select_list(this, trs, keys) + " FROM " + sql_identifier(tbl.id) + " WHERE (";
+  sql_prefix = "(SELECT " + sql_infix + " " + sql_select_list(this, cmd, keys) + " FROM " + sql_identifier(tbl.id) + " WHERE (";
   sql_suffix = ")";
   if (!sql_counter.empty()) sql_suffix += " AND " + sql_counter;
   sql_suffix += ")";
