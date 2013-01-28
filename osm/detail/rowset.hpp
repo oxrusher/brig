@@ -128,6 +128,7 @@ inline void rowset::add_files()
     check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_URL, url.c_str()));
     check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, &write));
     check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_WRITEDATA, data.rast));
+    check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, long(Timeout)));
     check(lib::singleton().p_curl_multi_add_handle(m_hnd, hnd));
   }
 }
@@ -151,6 +152,7 @@ inline bool rowset::fetch(std::vector<variant>& row)
   int msgs_in_queue(0);
   CURLMsg* msg(lib::singleton().p_curl_multi_info_read(m_hnd, &msgs_in_queue));
   if (!msg || msg->msg != CURLMSG_DONE) throw std::runtime_error("cURL error");
+  check(msg->data.result);
   CURL* hnd(msg->easy_handle);
 
   const size_t count(m_cols.size());
