@@ -23,9 +23,9 @@ enum index_type {
 }; // index_type
 
 const int CharsLimit = 250;
-const size_t PageSize = 500; // DB2 PUERTO_ROADS is slowdown after 447
+const size_t PageSize = 250; // DB2 PUERTO_ROADS is slowdown after 447
 const size_t PoolSize = 5;
-const size_t Timeout = 30000; // ms
+const size_t Timeout = 180000; // ms
 
 } // brig
 
