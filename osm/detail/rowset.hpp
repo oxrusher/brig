@@ -7,10 +7,10 @@
 #include <brig/boost/as_binary.hpp>
 #include <brig/detail/raii.hpp>
 #include <brig/global.hpp>
-#include <brig/osm/detail/layer.hpp>
 #include <brig/osm/detail/lib.hpp>
 #include <brig/osm/detail/tile.hpp>
 #include <brig/osm/detail/tiles.hpp>
+#include <brig/osm/layer.hpp>
 #include <brig/rowset.hpp>
 #include <iterator>
 #include <memory>
@@ -98,8 +98,8 @@ inline std::vector<std::string> rowset::columns()
   std::vector<std::string> cols;
   for (size_t i(0); i < m_cols.size(); ++i)
   {
-    if (m_cols[i]) cols.push_back(layer::column_raster());
-    else cols.push_back(layer::column_geometry());
+    if (m_cols[i]) cols.push_back(PNG());
+    else cols.push_back(WKB());
   }
   return cols;
 }
@@ -123,7 +123,7 @@ inline void rowset::add_files()
     m_pg[hnd] = data;
     raii_hnd.reset();
 
-    const std::string url(m_lr->get_url(i, tl));
+    const std::string url(m_lr->get_url(i, tl.x, tl.y, tl.z));
 
     check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_URL, url.c_str()));
     check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, &write));
@@ -167,7 +167,7 @@ inline bool rowset::fetch(std::vector<variant>& row)
       blob.assign(begin(*data.rast), end(*data.rast));
     }
     else
-      row[i] = brig::boost::as_binary(data.tl.get_mbr());
+      row[i] = brig::boost::as_binary(data.tl.get_box());
   }
 
   lib::singleton().p_curl_multi_remove_handle(m_hnd, hnd);

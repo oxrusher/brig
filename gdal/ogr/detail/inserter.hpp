@@ -1,12 +1,12 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_GDAL_DETAIL_INSERTER_HPP
-#define BRIG_GDAL_DETAIL_INSERTER_HPP
+#ifndef BRIG_GDAL_OGR_DETAIL_INSERTER_HPP
+#define BRIG_GDAL_OGR_DETAIL_INSERTER_HPP
 
 #include <brig/detail/get_columns.hpp>
 #include <brig/detail/raii.hpp>
-#include <brig/gdal/detail/datasource.hpp>
 #include <brig/gdal/detail/lib.hpp>
+#include <brig/gdal/ogr/detail/datasource_allocator.hpp>
 #include <brig/inserter.hpp>
 #include <brig/numeric_cast.hpp>
 #include <brig/table_def.hpp>
@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-namespace brig { namespace gdal { namespace detail {
+namespace brig { namespace gdal { namespace ogr { namespace detail {
 
 class inserter : public brig::inserter {
   std::unique_ptr<datasource> m_ds;
@@ -25,19 +25,20 @@ class inserter : public brig::inserter {
   OGRSpatialReferenceH m_sr;
   std::vector<int> m_fields;
 public:
-  inserter(datasource* ds, const table_def& tbl);
+  inserter(datasource_allocator* allocator, const table_def& tbl);
   void insert(std::vector<variant>& row) override;
   void flush() override;
 }; // inserter
 
-inline inserter::inserter(datasource* ds, const table_def& tbl) : m_ds(ds)
+inline inserter::inserter(datasource_allocator* allocator, const table_def& tbl) : m_ds(allocator->allocate(true))
 {
   using namespace std;
+  using namespace gdal::detail;
 
   m_lr = lib::singleton().p_OGR_DS_GetLayerByName(*m_ds, tbl.id.name.c_str());
-  if (!m_lr) throw runtime_error("GDAL error");
+  if (!m_lr) throw runtime_error("OGR error");
   m_feature_def = lib::singleton().p_OGR_L_GetLayerDefn(m_lr);
-  if (!m_feature_def) throw runtime_error("GDAL error");
+  if (!m_feature_def) throw runtime_error("OGR error");
   m_sr = lib::singleton().p_OGR_L_GetSpatialRef(m_lr);
 
   vector<column_def> cols = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
@@ -46,7 +47,7 @@ inline inserter::inserter(datasource* ds, const table_def& tbl) : m_ds(ds)
   for (int i(0), count(lib::singleton().p_OGR_FD_GetFieldCount(m_feature_def)); i < count; ++i)
   {
     OGRFieldDefnH field_def(lib::singleton().p_OGR_FD_GetFieldDefn(m_feature_def, i));
-    if (!field_def) throw runtime_error("GDAL error");
+    if (!field_def) throw runtime_error("OGR error");
     auto col(find_column(begin(cols), end(cols), lib::singleton().p_OGR_Fld_GetNameRef(field_def)));
     if (!col || Geometry == col->type) continue;
     auto pos(distance(cols.data(), col));
@@ -57,10 +58,11 @@ inline inserter::inserter(datasource* ds, const table_def& tbl) : m_ds(ds)
 inline void inserter::insert(std::vector<variant>& row)
 {
   using namespace std;
+  using namespace gdal::detail;
 
-  if (row.size() != m_fields.size()) throw runtime_error("GDAL error");
+  if (row.size() != m_fields.size()) throw runtime_error("OGR error");
   auto feature(brig::detail::make_raii(lib::singleton().p_OGR_F_Create(m_feature_def), lib::singleton().p_OGR_F_Destroy));
-  if (!feature) throw runtime_error("GDAL error");
+  if (!feature) throw runtime_error("OGR error");
 
   for (size_t i(0); i < m_fields.size(); ++i)
   {
@@ -76,13 +78,13 @@ inline void inserter::insert(std::vector<variant>& row)
     else if (typeid(int16_t) == row[i].type() || typeid(int32_t) == row[i].type() || typeid(int64_t) == row[i].type())
     {
       int val(0);
-      if (!numeric_cast(row[i], val)) throw runtime_error("GDAL error");
+      if (!numeric_cast(row[i], val)) throw runtime_error("OGR error");
       lib::singleton().p_OGR_F_SetFieldInteger(feature, m_fields[i], val);
     }
     else if (typeid(float) == row[i].type() || typeid(double) == row[i].type())
     {
       double val(0);
-      if (!numeric_cast(row[i], val)) throw runtime_error("GDAL error");
+      if (!numeric_cast(row[i], val)) throw runtime_error("OGR error");
       lib::singleton().p_OGR_F_SetFieldDouble(feature, m_fields[i], val);
     }
     else if (typeid(string) == row[i].type())
@@ -96,7 +98,7 @@ inline void inserter::insert(std::vector<variant>& row)
       lib::singleton().p_OGR_F_SetFieldBinary(feature, m_fields[i], int(blob.size()), (GByte*)blob.data());
     }
     else
-      throw runtime_error("GDAL error");
+      throw runtime_error("OGR error");
   }
 
   lib::check(lib::singleton().p_OGR_L_CreateFeature(m_lr, feature));
@@ -104,10 +106,11 @@ inline void inserter::insert(std::vector<variant>& row)
 
 inline void inserter::flush()
 {
+  using namespace gdal::detail;
   lib::check(lib::singleton().p_OGR_L_SyncToDisk(m_lr));
   lib::check(lib::singleton().p_OGR_DS_SyncToDisk(*m_ds));
 } // inserter::
 
-} } } // brig::gdal::detail
+} } } } // brig::gdal::ogr::detail
 
-#endif // BRIG_GDAL_DETAIL_INSERTER_HPP
+#endif // BRIG_GDAL_OGR_DETAIL_INSERTER_HPP

@@ -10,12 +10,11 @@
   #define CPL_STDCALL __stdcall
   #include <brig/detail/decoration.hpp>
   #define BRIG_GDAL_DL_FUNCTION(lib, fun) (decltype(fun)*)GetProcAddress(lib, BRIG_DECORATION(fun))
-
 #else
   #define BRIG_GDAL_DL_FUNCTION(lib, fun) BRIG_DL_FUNCTION(lib, fun)
-
 #endif
 
+#include <gdal.h>
 #include <ogr_api.h>
 #include <ogr_srs_api.h>
 
@@ -25,6 +24,21 @@ class lib {
   lib();
 
 public:
+  decltype(GDALAllRegister) *p_GDALAllRegister;
+  decltype(GDALClose) *p_GDALClose;
+  decltype(GDALGetColorEntry) *p_GDALGetColorEntry;
+  decltype(GDALGetColorEntryCount) *p_GDALGetColorEntryCount;
+  decltype(GDALGetGeoTransform) *p_GDALGetGeoTransform;
+  decltype(GDALGetPaletteInterpretation) *p_GDALGetPaletteInterpretation;
+  decltype(GDALGetProjectionRef) *p_GDALGetProjectionRef;
+  decltype(GDALGetRasterBand) *p_GDALGetRasterBand;
+  decltype(GDALGetRasterColorInterpretation) *p_GDALGetRasterColorInterpretation;
+  decltype(GDALGetRasterColorTable) *p_GDALGetRasterColorTable;
+  decltype(GDALGetRasterCount) *p_GDALGetRasterCount;
+  decltype(GDALGetRasterXSize) *p_GDALGetRasterXSize;
+  decltype(GDALGetRasterYSize) *p_GDALGetRasterYSize;
+  decltype(GDALOpen) *p_GDALOpen;
+  decltype(GDALRasterIO) *p_GDALRasterIO;
   decltype(GDALVersionInfo) *p_GDALVersionInfo;
   decltype(OGR_Dr_CreateDataSource) *p_OGR_Dr_CreateDataSource;
   decltype(OGR_DS_CreateLayer) *p_OGR_DS_CreateLayer;
@@ -84,14 +98,29 @@ public:
 
   bool empty() const  { return p_OSRNewSpatialReference == 0; }
   static lib& singleton()  { static lib s; return s; }
-  static std::string ogr_geom_wkb()  { return "ogr_geom_wkb"; }
-  static void check(OGRErr r)  { if (OGRERR_NONE != r) throw std::runtime_error("GDAL error"); }
+  static void check(CPLErr r)  { if (CE_None != r) throw std::runtime_error("GDAL error"); }
+  static void check(OGRErr r)  { if (OGRERR_NONE != r) throw std::runtime_error("OGR error"); }
 }; // lib
 
 inline lib::lib() : p_OSRNewSpatialReference(0)
 {
   auto handle = BRIG_DL_LIBRARY("gdal19.dll", ""); // todo:
   if (  handle
+    && (p_GDALAllRegister = BRIG_GDAL_DL_FUNCTION(handle, GDALAllRegister))
+    && (p_GDALClose = BRIG_GDAL_DL_FUNCTION(handle, GDALClose))
+    && (p_GDALGetColorEntry = BRIG_GDAL_DL_FUNCTION(handle, GDALGetColorEntry))
+    && (p_GDALGetColorEntryCount = BRIG_GDAL_DL_FUNCTION(handle, GDALGetColorEntryCount))
+    && (p_GDALGetGeoTransform = BRIG_GDAL_DL_FUNCTION(handle, GDALGetGeoTransform))
+    && (p_GDALGetPaletteInterpretation = BRIG_GDAL_DL_FUNCTION(handle, GDALGetPaletteInterpretation))
+    && (p_GDALGetProjectionRef = BRIG_GDAL_DL_FUNCTION(handle, GDALGetProjectionRef))
+    && (p_GDALGetRasterBand = BRIG_GDAL_DL_FUNCTION(handle, GDALGetRasterBand))
+    && (p_GDALGetRasterColorInterpretation = BRIG_GDAL_DL_FUNCTION(handle, GDALGetRasterColorInterpretation))
+    && (p_GDALGetRasterColorTable = BRIG_GDAL_DL_FUNCTION(handle, GDALGetRasterColorTable))
+    && (p_GDALGetRasterCount = BRIG_GDAL_DL_FUNCTION(handle, GDALGetRasterCount))
+    && (p_GDALGetRasterXSize = BRIG_GDAL_DL_FUNCTION(handle, GDALGetRasterXSize))
+    && (p_GDALGetRasterYSize = BRIG_GDAL_DL_FUNCTION(handle, GDALGetRasterYSize))
+    && (p_GDALOpen = BRIG_GDAL_DL_FUNCTION(handle, GDALOpen))
+    && (p_GDALRasterIO = BRIG_GDAL_DL_FUNCTION(handle, GDALRasterIO))
     && (p_GDALVersionInfo = BRIG_GDAL_DL_FUNCTION(handle, GDALVersionInfo))
     && (p_OGR_Dr_CreateDataSource = BRIG_GDAL_DL_FUNCTION(handle, OGR_Dr_CreateDataSource))
     && (p_OGR_DS_CreateLayer = BRIG_GDAL_DL_FUNCTION(handle, OGR_DS_CreateLayer))
@@ -149,7 +178,11 @@ inline lib::lib() : p_OSRNewSpatialReference(0)
     && (p_OSRImportFromProj4 = BRIG_GDAL_DL_FUNCTION(handle, OSRImportFromProj4))
      )  p_OSRNewSpatialReference = BRIG_GDAL_DL_FUNCTION(handle, OSRNewSpatialReference);
 
-  if (!empty()) p_OGRRegisterAll();
+  if (!empty())
+  {
+    p_GDALAllRegister();
+    p_OGRRegisterAll();
+  }
 } // lib::
 
 } } } // brig::gdal::detail

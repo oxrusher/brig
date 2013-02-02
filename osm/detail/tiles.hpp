@@ -21,7 +21,7 @@ public:
 
 inline bool tiles::find_in(const tile& tl)
 {
-  if (!tl.is_valid() || tl.z > m_zoom || !::boost::geometry::intersects(m_env, tl.get_mbr()))
+  if (!tl.is_valid() || tl.z > m_zoom || !::boost::geometry::intersects(m_env, tl.get_box()))
     return false;
 
   if (tl.z < m_zoom)

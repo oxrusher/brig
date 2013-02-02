@@ -268,7 +268,7 @@ inline std::string dialect_postgres::sql_column(command* cmd, const column_def& 
   if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
   if (Geometry == col.type && !cmd->readable_geom())
   {
-    if (col.type_lcase.name.compare("raster") == 0) return "ST_AsBinary(ST_Envelope(" + id + ")) AS " + id;
+    if (col.type_lcase.name.compare("raster") == 0) return "ST_AsBinary(ST_ConvexHull(" + id + ")) AS " + id;
     if (col.type_lcase.name.compare("geography") == 0 || col.type_lcase.name.compare("geometry") == 0) return "ST_AsBinary(" + id + ") AS " + id;
     throw runtime_error("datatype error");
   }

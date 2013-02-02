@@ -1,9 +1,8 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_CONNECTION_HPP
-#define BRIG_DATABASE_CONNECTION_HPP
+#ifndef BRIG_DATABASE_PROVIDER_HPP
+#define BRIG_DATABASE_PROVIDER_HPP
 
-#include <brig/connection.hpp>
 #include <brig/database/command_allocator.hpp>
 #include <brig/database/detail/dialect_factory.hpp>
 #include <brig/database/detail/fit_raster.hpp>
@@ -22,6 +21,7 @@
 #include <brig/database/detail/sql_select.hpp>
 #include <brig/database/detail/sql_unregister.hpp>
 #include <brig/detail/deleter.hpp>
+#include <brig/provider.hpp>
 #include <iterator>
 #include <memory>
 #include <string>
@@ -30,13 +30,13 @@
 namespace brig { namespace database {
 
 template <bool Threading>
-class connection : public brig::connection {
+class provider : public brig::provider {
   typedef detail::pool<Threading> pool_t;
   typedef brig::detail::deleter<command, pool_t> deleter_t;
   std::shared_ptr<pool_t> m_pool;
 
 public:
-  explicit connection(std::shared_ptr<command_allocator> allocator) : m_pool(new pool_t(allocator))  {}
+  explicit provider(std::shared_ptr<command_allocator> allocator) : m_pool(new pool_t(allocator))  {}
 
   std::vector<identifier> get_tables() override;
   std::vector<identifier> get_geometry_layers() override;
@@ -62,16 +62,16 @@ public:
   std::shared_ptr<command> get_command();
   void create(const table_def& tbl, std::vector<std::string>& sql);
   void reg(const pyramid_def& raster, std::vector<std::string>& sql);
-}; // connection
+}; // provider
 
 template <bool Threading>
-std::shared_ptr<command> connection<Threading>::get_command()
+std::shared_ptr<command> provider<Threading>::get_command()
 {
   return std::shared_ptr<command>(m_pool->allocate(), deleter_t(m_pool));
 }
 
 template <bool Threading>
-std::vector<identifier> connection<Threading>::get_tables()
+std::vector<identifier> provider<Threading>::get_tables()
 {
   using namespace std;
   using namespace detail;
@@ -81,7 +81,7 @@ std::vector<identifier> connection<Threading>::get_tables()
 }
 
 template <bool Threading>
-std::vector<identifier> connection<Threading>::get_geometry_layers()
+std::vector<identifier> provider<Threading>::get_geometry_layers()
 {
   using namespace std;
   using namespace detail;
@@ -91,7 +91,7 @@ std::vector<identifier> connection<Threading>::get_geometry_layers()
 }
 
 template <bool Threading>
-table_def connection<Threading>::get_table_def(const identifier& tbl)
+table_def provider<Threading>::get_table_def(const identifier& tbl)
 {
   using namespace std;
   using namespace detail;
@@ -101,7 +101,7 @@ table_def connection<Threading>::get_table_def(const identifier& tbl)
 }
 
 template <bool Threading>
-brig::boost::box connection<Threading>::get_mbr(const table_def& tbl, const std::string& col)
+brig::boost::box provider<Threading>::get_mbr(const table_def& tbl, const std::string& col)
 {
   using namespace std;
   using namespace detail;
@@ -111,7 +111,7 @@ brig::boost::box connection<Threading>::get_mbr(const table_def& tbl, const std:
 }
 
 template <bool Threading>
-table_def connection<Threading>::fit_to_create(const table_def& tbl)
+table_def provider<Threading>::fit_to_create(const table_def& tbl)
 {
   using namespace std;
   using namespace detail;
@@ -125,7 +125,7 @@ table_def connection<Threading>::fit_to_create(const table_def& tbl)
 }
 
 template <bool Threading>
-void connection<Threading>::create(const table_def& tbl, std::vector<std::string>& sql)
+void provider<Threading>::create(const table_def& tbl, std::vector<std::string>& sql)
 {
   using namespace std;
   using namespace detail;
@@ -135,7 +135,7 @@ void connection<Threading>::create(const table_def& tbl, std::vector<std::string
 }
 
 template <bool Threading>
-void connection<Threading>::create(const table_def& tbl)
+void provider<Threading>::create(const table_def& tbl)
 {
   using namespace std;
   using namespace detail;
@@ -148,7 +148,7 @@ void connection<Threading>::create(const table_def& tbl)
 }
 
 template <bool Threading>
-void connection<Threading>::drop(const table_def& tbl)
+void provider<Threading>::drop(const table_def& tbl)
 {
   using namespace std;
   using namespace detail;
@@ -161,7 +161,7 @@ void connection<Threading>::drop(const table_def& tbl)
 }
 
 template <bool Threading>
-std::vector<pyramid_def> connection<Threading>::get_raster_layers()
+std::vector<pyramid_def> provider<Threading>::get_raster_layers()
 {
   using namespace std;
   using namespace detail;
@@ -171,7 +171,7 @@ std::vector<pyramid_def> connection<Threading>::get_raster_layers()
 }
 
 template <bool Threading>
-pyramid_def connection<Threading>::fit_to_reg(const pyramid_def& raster)
+pyramid_def provider<Threading>::fit_to_reg(const pyramid_def& raster)
 {
   using namespace std;
   using namespace detail;
@@ -181,7 +181,7 @@ pyramid_def connection<Threading>::fit_to_reg(const pyramid_def& raster)
 }
 
 template <bool Threading>
-void connection<Threading>::reg(const pyramid_def& raster, std::vector<std::string>& sql)
+void provider<Threading>::reg(const pyramid_def& raster, std::vector<std::string>& sql)
 {
   using namespace std;
   using namespace detail;
@@ -191,7 +191,7 @@ void connection<Threading>::reg(const pyramid_def& raster, std::vector<std::stri
 }
 
 template <bool Threading>
-void connection<Threading>::reg(const pyramid_def& raster)
+void provider<Threading>::reg(const pyramid_def& raster)
 {
   using namespace std;
   using namespace detail;
@@ -204,7 +204,7 @@ void connection<Threading>::reg(const pyramid_def& raster)
 }
 
 template <bool Threading>
-void connection<Threading>::unreg(const pyramid_def& raster)
+void provider<Threading>::unreg(const pyramid_def& raster)
 {
   using namespace std;
   using namespace detail;
@@ -217,7 +217,7 @@ void connection<Threading>::unreg(const pyramid_def& raster)
 }
 
 template <bool Threading>
-std::shared_ptr<rowset> connection<Threading>::select(const table_def& tbl)
+std::shared_ptr<rowset> provider<Threading>::select(const table_def& tbl)
 {
   using namespace std;
   using namespace detail;
@@ -231,11 +231,11 @@ std::shared_ptr<rowset> connection<Threading>::select(const table_def& tbl)
 }
 
 template <bool Threading>
-std::shared_ptr<inserter> connection<Threading>::get_inserter(const table_def& tbl)
+std::shared_ptr<inserter> provider<Threading>::get_inserter(const table_def& tbl)
 {
   return std::shared_ptr<inserter>(new detail::inserter<deleter_t>(m_pool->allocate(), deleter_t(m_pool), tbl));
-} // connection::
+} // provider::
 
 } } // brig::database
 
-#endif // BRIG_DATABASE_CONNECTION_HPP
+#endif // BRIG_DATABASE_PROVIDER_HPP

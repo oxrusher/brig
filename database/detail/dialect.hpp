@@ -3,6 +3,7 @@
 #ifndef BRIG_DATABASE_DETAIL_DIALECT_HPP
 #define BRIG_DATABASE_DETAIL_DIALECT_HPP
 
+#include <brig/boost/geometry.hpp>
 #include <brig/database/command.hpp>
 #include <brig/numeric_cast.hpp>
 #include <brig/pyramid_def.hpp>

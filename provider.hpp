@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_CONNECTION_HPP
-#define BRIG_CONNECTION_HPP
+#ifndef BRIG_PROVIDER_HPP
+#define BRIG_PROVIDER_HPP
 
 #include <boost/utility.hpp>
 #include <brig/boost/geometry.hpp>
@@ -16,9 +16,9 @@
 
 namespace brig {
 
-struct connection : ::boost::noncopyable
+struct provider : ::boost::noncopyable
 {
-  virtual ~connection()  {}
+  virtual ~provider()  {}
 
   virtual std::vector<identifier> get_tables() = 0;
   virtual std::vector<identifier> get_geometry_layers() = 0;
@@ -40,8 +40,8 @@ struct connection : ::boost::noncopyable
   virtual void unreg(const pyramid_def& raster) = 0;
 
   virtual std::shared_ptr<inserter> get_inserter(const table_def& tbl) = 0;
-}; // connection
+}; // provider
 
 } // brig
 
-#endif // BRIG_CONNECTION_HPP
+#endif // BRIG_PROVIDER_HPP

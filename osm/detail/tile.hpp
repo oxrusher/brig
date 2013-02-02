@@ -15,7 +15,7 @@ class tile {
 public:
   int x, y, z;
   tile(int x_, int y_, int z_) : x(x_), y(y_), z(z_)  {}
-  brig::boost::box get_mbr() const;
+  brig::boost::box get_box() const;
   bool is_valid() const;
 }; // tile
 
@@ -45,7 +45,7 @@ inline brig::boost::point tile::get_point() const
   return brig::boost::point(merc_x, merc_y);
 }
 
-inline brig::boost::box tile::get_mbr() const
+inline brig::boost::box tile::get_box() const
 {
   using namespace brig::boost;
   auto a(get_point()), b(tile(x + 1, y + 1, z).get_point());

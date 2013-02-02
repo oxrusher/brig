@@ -6,7 +6,6 @@
 #define BRIG_DETAIL_RAII_HPP
 
 #include <boost/utility.hpp>
-#include <memory>
 
 namespace brig { namespace detail {
 
@@ -24,7 +23,7 @@ public:
 }; // raii
 
 template <typename Handle, typename Close>
-raii<Handle, Close> make_raii(Handle handle, Close close)
+inline raii<Handle, Close> make_raii(Handle handle, Close close)
 {
   return raii<Handle, Close>(handle, close);
 }
