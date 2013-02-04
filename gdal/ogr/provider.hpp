@@ -196,6 +196,8 @@ inline void provider::create(const table_def& tbl)
   using namespace gdal::detail;
 
   unique_ptr<detail::datasource> ds(m_allocator.allocate(true));
+  if (lib::singleton().p_OGR_DS_GetLayerByName(*ds, tbl.id.name.c_str())) throw runtime_error("OGR error");
+
   auto geom_col(find_if(begin(tbl.columns), end(tbl.columns), [](const column_def& col){ return Geometry == col.type; }));
   if (geom_col == end(tbl.columns)) throw runtime_error("OGR error");
   auto srs(brig::detail::make_raii

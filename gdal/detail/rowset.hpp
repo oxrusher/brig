@@ -10,13 +10,14 @@
 #include <brig/boost/geom_from_wkb.hpp>
 #include <brig/boost/geometry.hpp>
 #include <brig/detail/get_columns.hpp>
+#include <brig/detail/raii.hpp>
 #include <brig/gdal/detail/dataset_allocator.hpp>
 #include <brig/gdal/detail/lib.hpp>
 #include <brig/gdal/detail/transform.hpp>
 #include <brig/global.hpp>
 #include <brig/rowset.hpp>
+#include <brig/string_cast.hpp>
 #include <brig/table_def.hpp>
-#include <cmath>
 #include <cstdint>
 #include <iterator>
 #include <memory>
@@ -25,23 +26,19 @@
 
 namespace brig { namespace gdal { namespace detail {
 
-class rowset : public brig::rowset
-{
-  static const int TileSize = 256;
-
+class rowset : public brig::rowset {
   std::unique_ptr<dataset> m_ds;
+  bool m_done;
   std::vector<bool> m_cols;
-  int m_rows, m_width, m_height, m_tiles;
   transform m_tr;
-  brig::boost::box m_block;
-
+  int m_width, m_height;
 public:
   rowset(dataset_allocator* allocator, const table_def& tbl);
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
 }; // rowset
 
-inline rowset::rowset(dataset_allocator* allocator, const table_def& tbl) : m_ds(allocator->allocate())
+inline rowset::rowset(dataset_allocator* allocator, const table_def& tbl) : m_ds(allocator->allocate()), m_done(false)
 {
   using namespace std;
   using namespace brig::boost;
@@ -56,22 +53,21 @@ inline rowset::rowset(dataset_allocator* allocator, const table_def& tbl) : m_ds
     else
       throw runtime_error("GDAL error");
   }
-  m_rows = tbl.query_rows;
+  if (tbl.query_rows == 0)
+    m_done = true;
 
+  lib::check(lib::singleton().p_GDALGetGeoTransform(*m_ds, m_tr.coef));
   m_width = lib::singleton().p_GDALGetRasterXSize(*m_ds);
   m_height = lib::singleton().p_GDALGetRasterYSize(*m_ds);
-  m_tiles = int(ceil(double(m_width) / double(TileSize)) * ceil(double(m_height) / double(TileSize)));
-  lib::check(lib::singleton().p_GDALGetGeoTransform(*m_ds, m_tr.coef));
 
   auto geom_col(tbl[WKB()]);
-  if (typeid(null_t) == geom_col->query_value.type())
-    m_block = box(point(0, 0), point(m_width, m_height));
-  else if (!::boost::geometry::intersection
+  if ( typeid(blob_t) == geom_col->query_value.type()
+    && !::boost::geometry::intersects
       ( box(point(0, 0), point(m_width, m_height))
       , envelope(m_tr.proj_to_pixel(envelope(geom_from_wkb(::boost::get<blob_t>(geom_col->query_value)))))
-      , m_block
-      ))
-    m_tiles = 0;
+      )
+    )
+    m_done = true;
 }
 
 inline std::vector<std::string> rowset::columns()
@@ -89,20 +85,10 @@ inline bool rowset::fetch(std::vector<variant>& row)
 {
   using namespace std;
   using namespace brig::boost;
+  using namespace brig::detail;
 
-  if (m_rows == 0) return false;
-  box block;
-  const int isize(int(ceil(double(m_width) / double(TileSize))));
-  while (true)
-  {
-    if (m_tiles <= 0) return false;
-    --m_tiles;
-    const int i(m_tiles % isize);
-    const int j(m_tiles / isize);
-    block = box(point(i * TileSize, j * TileSize), point(min<>((i + 1) * TileSize, m_width), min<>((j + 1) * TileSize, m_height)));
-    if (::boost::geometry::intersects(block, m_block)) break;
-  }
-  if (m_rows > 0) --m_rows;
+  if (m_done) return false;
+  m_done = true;
 
   const size_t count(m_cols.size());
   row.resize(count);
@@ -110,21 +96,24 @@ inline bool rowset::fetch(std::vector<variant>& row)
   {
     if (m_cols[i])
     {
-      const int bands(lib::singleton().p_GDALGetRasterCount(*m_ds));
-      for (int band(1); band <= bands; ++band)
+      auto drv(lib::singleton().p_GDALGetDriverByName("PNG"));
+      if (!drv) throw runtime_error("GDAL error");
+      auto file("/vsimem/" + string_cast<char>(size_t(this)) + ".png");
       {
-        const int xoff(int(block.min_corner().get<0>()));
-        const int yoff(int(block.min_corner().get<1>()));
-        const int xsize(int(block.max_corner().get<0>() - block.min_corner().get<0>()));
-        const int ysize(int(block.max_corner().get<1>() - block.min_corner().get<1>()));
-        blob_t buf;
-        buf.resize(xsize * ysize * sizeof(uint32_t));
-        lib::check(lib::singleton().p_GDALRasterIO(lib::singleton().p_GDALGetRasterBand(*m_ds, band), GF_Read, xoff, yoff, xsize, ysize, buf.data(), xsize, ysize, GDT_UInt32, 0, 0));
+        auto ds(make_raii(lib::singleton().p_GDALCreateCopy(drv, file.c_str(), *m_ds, false, 0, 0, 0), lib::singleton().p_GDALClose));
+        if (!ds) throw runtime_error("GDAL error");
       }
-      row[i] = null_t(); // todo: libpng
+      {
+        vsi_l_offset len(0);
+        auto buf(make_raii(lib::singleton().p_VSIGetMemFileBuffer(file.c_str(), &len, true), lib::singleton().p_VSIFree));
+        row[i] = blob_t();
+        blob_t& blob = ::boost::get<blob_t>(row[i]);
+        const uint8_t* ptr = buf;
+        blob.assign(ptr, ptr + size_t(len));
+      }
     }
     else
-      row[i] = as_binary(geometry(m_tr.pixel_to_proj(block)));
+      row[i] = as_binary(geometry(m_tr.pixel_to_proj(box(point(0, 0), point(m_width, m_height)))));
   }
   return true;
 } // rowset::
