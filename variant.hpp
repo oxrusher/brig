@@ -3,10 +3,6 @@
 #ifndef BRIG_VARIANT_HPP
 #define BRIG_VARIANT_HPP
 
-#ifdef _MSC_VER
-#  define BOOST_NO_ARGUMENT_DEPENDENT_LOOKUP
-#endif
-
 #include <boost/variant/get.hpp>
 #include <boost/variant/variant.hpp>
 #include <brig/blob_t.hpp>

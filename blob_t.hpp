@@ -15,7 +15,7 @@
 
 namespace brig {
 
-struct blob_t : std::vector<uint8_t>  {};
+typedef std::vector<uint8_t> blob_t;
 
 } // brig
 

@@ -119,7 +119,8 @@ inline column_def dialect_ms_sql::fit_column(const column_def& col)
     res.type_lcase.name = "geometry";
     res.srid = col.epsg;
     res.epsg = col.epsg;
-    res.query_value = (typeid(blob_t) == col.query_value.type())? col.query_value: blob_t();
+    if (typeid(blob_t) == col.query_value.type()) res.query_value = col.query_value;
+    else res.query_value = blob_t();
     break;
   case Integer: res.type_lcase.name = "bigint"; break;
   case String:

@@ -161,7 +161,8 @@ inline column_def dialect_oracle::fit_column(const column_def& col)
     res.type_lcase.schema = "mdsys";
     res.type_lcase.name = "sdo_geometry";
     res.epsg = col.epsg;
-    res.query_value = (typeid(blob_t) == col.query_value.type())? col.query_value: blob_t();
+    if (typeid(blob_t) == col.query_value.type()) res.query_value = col.query_value;
+    else res.query_value = blob_t();
     break;
   case Integer: res.type_lcase.name = "number(19)"; break;
   case String:
