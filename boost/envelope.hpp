@@ -3,7 +3,6 @@
 #ifndef BRIG_BOOST_ENVELOPE_HPP
 #define BRIG_BOOST_ENVELOPE_HPP
 
-#include <boost/variant/apply_visitor.hpp>
 #include <brig/boost/detail/envelope_visitor.hpp>
 #include <brig/boost/geometry.hpp>
 

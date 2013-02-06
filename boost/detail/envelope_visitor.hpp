@@ -4,8 +4,6 @@
 #define BRIG_BOOST_DETAIL_ENVELOPE_VISITOR_HPP
 
 #include <boost/geometry/geometry.hpp>
-#include <boost/variant/apply_visitor.hpp>
-#include <boost/variant/static_visitor.hpp>
 #include <brig/boost/geometry.hpp>
 #include <stdexcept>
 

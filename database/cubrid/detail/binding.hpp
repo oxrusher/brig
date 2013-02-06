@@ -3,15 +3,9 @@
 #ifndef BRIG_DATABASE_CUBRID_DETAIL_BINDING_HPP
 #define BRIG_DATABASE_CUBRID_DETAIL_BINDING_HPP
 
-#include <boost/variant/apply_visitor.hpp>
-#include <boost/variant/static_visitor.hpp>
-#include <brig/blob_t.hpp>
 #include <brig/column_def.hpp>
 #include <brig/database/cubrid/detail/lib.hpp>
-#include <brig/null_t.hpp>
 #include <brig/variant.hpp>
-#include <cstdint>
-#include <string>
 
 namespace brig { namespace database { namespace cubrid { namespace detail {
 

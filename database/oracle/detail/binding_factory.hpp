@@ -3,9 +3,6 @@
 #ifndef BRIG_DATABASE_ORACLE_DETAIL_BINDING_FACTORY_HPP
 #define BRIG_DATABASE_ORACLE_DETAIL_BINDING_FACTORY_HPP
 
-#include <boost/variant/apply_visitor.hpp>
-#include <boost/variant/static_visitor.hpp>
-#include <brig/blob_t.hpp>
 #include <brig/column_def.hpp>
 #include <brig/database/oracle/detail/binding.hpp>
 #include <brig/database/oracle/detail/binding_blob.hpp>
@@ -16,9 +13,7 @@
 #include <brig/database/oracle/detail/handles.hpp>
 #include <brig/global.hpp>
 #include <brig/variant.hpp>
-#include <cstdint>
 #include <stdexcept>
-#include <string>
 
 namespace brig { namespace database { namespace oracle { namespace detail {
 

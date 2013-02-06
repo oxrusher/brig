@@ -3,9 +3,6 @@
 #ifndef BRIG_BOOST_DETAIL_WRITE_GEOMETRY_HPP
 #define BRIG_BOOST_DETAIL_WRITE_GEOMETRY_HPP
 
-#include <boost/variant/apply_visitor.hpp>
-#include <boost/variant/recursive_wrapper.hpp>
-#include <boost/variant/static_visitor.hpp>
 #include <brig/detail/ogc.hpp>
 #include <brig/boost/detail/write_line.hpp>
 #include <brig/boost/detail/write_point.hpp>

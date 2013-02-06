@@ -3,11 +3,12 @@
 #ifndef BRIG_NULL_T_HPP
 #define BRIG_NULL_T_HPP
 
+#include <boost/none_t.hpp>
 #include <ostream>
 
 namespace brig {
 
-struct null_t  { null_t() {} };
+typedef ::boost::none_t null_t;
 
 } // brig
 

@@ -3,7 +3,6 @@
 #ifndef BRIG_NUMERIC_CAST_HPP
 #define BRIG_NUMERIC_CAST_HPP
 
-#include <boost/variant/apply_visitor.hpp>
 #include <brig/detail/numeric_visitor.hpp>
 #include <brig/variant.hpp>
 

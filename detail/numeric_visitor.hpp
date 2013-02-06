@@ -5,9 +5,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/numeric/conversion/converter.hpp>
-#include <boost/variant/static_visitor.hpp>
-#include <brig/blob_t.hpp>
-#include <string>
+#include <brig/variant.hpp>
 
 namespace brig { namespace detail {
 

@@ -3,14 +3,8 @@
 #ifndef BRIG_DATABASE_MYSQL_DETAIL_BIND_PARAM_HPP
 #define BRIG_DATABASE_MYSQL_DETAIL_BIND_PARAM_HPP
 
-#include <boost/variant/apply_visitor.hpp>
-#include <boost/variant/static_visitor.hpp>
-#include <brig/blob_t.hpp>
 #include <brig/database/mysql/detail/lib.hpp>
-#include <brig/null_t.hpp>
 #include <brig/variant.hpp>
-#include <cstdint>
-#include <string>
 
 namespace brig { namespace database { namespace mysql { namespace detail {
 

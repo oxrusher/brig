@@ -11,9 +11,7 @@
 #include <boost/geometry/multi/geometries/multi_linestring.hpp>
 #include <boost/geometry/multi/geometries/multi_point.hpp>
 #include <boost/geometry/multi/geometries/multi_polygon.hpp>
-#include <boost/variant/get.hpp>
-#include <boost/variant/recursive_wrapper.hpp>
-#include <boost/variant/variant.hpp>
+#include <boost/variant.hpp>
 #include <vector>
 
 namespace brig { namespace boost {

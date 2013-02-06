@@ -3,7 +3,6 @@
 #ifndef BRIG_BOOST_CORRECT_HPP
 #define BRIG_BOOST_CORRECT_HPP
 
-#include <boost/variant/apply_visitor.hpp>
 #include <brig/boost/detail/correct_visitor.hpp>
 #include <brig/boost/geometry.hpp>
 

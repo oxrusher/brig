@@ -3,8 +3,7 @@
 #ifndef BRIG_VARIANT_HPP
 #define BRIG_VARIANT_HPP
 
-#include <boost/variant/get.hpp>
-#include <boost/variant/variant.hpp>
+#include <boost/variant.hpp>
 #include <brig/blob_t.hpp>
 #include <brig/null_t.hpp>
 #include <cstdint>

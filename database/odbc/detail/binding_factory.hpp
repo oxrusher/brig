@@ -3,9 +3,6 @@
 #ifndef BRIG_DATABASE_ODBC_DETAIL_BINDING_FACTORY_HPP
 #define BRIG_DATABASE_ODBC_DETAIL_BINDING_FACTORY_HPP
 
-#include <boost/variant/apply_visitor.hpp>
-#include <boost/variant/static_visitor.hpp>
-#include <brig/blob_t.hpp>
 #include <brig/column_def.hpp>
 #include <brig/database/odbc/detail/binding.hpp>
 #include <brig/database/odbc/detail/binding_blob.hpp>
@@ -14,11 +11,8 @@
 #include <brig/database/odbc/detail/binding_string.hpp>
 #include <brig/database/odbc/detail/lib.hpp>
 #include <brig/global.hpp>
-#include <brig/null_t.hpp>
 #include <brig/variant.hpp>
-#include <cstdint>
 #include <stdexcept>
-#include <string>
 
 namespace brig { namespace database { namespace odbc { namespace detail {
 
