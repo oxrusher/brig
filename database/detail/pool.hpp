@@ -50,6 +50,7 @@ inline void pool<false>::deallocate(command* cmd)
   {
     try
     {
+      cmd->set_autocommit(false);
       cmd->set_autocommit(true);
       m_commands.push(cmd);
       return;
