@@ -128,7 +128,7 @@ inline void rowset::add_files()
     check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_URL, url.c_str()));
     check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, &write));
     check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_WRITEDATA, data.rast));
-    check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, long(Timeout)));
+    check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, long(TimeoutSec * 1000)));
     check(lib::singleton().p_curl_multi_add_handle(m_hnd, hnd));
   }
 }

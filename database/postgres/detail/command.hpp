@@ -33,11 +33,10 @@ class command : public brig::database::command {
   void check(bool r);
   void check_command(PGresult* res);
   void close_result();
-  void close_all();
 
 public:
   command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd);
-  ~command() override  { close_all(); }
+  ~command() override;
   void exec(const std::string& sql, const std::vector<column_def>& params = std::vector<column_def>()) override;
   void exec_batch(const std::string& sql) override;
   std::vector<std::string> columns() override;
@@ -79,20 +78,19 @@ inline void command::close_result()
   }
 }
 
-inline void command::close_all()
-{
-  close_result();
-  lib::singleton().p_PQfinish(m_con);
-}
-
 inline command::command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd)
   : m_con(0), m_res(0), m_fetch(false), m_row(0), m_autocommit(true)
 {
   if (lib::singleton().empty()) throw std::runtime_error("Postgres error");
-  m_con = lib::singleton().p_PQsetdbLogin((char*)host.c_str(), (char*)string_cast<char>(port).c_str(), 0, 0, (char*)db.c_str(), (char*)usr.c_str(), (char*)pwd.c_str());
+  const std::string con("host='" + host + "' port='" + string_cast<char>(port) + "' dbname='" + db + "' user='" + usr + "' password='" + pwd + "' connect_timeout='" + string_cast<char>(TimeoutSec) + "' client_encoding='UTF8'");
+  m_con = lib::singleton().p_PQconnectdb((char*)con.c_str());
   check(lib::singleton().p_PQstatus(m_con) == CONNECTION_OK);
-  try  { check(lib::singleton().p_PQsetClientEncoding(m_con, "UTF8") == 0); }
-  catch (const std::exception&)  { close_all(); throw; }
+}
+
+inline command::~command()
+{
+  close_result();
+  lib::singleton().p_PQfinish(m_con);
 }
 
 inline void command::exec(const std::string& sql, const std::vector<column_def>& params)

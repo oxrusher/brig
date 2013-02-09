@@ -13,6 +13,7 @@ class lib {
 
 public:
   decltype(PQclear) *p_PQclear;
+  decltype(PQconnectdb) *p_PQconnectdb;
   decltype(PQerrorMessage) *p_PQerrorMessage;
   decltype(PQexec) *p_PQexec;
   decltype(PQexecParams) *p_PQexecParams;
@@ -26,8 +27,6 @@ public:
   decltype(PQnfields) *p_PQnfields;
   decltype(PQntuples) *p_PQntuples;
   decltype(PQresultStatus) *p_PQresultStatus;
-  decltype(PQsetClientEncoding) *p_PQsetClientEncoding;
-  decltype(PQsetdbLogin) *p_PQsetdbLogin;
   decltype(PQstatus) *p_PQstatus;
 
   bool empty() const  { return p_PQstatus == 0; }
@@ -39,6 +38,7 @@ inline lib::lib() : p_PQstatus(0)
   auto handle = BRIG_DL_LIBRARY("libpq.dll", "libpq.so");
   if (  handle
     && (p_PQclear = BRIG_DL_FUNCTION(handle, PQclear))
+    && (p_PQconnectdb = BRIG_DL_FUNCTION(handle, PQconnectdb))
     && (p_PQerrorMessage = BRIG_DL_FUNCTION(handle, PQerrorMessage))
     && (p_PQexec = BRIG_DL_FUNCTION(handle, PQexec))
     && (p_PQexecParams = BRIG_DL_FUNCTION(handle, PQexecParams))
@@ -52,8 +52,6 @@ inline lib::lib() : p_PQstatus(0)
     && (p_PQlibVersion = BRIG_DL_FUNCTION(handle, PQlibVersion))
     && (p_PQntuples = BRIG_DL_FUNCTION(handle, PQntuples))
     && (p_PQresultStatus = BRIG_DL_FUNCTION(handle, PQresultStatus))
-    && (p_PQsetClientEncoding = BRIG_DL_FUNCTION(handle, PQsetClientEncoding))
-    && (p_PQsetdbLogin = BRIG_DL_FUNCTION(handle, PQsetdbLogin))
      )  p_PQstatus = BRIG_DL_FUNCTION(handle, PQstatus);
 } // lib::
 
