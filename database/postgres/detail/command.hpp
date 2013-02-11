@@ -33,10 +33,11 @@ class command : public brig::database::command {
   void check(bool r);
   void check_command(PGresult* res);
   void close_result();
+  void close_all();
 
 public:
   command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd);
-  ~command() override;
+  ~command() override  { close_all(); }
   void exec(const std::string& sql, const std::vector<column_def>& params = std::vector<column_def>()) override;
   void exec_batch(const std::string& sql) override;
   std::vector<std::string> columns() override;
@@ -78,19 +79,30 @@ inline void command::close_result()
   }
 }
 
-inline command::command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd)
-  : m_con(0), m_res(0), m_fetch(false), m_row(0), m_autocommit(true)
-{
-  if (lib::singleton().empty()) throw std::runtime_error("Postgres error");
-  const std::string con("host='" + host + "' port='" + string_cast<char>(port) + "' dbname='" + db + "' user='" + usr + "' password='" + pwd + "' connect_timeout='" + string_cast<char>(TimeoutSec) + "' client_encoding='UTF8'");
-  m_con = lib::singleton().p_PQconnectdb((char*)con.c_str());
-  check(lib::singleton().p_PQstatus(m_con) == CONNECTION_OK);
-}
-
-inline command::~command()
+inline void command::close_all()
 {
   close_result();
   lib::singleton().p_PQfinish(m_con);
+}
+
+inline command::command(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd)
+  : m_con(0), m_res(0), m_fetch(false), m_row(0), m_autocommit(true)
+{
+  using namespace std;
+
+  try
+  {
+    if (lib::singleton().empty()) throw runtime_error("Postgres error");
+    const string con("host='" + host + "' port='" + string_cast<char>(port) + "' dbname='" + db + "' user='" + usr + "' password='" + pwd + "' connect_timeout='" + string_cast<char>(TimeoutSec) + "' client_encoding='UTF8'");
+    m_con = lib::singleton().p_PQconnectdb((char*)con.c_str());
+    check(lib::singleton().p_PQstatus(m_con) == CONNECTION_OK);
+    check_command(lib::singleton().p_PQexec(m_con, string("SET statement_timeout TO " + string_cast<char>(TimeoutSec * 1000)).c_str()));
+  }
+  catch (const exception&)
+  {
+    close_all();
+    throw;
+  }
 }
 
 inline void command::exec(const std::string& sql, const std::vector<column_def>& params)
@@ -114,7 +126,7 @@ inline void command::exec(const std::string& sql, const std::vector<column_def>&
     formats.push_back(bind->format());
   }
 
-  if (m_autocommit && sql.size() > 6 && brig::unicode::transform<char>(sql.substr(0, 6), brig::unicode::lower_case).compare("select") == 0)
+  if (m_autocommit && sql.size() > 6 && unicode::transform<char>(sql.substr(0, 6), unicode::lower_case).compare("select") == 0)
   {
     check_command(lib::singleton().p_PQexec(m_con, "BEGIN"));
     m_fetch = true;

@@ -55,10 +55,11 @@ inline std::string dialect_postgres::sql_tables()
 inline std::string dialect_postgres::sql_geometries()
 {
   return "\
-SELECT g.scm scm, g.tbl tbl, g.col col \
+SELECT g.* \
 FROM (SELECT f_table_schema scm, f_table_name tbl, f_geometry_column col FROM geometry_columns UNION ALL SELECT f_table_schema scm, f_table_name tbl, f_geography_column col FROM geography_columns) g \
-JOIN (SELECT table_schema scm, table_name tbl, column_name col FROM INFORMATION_SCHEMA.COLUMNS) c \
-ON g.scm = c.scm AND g.tbl = c.tbl AND g.col = c.col";
+JOIN pg_namespace s ON g.scm = s.nspname \
+JOIN pg_class t ON s.oid = t.relnamespace AND g.tbl = t.relname AND t.relkind = 'r' \
+JOIN pg_attribute c ON t.oid = c.attrelid AND c.attname = g.col AND NOT c.attisdropped";
 }
 
 inline std::string dialect_postgres::sql_columns(const identifier& tbl)
@@ -203,7 +204,7 @@ inline std::string dialect_postgres::sql_create_spatial_index(const table_def& t
 
 inline std::string dialect_postgres::sql_test_rasters()
 {
-  return "SELECT TABLE_SCHEMA scm, TABLE_NAME tbl FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'public' AND TABLE_NAME = 'raster_columns'";
+  return "SELECT s.nspname scm, t.relname tbl FROM pg_namespace s, pg_class t WHERE s.nspname = 'public' AND s.oid = t.relnamespace AND t.relname = 'raster_columns' AND t.relkind = 'r'";
 }
 
 inline std::string dialect_postgres::sql_rasters()
@@ -220,10 +221,10 @@ SELECT \
 , r.r_raster_column \
 , r.r_raster_column \
 FROM public.raster_columns r \
-JOIN INFORMATION_SCHEMA.COLUMNS c \
-ON r.r_table_schema = c.table_schema AND r.r_table_name = c.table_name AND r.r_raster_column = c.column_name \
-LEFT JOIN public.raster_overviews o \
-ON r.r_table_schema = o.o_table_schema AND r.r_table_name = o.o_table_name AND r.r_raster_column = o.o_raster_column \
+LEFT JOIN public.raster_overviews o ON r.r_table_schema = o.o_table_schema AND r.r_table_name = o.o_table_name AND r.r_raster_column = o.o_raster_column \
+JOIN pg_namespace s ON r.r_table_schema = s.nspname \
+JOIN pg_class t ON s.oid = t.relnamespace AND r.r_table_name = t.relname AND t.relkind = 'r' \
+JOIN pg_attribute c ON t.oid = c.attrelid AND c.attname = r.r_raster_column AND NOT c.attisdropped \
 ORDER BY base_scm, base_tbl, base_col, res_x, res_y";
 }
 
