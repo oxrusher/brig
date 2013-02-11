@@ -101,7 +101,7 @@ public:
 
 inline lib::lib() : p_VSIGetMemFileBuffer(0)
 {
-  auto handle = BRIG_DL_LIBRARY("gdal19.dll", ""); // todo:
+  auto handle = BRIG_DL_LIBRARY("gdal19.dll", "libgdal.so");
   if (  handle
     && (p_GDALAllRegister = BRIG_GDAL_DL_FUNCTION(handle, GDALAllRegister))
     && (p_GDALClose = BRIG_GDAL_DL_FUNCTION(handle, GDALClose))

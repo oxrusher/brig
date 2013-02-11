@@ -31,7 +31,7 @@ public:
 
 inline lib::lib() : p_curl_version(0)
 {
-  auto handle(BRIG_DL_LIBRARY("libcurl.dll", "")); // todo:
+  auto handle(BRIG_DL_LIBRARY("libcurl.dll", "libcurl.so"));
   if (  handle
   && (p_curl_easy_cleanup = BRIG_DL_FUNCTION(handle, curl_easy_cleanup))
   && (p_curl_easy_init = BRIG_DL_FUNCTION(handle, curl_easy_init))
