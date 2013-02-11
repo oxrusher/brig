@@ -204,7 +204,7 @@ inline std::string dialect_postgres::sql_create_spatial_index(const table_def& t
 
 inline std::string dialect_postgres::sql_test_rasters()
 {
-  return "SELECT s.nspname scm, t.relname tbl FROM pg_namespace s, pg_class t WHERE s.nspname = 'public' AND s.oid = t.relnamespace AND t.relname = 'raster_columns' AND t.relkind = 'r'";
+  return "SELECT s.nspname scm, t.relname tbl FROM pg_namespace s, pg_class t WHERE s.nspname = 'public' AND s.oid = t.relnamespace AND t.relname = 'raster_columns'";
 }
 
 inline std::string dialect_postgres::sql_rasters()
