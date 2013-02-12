@@ -101,7 +101,7 @@ namespace brig { namespace detail {
     static const size_t size = sizeof(A1) + signature<R(A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12)>::size;
   };
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_WIN64)
 
   template <typename R>
   struct signature<R __stdcall ()>
