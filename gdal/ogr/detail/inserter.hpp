@@ -4,7 +4,6 @@
 #define BRIG_GDAL_OGR_DETAIL_INSERTER_HPP
 
 #include <brig/detail/get_columns.hpp>
-#include <brig/detail/raii.hpp>
 #include <brig/gdal/detail/lib.hpp>
 #include <brig/gdal/ogr/detail/datasource_allocator.hpp>
 #include <brig/inserter.hpp>
@@ -61,8 +60,9 @@ inline void inserter::insert(std::vector<variant>& row)
   using namespace gdal::detail;
 
   if (row.size() != m_fields.size()) throw runtime_error("OGR error");
-  auto feature(brig::detail::make_raii(lib::singleton().p_OGR_F_Create(m_feature_def), lib::singleton().p_OGR_F_Destroy));
-  if (!feature) throw runtime_error("OGR error");
+  auto del = [](void* ptr) { lib::singleton().p_OGR_F_Destroy(OGRFeatureH(ptr)); };
+  unique_ptr<void, decltype(del)> feature(lib::singleton().p_OGR_F_Create(m_feature_def), del);
+  if (!feature.get()) throw runtime_error("OGR error");
 
   for (size_t i(0); i < m_fields.size(); ++i)
   {
@@ -71,37 +71,37 @@ inline void inserter::insert(std::vector<variant>& row)
       blob_t& wkb(::boost::get<blob_t>(row[i]));
       OGRGeometryH geom(0);
       lib::check(lib::singleton().p_OGR_G_CreateFromWkb((unsigned char*)wkb.data(), m_sr, &geom, int(wkb.size())));
-      lib::singleton().p_OGR_F_SetGeometryDirectly(feature, geom);
+      lib::singleton().p_OGR_F_SetGeometryDirectly(feature.get(), geom);
     }
     else if (typeid(null_t) == row[i].type())
-      lib::singleton().p_OGR_F_UnsetField(feature, m_fields[i]);
+      lib::singleton().p_OGR_F_UnsetField(feature.get(), m_fields[i]);
     else if (typeid(int16_t) == row[i].type() || typeid(int32_t) == row[i].type() || typeid(int64_t) == row[i].type())
     {
       int val(0);
       if (!numeric_cast(row[i], val)) throw runtime_error("OGR error");
-      lib::singleton().p_OGR_F_SetFieldInteger(feature, m_fields[i], val);
+      lib::singleton().p_OGR_F_SetFieldInteger(feature.get(), m_fields[i], val);
     }
     else if (typeid(float) == row[i].type() || typeid(double) == row[i].type())
     {
       double val(0);
       if (!numeric_cast(row[i], val)) throw runtime_error("OGR error");
-      lib::singleton().p_OGR_F_SetFieldDouble(feature, m_fields[i], val);
+      lib::singleton().p_OGR_F_SetFieldDouble(feature.get(), m_fields[i], val);
     }
     else if (typeid(string) == row[i].type())
     {
       string& str(::boost::get<string>(row[i]));
-      lib::singleton().p_OGR_F_SetFieldString(feature, m_fields[i], str.c_str());
+      lib::singleton().p_OGR_F_SetFieldString(feature.get(), m_fields[i], str.c_str());
     }
     else if (typeid(blob_t) == row[i].type())
     {
       blob_t& blob(::boost::get<blob_t>(row[i]));
-      lib::singleton().p_OGR_F_SetFieldBinary(feature, m_fields[i], int(blob.size()), (GByte*)blob.data());
+      lib::singleton().p_OGR_F_SetFieldBinary(feature.get(), m_fields[i], int(blob.size()), (GByte*)blob.data());
     }
     else
       throw runtime_error("OGR error");
   }
 
-  lib::check(lib::singleton().p_OGR_L_CreateFeature(m_lr, feature));
+  lib::check(lib::singleton().p_OGR_L_CreateFeature(m_lr, feature.get()));
 }
 
 inline void inserter::flush()

@@ -8,7 +8,6 @@
 #include <brig/boost/geom_from_wkb.hpp>
 #include <brig/boost/geometry.hpp>
 #include <brig/detail/get_columns.hpp>
-#include <brig/detail/raii.hpp>
 #include <brig/gdal/detail/lib.hpp>
 #include <brig/gdal/ogr/detail/datasource_allocator.hpp>
 #include <brig/global.hpp>
@@ -117,15 +116,16 @@ inline bool rowset::fetch(std::vector<variant>& row)
 
   if (!m_lr || m_rows == 0) return false;
   if (m_rows > 0) --m_rows;
-  auto feature(brig::detail::make_raii(lib::singleton().p_OGR_L_GetNextFeature(m_lr), lib::singleton().p_OGR_F_Destroy));
-  if (!feature) return false;
+  auto del = [](void* ptr) { lib::singleton().p_OGR_F_Destroy(OGRFeatureH(ptr)); };
+  unique_ptr<void, decltype(del)> feature(lib::singleton().p_OGR_L_GetNextFeature(m_lr), del);
+  if (!feature.get()) return false;
 
   row.resize(m_cols.size());
   for (size_t i(0); i < m_cols.size(); ++i)
   {
     if (m_cols[i] < 0)
     {
-      OGRGeometryH geom(lib::singleton().p_OGR_F_GetGeometryRef(feature));
+      OGRGeometryH geom(lib::singleton().p_OGR_F_GetGeometryRef(feature.get()));
       int size(lib::singleton().p_OGR_G_WkbSize(geom));
       if (size > 0)
       {
@@ -139,21 +139,21 @@ inline bool rowset::fetch(std::vector<variant>& row)
     }
     else
     {
-      OGRFieldDefnH field_def(lib::singleton().p_OGR_F_GetFieldDefnRef(feature, m_cols[i]));
+      OGRFieldDefnH field_def(lib::singleton().p_OGR_F_GetFieldDefnRef(feature.get(), m_cols[i]));
       if (!field_def) throw runtime_error("OGR error");
       switch (lib::singleton().p_OGR_Fld_GetType(field_def))
       {
       default: throw runtime_error("OGR error");
-      case OFTInteger: row[i] = lib::singleton().p_OGR_F_GetFieldAsInteger(feature, m_cols[i]); break;
-      case OFTReal: row[i] = lib::singleton().p_OGR_F_GetFieldAsDouble(feature, m_cols[i]); break;
+      case OFTInteger: row[i] = lib::singleton().p_OGR_F_GetFieldAsInteger(feature.get(), m_cols[i]); break;
+      case OFTReal: row[i] = lib::singleton().p_OGR_F_GetFieldAsDouble(feature.get(), m_cols[i]); break;
       case OFTDate:
       case OFTTime:
       case OFTDateTime:
-      case OFTString: row[i] = string(lib::singleton().p_OGR_F_GetFieldAsString(feature, m_cols[i])); break;
+      case OFTString: row[i] = string(lib::singleton().p_OGR_F_GetFieldAsString(feature.get(), m_cols[i])); break;
       case OFTBinary:
         {
         int size(0);
-        GByte* bytes(lib::singleton().p_OGR_F_GetFieldAsBinary(feature, m_cols[i], &size));
+        GByte* bytes(lib::singleton().p_OGR_F_GetFieldAsBinary(feature.get(), m_cols[i], &size));
         if (size > 0)
         {
           row[i] = blob_t();

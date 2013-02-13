@@ -10,7 +10,6 @@
 #include <brig/boost/geom_from_wkb.hpp>
 #include <brig/boost/geometry.hpp>
 #include <brig/detail/get_columns.hpp>
-#include <brig/detail/raii.hpp>
 #include <brig/gdal/detail/dataset_allocator.hpp>
 #include <brig/gdal/detail/lib.hpp>
 #include <brig/gdal/detail/transform.hpp>
@@ -100,15 +99,17 @@ inline bool rowset::fetch(std::vector<variant>& row)
       if (!drv) throw runtime_error("GDAL error");
       auto file("/vsimem/" + string_cast<char>(size_t(this)) + ".png");
       {
-        auto ds(make_raii(lib::singleton().p_GDALCreateCopy(drv, file.c_str(), *m_ds, false, 0, 0, 0), lib::singleton().p_GDALClose));
-        if (!ds) throw runtime_error("GDAL error");
+        auto del = [](void* ptr) { lib::singleton().p_GDALClose(GDALDatasetH(ptr)); };
+        unique_ptr<void, decltype(del)> ds(lib::singleton().p_GDALCreateCopy(drv, file.c_str(), *m_ds, false, 0, 0, 0), del);
+        if (!ds.get()) throw runtime_error("GDAL error");
       }
       {
         vsi_l_offset len(0);
-        auto buf(make_raii(lib::singleton().p_VSIGetMemFileBuffer(file.c_str(), &len, true), lib::singleton().p_VSIFree));
+        auto del = [](void* ptr) { lib::singleton().p_VSIFree(ptr); };
+        unique_ptr<void, decltype(del)> buf(lib::singleton().p_VSIGetMemFileBuffer(file.c_str(), &len, true), del);
         row[i] = blob_t();
         blob_t& blob = ::boost::get<blob_t>(row[i]);
-        const uint8_t* ptr = buf;
+        const uint8_t* ptr(static_cast<const uint8_t*>(buf.get()));
         blob.assign(ptr, ptr + size_t(len));
       }
     }

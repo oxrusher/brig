@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <brig/boost/geometry.hpp>
-#include <brig/detail/raii.hpp>
 #include <brig/gdal/detail/lib.hpp>
 #include <brig/gdal/ogr/detail/datasource_allocator.hpp>
 #include <brig/gdal/ogr/detail/inserter.hpp>
@@ -200,11 +199,9 @@ inline void provider::create(const table_def& tbl)
 
   auto geom_col(find_if(begin(tbl.columns), end(tbl.columns), [](const column_def& col){ return Geometry == col.type; }));
   if (geom_col == end(tbl.columns)) throw runtime_error("OGR error");
-  auto srs(brig::detail::make_raii
-    ( lib::singleton().p_OSRNewSpatialReference("GEOGCS[\"WGS 84\", DATUM[\"WGS_1984\", SPHEROID[\"WGS 84\",6378137,298.257223563]], PRIMEM[\"Greenwich\",0], UNIT[\"degree\",0.01745329251994328]]")
-    , lib::singleton().p_OSRDestroySpatialReference)
-    );
-  if (!srs) throw runtime_error("OGR error");
+  auto del = [](void* ptr) { lib::singleton().p_OSRDestroySpatialReference(OGRSpatialReferenceH(ptr)); };
+  unique_ptr<void, decltype(del)> srs(lib::singleton().p_OSRNewSpatialReference("GEOGCS[\"WGS 84\", DATUM[\"WGS_1984\", SPHEROID[\"WGS 84\",6378137,298.257223563]], PRIMEM[\"Greenwich\",0], UNIT[\"degree\",0.01745329251994328]]"), del);
+  if (!srs.get()) throw runtime_error("OGR error");
 
   string proj;
   if (geom_col->epsg > 0)
@@ -214,9 +211,9 @@ inline void provider::create(const table_def& tbl)
   }
   else if (!geom_col->proj.empty())
     proj = geom_col->proj;
-  lib::check(lib::singleton().p_OSRImportFromProj4(srs, proj.c_str()));
+  lib::check(lib::singleton().p_OSRImportFromProj4(srs.get(), proj.c_str()));
 
-  OGRLayerH lr(lib::singleton().p_OGR_DS_CreateLayer(*ds, tbl.id.name.c_str(), srs, wkbUnknown, 0));
+  OGRLayerH lr(lib::singleton().p_OGR_DS_CreateLayer(*ds, tbl.id.name.c_str(), srs.get(), wkbUnknown, 0));
   if (!lr) throw runtime_error("OGR error");
 
   for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
@@ -232,8 +229,9 @@ inline void provider::create(const table_def& tbl)
     case Integer: type = OFTInteger; break;
     case String: type = OFTString; break;
     };
-    auto fld(brig::detail::make_raii(lib::singleton().p_OGR_Fld_Create(col->name.c_str(), type), lib::singleton().p_OGR_Fld_Destroy));
-    lib::check(lib::singleton().p_OGR_L_CreateField(lr, fld, true));
+    auto del = [](void* ptr) { lib::singleton().p_OGR_Fld_Destroy(OGRFieldDefnH(ptr)); };
+    unique_ptr<void, decltype(del)> fld(lib::singleton().p_OGR_Fld_Create(col->name.c_str(), type), del);
+    lib::check(lib::singleton().p_OGR_L_CreateField(lr, fld.get(), true));
   }
   lib::check(lib::singleton().p_OGR_L_SyncToDisk(lr));
   lib::check(lib::singleton().p_OGR_DS_SyncToDisk(*ds));

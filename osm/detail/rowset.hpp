@@ -5,7 +5,6 @@
 
 #include <brig/boost/geometry.hpp>
 #include <brig/boost/as_binary.hpp>
-#include <brig/detail/raii.hpp>
 #include <brig/global.hpp>
 #include <brig/osm/detail/lib.hpp>
 #include <brig/osm/detail/tile.hpp>
@@ -115,16 +114,16 @@ inline void rowset::add_files()
 
     CURL* hnd(lib::singleton().p_curl_easy_init());
     if (!hnd) throw std::runtime_error("cURL error");
-    auto raii_hnd(brig::detail::make_raii(hnd, lib::singleton().p_curl_easy_cleanup));
+    auto del = [](CURL* ptr) { lib::singleton().p_curl_easy_cleanup(ptr); };
+    std::unique_ptr<CURL, decltype(del)> raii_hnd(hnd, del);
 
     row_t data;
     data.tl = tl;
     data.rast = new blob_t();
     m_pg[hnd] = data;
-    raii_hnd.reset();
 
+    raii_hnd.release();
     const std::string url(m_lr->get_url(i, tl.x, tl.y, tl.z));
-
     check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_URL, url.c_str()));
     check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, &write));
     check(lib::singleton().p_curl_easy_setopt(hnd, CURLOPT_WRITEDATA, data.rast));

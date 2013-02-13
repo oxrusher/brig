@@ -5,7 +5,6 @@
 
 #include <brig/boost/envelope.hpp>
 #include <brig/boost/geometry.hpp>
-#include <brig/detail/raii.hpp>
 #include <brig/gdal/detail/dataset_allocator.hpp>
 #include <brig/gdal/detail/lib.hpp>
 #include <brig/gdal/detail/rowset.hpp>
@@ -109,20 +108,18 @@ inline table_def provider::get_table_def(const identifier&)
     column_def col;
     col.name = WKB();
     col.type = Geometry;
-    auto srs(brig::detail::make_raii
-      ( lib::singleton().p_OSRNewSpatialReference(lib::singleton().p_GDALGetProjectionRef(*ds))
-      , lib::singleton().p_OSRDestroySpatialReference)
-      );
-    if (!srs) throw runtime_error("GDAL error");
-    lib::singleton().p_OSRAutoIdentifyEPSG(srs);
-    const char* name(lib::singleton().p_OSRGetAuthorityName(srs, 0));
-    const char* code(lib::singleton().p_OSRGetAuthorityCode(srs, 0));
+    auto del = [](void* ptr) { lib::singleton().p_OSRDestroySpatialReference(OGRSpatialReferenceH(ptr)); };
+    unique_ptr<void, decltype(del)> srs(lib::singleton().p_OSRNewSpatialReference(lib::singleton().p_GDALGetProjectionRef(*ds)), del);
+    if (!srs.get()) throw runtime_error("GDAL error");
+    lib::singleton().p_OSRAutoIdentifyEPSG(srs.get());
+    const char* name(lib::singleton().p_OSRGetAuthorityName(srs.get(), 0));
+    const char* code(lib::singleton().p_OSRGetAuthorityCode(srs.get(), 0));
     if (name && code && string(name).compare("EPSG") == 0)
       col.epsg = atoi(code);
     else
     {
       char* proj(0);
-      if (OGRERR_NONE == lib::singleton().p_OSRExportToProj4(srs, &proj) && proj)
+      if (OGRERR_NONE == lib::singleton().p_OSRExportToProj4(srs.get(), &proj) && proj)
       {
         col.proj = proj;
         lib::singleton().p_OGRFree(proj);
