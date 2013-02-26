@@ -13,7 +13,7 @@ struct layer_aerial : layer {
   std::string get_name() override  { return "Aerial"; }
   std::string get_url(size_t order, int x, int y, int z) override
   {
-    return "http://oatile" + string_cast<char>((order % 4) + 1) + ".mqcdn.com/naip/" + string_cast<char>(z) + "/" + string_cast<char>(x) + "/" + string_cast<char>(y) + ".png";
+    return "http://otile" + string_cast<char>((order % 4) + 1) + ".mqcdn.com/tiles/1.0.0/sat/" + string_cast<char>(z) + "/" + string_cast<char>(x) + "/" + string_cast<char>(y) + ".png";
   }
 }; // layer_aerial
 
