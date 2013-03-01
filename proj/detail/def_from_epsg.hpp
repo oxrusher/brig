@@ -4188,8 +4188,8 @@ inline std::string def_from_epsg(const int epsg)
   make_pair(32761, "+proj=stere +lat_0=-90 +lat_ts=-90 +lon_0=0 +k=0.994 +x_0=2000000 +y_0=2000000 +datum=WGS84 +units=m +no_defs"),
   make_pair(32766, "+proj=tmerc +lat_0=0 +lon_0=36 +k=0.9996 +x_0=500000 +y_0=10000000 +datum=WGS84 +units=m +no_defs"),
   };
-  auto iter(lower_bound(begin(mapping), end(mapping), make_pair(epsg, (const char*)0)));
-  return (iter != end(mapping) && iter->first == epsg)? iter->second: "";
+  auto itr(lower_bound(begin(mapping), end(mapping), make_pair(epsg, (const char*)0)));
+  return (itr != end(mapping) && itr->first == epsg)? itr->second: "";
 }
 
 } } } // brig::proj::detail
