@@ -26,7 +26,8 @@ inline table_def get_table_def_sqlite(dialect* dct, command* cmd, const identifi
   // columns
   table_def res;
   res.id = tbl;
-  vector<string> keys;
+  index_def pri_idx;
+  pri_idx.type = Primary;
   vector<variant> row;
   cmd->exec("PRAGMA TABLE_INFO(" + dct->sql_identifier(tbl.name) + ")");
   while (cmd->fetch(row))
@@ -43,18 +44,14 @@ inline table_def get_table_def_sqlite(dialect* dct, command* cmd, const identifi
     res.columns.push_back(col);
 
     int key(0);
-    if (numeric_cast(row[5], key) && key) keys.push_back(col.name);
+    if (numeric_cast(row[5], key) && key > 0) // one-based
+    {
+      if (pri_idx.columns.size() < size_t(key)) pri_idx.columns.resize(key);
+      pri_idx.columns[key - 1] = col.name;
+    }
   }
   if (res.columns.empty()) throw runtime_error("table error");
-
-  if (!keys.empty())
-  {
-    index_def pri_idx;
-    pri_idx.type = Primary;
-    pri_idx.columns = keys;
-    res.indexes.push_back(pri_idx);
-    sort(begin(keys), end(keys));
-  }
+  if (!pri_idx.columns.empty()) res.indexes.push_back(pri_idx);
 
   // indexes
   cmd->exec("PRAGMA INDEX_LIST(" + dct->sql_identifier(tbl.name) + ")");
@@ -62,6 +59,7 @@ inline table_def get_table_def_sqlite(dialect* dct, command* cmd, const identifi
   {
     index_def idx;
     idx.id.name = string_cast<char>(row[1]);
+    if (idx.id.name.empty()) continue;
     int unique(0);
     idx.type = (numeric_cast(row[2], unique) && !unique)? Duplicate: Unique;
     res.indexes.push_back(idx);
@@ -70,35 +68,20 @@ inline table_def get_table_def_sqlite(dialect* dct, command* cmd, const identifi
   // indexed columns
   for (size_t i(0); i < res.indexes.size(); ++i)
   {
-    if (res.indexes[i].id.name.empty()) continue;
-
     cmd->exec("PRAGMA INDEX_INFO(" + dct->sql_identifier(res.indexes[i].id.name) + ")");
-    vector<string> cols;
     vector<pair<int, string>> seq_cols;
     while (cmd->fetch(row))
     {
       const string col(string_cast<char>(row[2]));
-      cols.push_back(col);
-
       pair<int, string> seq_col;
       numeric_cast(row[0], seq_col.first);
       seq_col.second = col;
       seq_cols.push_back(seq_col);
     }
-    sort(begin(cols), end(cols));
     sort(begin(seq_cols), end(seq_cols));
     for (size_t j(0); j < seq_cols.size(); ++j)
       res.indexes[i].columns.push_back(seq_cols[j].second);
-
-    if (keys.size() == cols.size() && equal(begin(keys), end(keys), begin(cols)))
-    {
-      keys.clear();
-      res.indexes[i].type = VoidIndex;
-      res.indexes[0].columns = move(res.indexes[i].columns);
-    }
   }
-  auto new_end(remove_if(begin(res.indexes), end(res.indexes), [](const index_def& idx){ return VoidIndex == idx.type; }));
-  res.indexes.resize(distance(begin(res.indexes), new_end));
 
   // srid, epsg, spatial index
   for (size_t i(0); i < res.columns.size(); ++i)
