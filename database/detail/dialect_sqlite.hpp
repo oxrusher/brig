@@ -34,7 +34,7 @@ struct dialect_sqlite : dialect {
   std::string sql_spatial_detail(const table_def&, const std::string&) override  { throw std::runtime_error("DBMS error"); }
   column_type get_type(const identifier&, int) override  { throw std::runtime_error("DBMS error"); }
 
-  std::string sql_mbr(const table_def& tbl, const std::string& col) override;
+  std::string sql_extent(const table_def& tbl, const std::string& col) override;
 
   std::string sql_schema() override  { return ""; }
   std::string fit_identifier(const std::string& id) override;
@@ -64,10 +64,9 @@ inline std::string dialect_sqlite::sql_geometries()
   return "SELECT '' scm, t.name tbl, g.f_geometry_column col FROM geometry_columns g JOIN sqlite_master t ON LOWER(g.f_table_name) = LOWER(t.name)";
 }
 
-inline std::string dialect_sqlite::sql_mbr(const table_def& tbl, const std::string& col)
+inline std::string dialect_sqlite::sql_extent(const table_def& tbl, const std::string& col)
 {
-  const std::string c(sql_identifier(col));
-  return "SELECT Min(MbrMinX(" + c + ")), Min(MbrMinY(" + c + ")), Max(MbrMaxX(" + c + ")), Max(MbrMaxY(" + c + ")) FROM " + sql_identifier(tbl.id.name);
+  return "SELECT MbrMinX(t.r), MbrMinY(t.r), MbrMaxX(t.r), MbrMaxY(t.r) FROM (SELECT Extent(" + sql_identifier(col) + ") r FROM " + sql_identifier(tbl.id.name) + ") t";
 }
 
 inline std::string dialect_sqlite::fit_identifier(const std::string& id)
@@ -146,7 +145,7 @@ inline void dialect_sqlite::init_raster(pyramid_def& raster)
   for (size_t i(0); i < raster.levels.size(); ++i)
   {
     const bool hint((i * 6) < raster.levels.size());
-    tiling_def& lvl(raster.levels[i]);
+    tilemap_def& lvl(raster.levels[i]);
     lvl.raster.query_expression = "(SELECT r FROM (SELECT id i, raster r FROM " + tbl + ") t WHERE t.i = " + "id)";
     {
       column_def col;

@@ -6,8 +6,8 @@
 #include <brig/database/command_allocator.hpp>
 #include <brig/database/detail/dialect_factory.hpp>
 #include <brig/database/detail/fit_raster.hpp>
+#include <brig/database/detail/get_extent.hpp>
 #include <brig/database/detail/get_geometry_layers.hpp>
-#include <brig/database/detail/get_mbr.hpp>
 #include <brig/database/detail/get_raster_layers.hpp>
 #include <brig/database/detail/get_schema.hpp>
 #include <brig/database/detail/get_srid.hpp>
@@ -42,13 +42,9 @@ public:
   std::vector<identifier> get_geometry_layers() override;
   std::vector<pyramid_def> get_raster_layers() override;
   table_def get_table_def(const identifier& tbl) override;
-
-  brig::boost::box get_mbr(const table_def& tbl, const std::string& col) override;
+  brig::boost::box get_extent(const table_def& tbl) override;
   std::shared_ptr<rowset> select(const table_def& tbl) override;
 
-  /*!
-  AFTER CALL: define bounding box with boost::as_binary() if column_def.query_value is empty blob_t
-  */
   table_def fit_to_create(const table_def& tbl) override;
   void create(const table_def& tbl) override;
   void drop(const table_def& tbl) override;
@@ -101,13 +97,13 @@ table_def provider<Threading>::get_table_def(const identifier& tbl)
 }
 
 template <bool Threading>
-brig::boost::box provider<Threading>::get_mbr(const table_def& tbl, const std::string& col)
+brig::boost::box provider<Threading>::get_extent(const table_def& tbl)
 {
   using namespace std;
   using namespace detail;
   unique_ptr<command, deleter_t> cmd(m_pool->allocate(), deleter_t(m_pool));
   unique_ptr<dialect> dct(dialect_factory(cmd->system()));
-  return detail::get_mbr(dct.get(), cmd.get(), tbl, col);
+  return detail::get_extent(dct.get(), cmd.get(), tbl);
 }
 
 template <bool Threading>

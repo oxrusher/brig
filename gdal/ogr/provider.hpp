@@ -31,8 +31,7 @@ public:
   std::vector<identifier> get_geometry_layers() override;
   std::vector<pyramid_def> get_raster_layers() override  { return std::vector<pyramid_def>(); }
   table_def get_table_def(const identifier& tbl) override;
-
-  brig::boost::box get_mbr(const table_def& tbl, const std::string& col) override;
+  brig::boost::box get_extent(const table_def& tbl) override;
   std::shared_ptr<rowset> select(const table_def& tbl) override;
 
   table_def fit_to_create(const table_def& tbl) override;
@@ -142,7 +141,7 @@ inline table_def provider::get_table_def(const identifier& tbl)
   return res;
 }
 
-inline brig::boost::box provider::get_mbr(const table_def& tbl, const std::string&)
+inline brig::boost::box provider::get_extent(const table_def& tbl)
 {
   using namespace std;
   using namespace brig::boost;

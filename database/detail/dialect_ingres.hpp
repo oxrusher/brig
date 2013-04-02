@@ -30,7 +30,7 @@ struct dialect_ingres : dialect {
   std::string sql_spatial_detail(const table_def& tbl, const std::string& col) override;
   column_type get_type(const identifier& type_lcase, int scale) override;
 
-  std::string sql_mbr(const table_def& tbl, const std::string& col) override;
+  std::string sql_extent(const table_def& tbl, const std::string& col) override;
 
   std::string sql_schema() override;
   std::string fit_identifier(const std::string& id) override;
@@ -122,7 +122,7 @@ inline column_type dialect_ingres::get_type(const identifier& type_lcase, int sc
   return get_iso_type(type_lcase.name, scale);
 }
 
-inline std::string dialect_ingres::sql_mbr(const table_def& tbl, const std::string& col)
+inline std::string dialect_ingres::sql_extent(const table_def& tbl, const std::string& col)
 {
   return "SELECT X(PointN(t.r, 1)), Y(PointN(t.r, 1)), X(PointN(t.r, 3)), Y(PointN(t.r, 3)) FROM (SELECT ExteriorRing(Extent(" + sql_identifier(col) + ")) r FROM " + sql_identifier(tbl.id) + ") t";
 }

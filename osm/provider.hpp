@@ -39,8 +39,7 @@ public:
   std::vector<identifier> get_geometry_layers() override;
   std::vector<pyramid_def> get_raster_layers() override;
   table_def get_table_def(const identifier& tbl) override;
-
-  brig::boost::box get_mbr(const table_def& tbl, const std::string& col) override;
+  brig::boost::box get_extent(const table_def& tbl) override;
   std::shared_ptr<rowset> select(const table_def& tbl) override;
 
   table_def fit_to_create(const table_def&) override  { throw std::runtime_error("OSM error"); }
@@ -117,7 +116,7 @@ inline std::vector<pyramid_def> provider::get_raster_layers()
   for (int z(m_lr->get_max_zoom()); z >= 0; --z)
   {
     auto env(tile(0, 0, z).get_box());
-    tiling_def lvl;
+    tilemap_def lvl;
     lvl.resolution_x = (env.max_corner().get<0>() - env.min_corner().get<0>()) / double(m_lr->get_pixels());
     lvl.resolution_y = (env.max_corner().get<1>() - env.min_corner().get<1>()) / double(m_lr->get_pixels());
     lvl.geometry.name = zoom_to_table(z);
@@ -161,7 +160,7 @@ inline table_def provider::get_table_def(const identifier& tbl)
   return res;
 }
 
-inline brig::boost::box provider::get_mbr(const table_def&, const std::string&)
+inline brig::boost::box provider::get_extent(const table_def&)
 {
   return detail::tile(0, 0, 0).get_box();
 }

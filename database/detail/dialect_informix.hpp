@@ -25,7 +25,7 @@ struct dialect_informix : dialect {
   std::string sql_spatial_detail(const table_def& tbl, const std::string& col) override;
   column_type get_type(const identifier& type_lcase, int scale) override;
 
-  std::string sql_mbr(const table_def& tbl, const std::string& col) override;
+  std::string sql_extent(const table_def& tbl, const std::string& col) override;
 
   std::string sql_schema() override;
   column_def fit_column(const column_def& col) override;
@@ -162,7 +162,7 @@ inline column_type dialect_informix::get_type(const identifier& type_lcase, int 
   return get_iso_type(type_lcase.name, scale);
 }
 
-inline std::string dialect_informix::sql_mbr(const table_def& tbl, const std::string& col)
+inline std::string dialect_informix::sql_extent(const table_def& tbl, const std::string& col)
 {
   const std::string c(sql_identifier(col));
   const std::string t(sql_identifier(tbl.id));

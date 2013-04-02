@@ -31,7 +31,7 @@ struct dialect_ms_sql : dialect {
   std::string sql_spatial_detail(const table_def& tbl, const std::string& col) override;
   column_type get_type(const identifier& type_lcase, int scale) override;
 
-  std::string sql_mbr(const table_def& tbl, const std::string& col) override;
+  std::string sql_extent(const table_def& tbl, const std::string& col) override;
 
   std::string sql_schema() override;
   column_def fit_column(const column_def& col) override;
@@ -91,7 +91,7 @@ inline column_type dialect_ms_sql::get_type(const identifier& type_lcase, int sc
   return get_iso_type(type_lcase.name, scale);
 }
 
-inline std::string dialect_ms_sql::sql_mbr(const table_def& tbl, const std::string& col)
+inline std::string dialect_ms_sql::sql_extent(const table_def& tbl, const std::string& col)
 {
   if (tbl[col]->type_lcase.name.compare("geography") == 0) return "";
   return "\

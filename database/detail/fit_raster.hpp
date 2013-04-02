@@ -20,12 +20,12 @@ inline pyramid_def fit_raster(dialect* dct, const pyramid_def& raster, const std
   pyramid_def res;
   res.id.schema = schema;
   res.id.name = dct->fit_identifier(raster.id.name);
-  vector<tiling_def> levels(raster.levels);
-  sort(begin(levels), end(levels), [](const tiling_def& a, const tiling_def& b){ return a.pixel_area() < b.pixel_area(); });
+  vector<tilemap_def> levels(raster.levels);
+  sort(begin(levels), end(levels), [](const tilemap_def& a, const tilemap_def& b){ return a.pixel_area() < b.pixel_area(); });
   const int width(levels.size() < 10? 1: 2);
   for (size_t i(0); i < levels.size(); ++i)
   {
-    tiling_def lvl;
+    tilemap_def lvl;
     lvl.resolution_x = levels[i].resolution_x;
     lvl.resolution_y = levels[i].resolution_y;
     lvl.geometry.schema = schema;

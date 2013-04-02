@@ -31,7 +31,7 @@ struct dialect_oracle : dialect {
   std::string sql_spatial_detail(const table_def& tbl, const std::string& col) override;
   column_type get_type(const identifier& type_lcase, int scale) override;
 
-  std::string sql_mbr(const table_def& tbl, const std::string& col) override;
+  std::string sql_extent(const table_def& tbl, const std::string& col) override;
 
   std::string sql_schema() override;
   std::string fit_identifier(const std::string& id)  override;
@@ -114,7 +114,7 @@ inline column_type dialect_oracle::get_type(const identifier& type_lcase, int sc
   return get_iso_type(type_lcase.name, scale);
 }
 
-inline std::string dialect_oracle::sql_mbr(const table_def& tbl, const std::string& col)
+inline std::string dialect_oracle::sql_extent(const table_def& tbl, const std::string& col)
 {
   const std::string t("\
 SELECT ROWNUM n, d.SDO_LB l, d.SDO_UB u \

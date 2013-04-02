@@ -35,7 +35,7 @@ inline std::vector<pyramid_def> get_rasters(rowset* rs)
       prev_id = cur_id;
     }
 
-    tiling_def lvl;
+    tilemap_def lvl;
     numeric_cast(row[3], lvl.resolution_x);
     numeric_cast(row[4], lvl.resolution_y);
     lvl.geometry.schema = string_cast<char>(row[5]);

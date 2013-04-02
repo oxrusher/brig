@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_DATABASE_DETAIL_GET_MBR_HPP
-#define BRIG_DATABASE_DETAIL_GET_MBR_HPP
+#ifndef BRIG_DATABASE_DETAIL_GET_EXTENT_HPP
+#define BRIG_DATABASE_DETAIL_GET_EXTENT_HPP
 
 #include <brig/boost/geometry.hpp>
 #include <brig/database/command.hpp>
@@ -9,18 +9,27 @@
 #include <brig/global.hpp>
 #include <brig/numeric_cast.hpp>
 #include <brig/table_def.hpp>
+#include <iterator>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace brig { namespace database { namespace detail {
 
-inline brig::boost::box get_mbr(dialect* dct, command* cmd, const table_def& tbl, const std::string& col)
+inline brig::boost::box get_extent(dialect* dct, command* cmd, const table_def& tbl)
 {
   using namespace std;
   using namespace brig::boost;
 
-  if (Geometry != tbl[col]->type) throw runtime_error("datatype error");
-  const string sql(dct->sql_mbr(tbl, col));
+  vector<string> query_columns(tbl.query_columns);
+  if (query_columns.empty())
+    for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
+      if (Geometry == col->type) query_columns.push_back(col->name);
+  if ( query_columns.size() != 1
+    || Geometry != tbl[ query_columns.front() ]->type
+     ) throw runtime_error("extent error");
+
+  const string sql(dct->sql_extent(tbl, query_columns.front()));
   if (sql.empty()) return box(point(-180, -90), point(180, 90)); // geodetic
 
   cmd->exec(sql);
@@ -34,9 +43,9 @@ inline brig::boost::box get_mbr(dialect* dct, command* cmd, const table_def& tbl
      )
     return box(point(xmin, ymin), point(xmax, ymax));
 
-  throw runtime_error("envelope error");
+  throw runtime_error("extent error");
 }
 
 } } } // brig::database::detail
 
-#endif // BRIG_DATABASE_DETAIL_GET_MBR_HPP
+#endif // BRIG_DATABASE_DETAIL_GET_EXTENT_HPP

@@ -22,7 +22,7 @@ struct dialect_cubrid : dialect {
   std::string sql_spatial_detail(const table_def&, const std::string&)  { throw std::runtime_error("DBMS error"); }
   column_type get_type(const identifier& type_lcase, int scale) override;
 
-  std::string sql_mbr(const table_def&, const std::string&) override  { throw std::runtime_error("DBMS error"); }
+  std::string sql_extent(const table_def&, const std::string&) override  { throw std::runtime_error("DBMS error"); }
 
   std::string sql_schema() override;
   column_def fit_column(const column_def& col) override;

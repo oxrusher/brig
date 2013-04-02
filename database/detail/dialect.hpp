@@ -29,7 +29,7 @@ struct dialect {
   virtual std::string sql_spatial_detail(const table_def& tbl, const std::string& col) = 0;
   virtual column_type get_type(const identifier& type_lcase, int scale) = 0;
 
-  virtual std::string sql_mbr(const table_def& tbl, const std::string& col) = 0; // 1 - metadata, 2 - geodetic (no sql), 3 - aggregate
+  virtual std::string sql_extent(const table_def& tbl, const std::string& col) = 0; // 1 - metadata, 2 - geodetic (no sql), 3 - aggregate
 
   virtual std::string sql_schema() = 0; // empty is returned if not supported
   virtual std::string fit_identifier(const std::string& id)  { return id; }

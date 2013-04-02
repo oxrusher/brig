@@ -24,8 +24,7 @@ struct provider : ::boost::noncopyable
   virtual std::vector<identifier> get_geometry_layers() = 0;
   virtual std::vector<pyramid_def> get_raster_layers() = 0;
   virtual table_def get_table_def(const identifier& tbl) = 0;
-
-  virtual brig::boost::box get_mbr(const table_def& tbl, const std::string& col) = 0;
+  virtual brig::boost::box get_extent(const table_def& tbl) = 0;
   virtual std::shared_ptr<rowset> select(const table_def& tbl) = 0;
 
   /*!
