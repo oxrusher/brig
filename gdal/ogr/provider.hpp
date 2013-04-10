@@ -76,7 +76,7 @@ inline std::vector<identifier> provider::get_geometry_layers()
     if (!lr) throw runtime_error("OGR error");
     identifier id;
     id.name = lib::singleton().p_OGR_L_GetName(lr);
-    id.qualifier = WKB();
+    id.qualifier = WKB;
     res.push_back(id);
   }
   return res;
@@ -95,7 +95,7 @@ inline table_def provider::get_table_def(const identifier& tbl)
   res.id.name = tbl.name;
 
   column_def col;
-  col.name = WKB();
+  col.name = WKB;
   col.type = Geometry;
   OGRSpatialReferenceH srs(lib::singleton().p_OGR_L_GetSpatialRef(lr));
   if (srs)
@@ -124,7 +124,7 @@ inline table_def provider::get_table_def(const identifier& tbl)
     OGRFieldDefnH field_def(lib::singleton().p_OGR_FD_GetFieldDefn(feature_def, i));
     if (!field_def) throw runtime_error("OGR error");
     col.name = lib::singleton().p_OGR_Fld_GetNameRef(field_def);
-    if (col.name.empty() || col.name.compare(WKB()) == 0) throw runtime_error("OGR name error");
+    if (col.name.empty() || col.name.compare(WKB) == 0) throw runtime_error("OGR name error");
     switch (lib::singleton().p_OGR_Fld_GetType(field_def))
     {
     default: col.type = VoidColumn; break;
@@ -175,7 +175,7 @@ inline table_def provider::fit_to_create(const table_def& tbl)
     switch (col.type)
     {
     case Geometry:
-      col.name = WKB();
+      col.name = WKB;
       col.epsg = col_iter->epsg;
       col.proj = col_iter->proj;
       break;

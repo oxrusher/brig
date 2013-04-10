@@ -29,7 +29,7 @@ inline std::vector<std::string> rowset_lite::columns()
 {
   std::vector<std::string> cols;
   for (size_t i(0); i < m_cols; ++i)
-    cols.push_back(WKB());
+    cols.push_back(WKB);
   return cols;
 }
 

@@ -50,7 +50,7 @@ inline std::vector<identifier> provider::get_tables()
   unique_ptr<dataset> ds(m_allocator.allocate());
   vector<identifier> res;
   identifier id;
-  id.name = TBL();
+  id.name = TBL;
   res.push_back(id);
   return res;
 }
@@ -63,8 +63,8 @@ inline std::vector<identifier> provider::get_geometry_layers()
   unique_ptr<dataset> ds(m_allocator.allocate());
   vector<identifier> res;
   identifier id;
-  id.name = TBL();
-  id.qualifier = WKB();
+  id.name = TBL;
+  id.qualifier = WKB;
   res.push_back(id);
   return res;
 }
@@ -85,9 +85,9 @@ inline std::vector<pyramid_def> provider::get_raster_layers()
   tilemap_def lvl;
   lvl.resolution_x = env.max_corner().get<0>() - env.min_corner().get<0>();
   lvl.resolution_y = env.max_corner().get<1>() - env.min_corner().get<1>();
-  lvl.geometry.name = pyr.id.name = TBL();
-  lvl.geometry.qualifier = WKB();
-  lvl.raster.name = pyr.id.qualifier = PNG();
+  lvl.geometry.name = pyr.id.name = TBL;
+  lvl.geometry.qualifier = WKB;
+  lvl.raster.name = pyr.id.qualifier = PNG;
   lvl.raster.type = Blob;
   pyr.levels.push_back(lvl);
   res.push_back(pyr);
@@ -101,11 +101,11 @@ inline table_def provider::get_table_def(const identifier&)
 
   unique_ptr<dataset> ds(m_allocator.allocate());
   table_def res;
-  res.id.name = TBL();
+  res.id.name = TBL;
 
   {
     column_def col;
-    col.name = WKB();
+    col.name = WKB;
     col.type = Geometry;
     auto del = [](void* ptr) { lib::singleton().p_OSRDestroySpatialReference(OGRSpatialReferenceH(ptr)); };
     unique_ptr<void, decltype(del)> srs(lib::singleton().p_OSRNewSpatialReference(lib::singleton().p_GDALGetProjectionRef(*ds)), del);
@@ -129,7 +129,7 @@ inline table_def provider::get_table_def(const identifier&)
 
   {
     column_def col;
-    col.name = PNG();
+    col.name = PNG;
     col.type = Blob;
     res.columns.push_back(col);
   }
@@ -151,7 +151,7 @@ inline brig::boost::box provider::get_extent(const table_def&)
 inline std::shared_ptr<rowset> provider::select(const table_def& tbl)
 {
   using namespace std;
-  if (typeid(null_t) != tbl[PNG()]->query_value.type()) throw runtime_error("GDAL error");
+  if (typeid(null_t) != tbl[PNG]->query_value.type()) throw runtime_error("GDAL error");
   return make_shared<detail::rowset>(&m_allocator, tbl);
 } // provider::
 

@@ -96,7 +96,7 @@ inline std::vector<std::string> rowset::columns()
   {
     string col;
     if (m_cols[i] < 0)
-      col = WKB();
+      col = WKB;
     else
     {
       OGRFieldDefnH field_def(lib::singleton().p_OGR_FD_GetFieldDefn(feature_def, m_cols[i]));

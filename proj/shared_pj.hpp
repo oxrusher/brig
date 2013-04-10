@@ -23,6 +23,7 @@ public:
   bool is_latlong() const  { return m_ptr && detail::lib::singleton().p_pj_is_latlong(m_ptr.get()); }
   operator projPJ() const  { return m_ptr.get(); }
   bool operator ==(const shared_pj& r) const  { return m_ptr && r.m_ptr && (m_ptr.get() == r.m_ptr.get() || get_def().compare(r.get_def()) == 0); }
+  bool operator !=(const shared_pj& r) const  { return !operator ==(r); }
 }; // shared_pj
 
 inline void shared_pj::init(const char* def)

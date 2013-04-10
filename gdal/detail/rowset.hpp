@@ -45,9 +45,9 @@ inline rowset::rowset(dataset_allocator* allocator, const table_def& tbl) : m_ds
   vector<column_def> col_defs = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
   for (auto iter(begin(col_defs)); iter != end(col_defs); ++iter)
   {
-    if (iter->name.compare(PNG()) == 0)
+    if (iter->name.compare(PNG) == 0)
       m_cols.push_back(true);
-    else if (iter->name.compare(WKB()) == 0)
+    else if (iter->name.compare(WKB) == 0)
       m_cols.push_back(false);
     else
       throw runtime_error("GDAL error");
@@ -59,7 +59,7 @@ inline rowset::rowset(dataset_allocator* allocator, const table_def& tbl) : m_ds
   m_width = lib::singleton().p_GDALGetRasterXSize(*m_ds);
   m_height = lib::singleton().p_GDALGetRasterYSize(*m_ds);
 
-  auto geom_col(tbl[WKB()]);
+  auto geom_col(tbl[WKB]);
   if ( typeid(blob_t) == geom_col->query_value.type()
     && !::boost::geometry::intersects
       ( box(point(0, 0), point(m_width, m_height))
@@ -74,8 +74,8 @@ inline std::vector<std::string> rowset::columns()
   std::vector<std::string> cols;
   for (size_t i(0); i < m_cols.size(); ++i)
   {
-    if (m_cols[i]) cols.push_back(PNG());
-    else cols.push_back(WKB());
+    if (m_cols[i]) cols.push_back(PNG);
+    else cols.push_back(WKB);
   }
   return cols;
 }
