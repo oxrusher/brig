@@ -56,7 +56,14 @@ struct dialect_sqlite : dialect {
 
 inline std::string dialect_sqlite::sql_tables()
 {
-  return "SELECT '' scm, name tbl FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite!_%' ESCAPE '!' AND name NOT LIKE 'idx!_%' ESCAPE '!'";
+  return "\
+SELECT  '' scm, name tbl FROM sqlite_master \
+WHERE type = 'table' \
+AND name NOT LIKE 'sqlite!_%' ESCAPE '!' \
+AND name NOT LIKE 'idx!_%' ESCAPE '!' \
+AND name NOT LIKE '%!_geometry_columns%' ESCAPE '!' \
+AND name NOT LIKE '%geometry_columns!_%' ESCAPE '!' \
+AND name NOT IN ('SpatialIndex','spatialite_history','sql_statements_log')";
 }
 
 inline std::string dialect_sqlite::sql_geometries()
