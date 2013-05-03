@@ -16,30 +16,29 @@
 #include <brig/table_def.hpp>
 #include <cstring>
 #include <iterator>
-#include <memory>
 #include <stdexcept>
 #include <vector>
 
 namespace brig { namespace gdal { namespace ogr { namespace detail {
 
 class rowset : public brig::rowset {
-  std::unique_ptr<datasource> m_ds;
+  datasource m_ds;
   OGRLayerH m_lr;
   std::vector<int> m_cols;
   int m_rows;
 public:
-  rowset(datasource_allocator* allocator, const table_def& tbl);
+  rowset(datasource_allocator allocator, const table_def& tbl);
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
 }; // rowset
 
-inline rowset::rowset(datasource_allocator* allocator, const table_def& tbl) : m_ds(allocator->allocate(false)), m_lr(0)
+inline rowset::rowset(datasource_allocator allocator, const table_def& tbl) : m_ds(allocator.allocate(false)), m_lr(0)
 {
   using namespace std;
   using namespace brig::boost;
   using namespace gdal::detail;
 
-  OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayerByName(*m_ds, tbl.id.name.c_str()));
+  OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayerByName(m_ds, tbl.id.name.c_str()));
   if (!lr) throw runtime_error("OGR error");
   OGRFeatureDefnH feature_def(lib::singleton().p_OGR_L_GetLayerDefn(lr));
   if (!feature_def) throw runtime_error("OGR error");

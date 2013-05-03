@@ -10,7 +10,6 @@
 #include <brig/numeric_cast.hpp>
 #include <brig/table_def.hpp>
 #include <iterator>
-#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -18,23 +17,23 @@
 namespace brig { namespace gdal { namespace ogr { namespace detail {
 
 class inserter : public brig::inserter {
-  std::unique_ptr<datasource> m_ds;
+  datasource m_ds;
   OGRLayerH m_lr;
   OGRFeatureDefnH m_feature_def;
   OGRSpatialReferenceH m_sr;
   std::vector<int> m_fields;
 public:
-  inserter(datasource_allocator* allocator, const table_def& tbl);
+  inserter(datasource_allocator allocator, const table_def& tbl);
   void insert(std::vector<variant>& row) override;
   void flush() override;
 }; // inserter
 
-inline inserter::inserter(datasource_allocator* allocator, const table_def& tbl) : m_ds(allocator->allocate(true))
+inline inserter::inserter(datasource_allocator allocator, const table_def& tbl) : m_ds(allocator.allocate(true))
 {
   using namespace std;
   using namespace gdal::detail;
 
-  m_lr = lib::singleton().p_OGR_DS_GetLayerByName(*m_ds, tbl.id.name.c_str());
+  m_lr = lib::singleton().p_OGR_DS_GetLayerByName(m_ds, tbl.id.name.c_str());
   if (!m_lr) throw runtime_error("OGR error");
   m_feature_def = lib::singleton().p_OGR_L_GetLayerDefn(m_lr);
   if (!m_feature_def) throw runtime_error("OGR error");
@@ -108,7 +107,7 @@ inline void inserter::flush()
 {
   using namespace gdal::detail;
   lib::check(lib::singleton().p_OGR_L_SyncToDisk(m_lr));
-  lib::check(lib::singleton().p_OGR_DS_SyncToDisk(*m_ds));
+  lib::check(lib::singleton().p_OGR_DS_SyncToDisk(m_ds));
 } // inserter::
 
 } } } } // brig::gdal::ogr::detail

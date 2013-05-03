@@ -26,18 +26,18 @@
 namespace brig { namespace gdal { namespace detail {
 
 class rowset : public brig::rowset {
-  std::unique_ptr<dataset> m_ds;
+  dataset m_ds;
   bool m_done;
   std::vector<bool> m_cols;
   transform m_tr;
   int m_width, m_height;
 public:
-  rowset(dataset_allocator* allocator, const table_def& tbl);
+  rowset(dataset_allocator allocator, const table_def& tbl);
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
 }; // rowset
 
-inline rowset::rowset(dataset_allocator* allocator, const table_def& tbl) : m_ds(allocator->allocate()), m_done(false)
+inline rowset::rowset(dataset_allocator allocator, const table_def& tbl) : m_ds(allocator.allocate()), m_done(false)
 {
   using namespace std;
   using namespace brig::boost;
@@ -55,9 +55,9 @@ inline rowset::rowset(dataset_allocator* allocator, const table_def& tbl) : m_ds
   if (tbl.query_rows == 0)
     m_done = true;
 
-  lib::check(lib::singleton().p_GDALGetGeoTransform(*m_ds, m_tr.coef));
-  m_width = lib::singleton().p_GDALGetRasterXSize(*m_ds);
-  m_height = lib::singleton().p_GDALGetRasterYSize(*m_ds);
+  lib::check(lib::singleton().p_GDALGetGeoTransform(m_ds, m_tr.coef));
+  m_width = lib::singleton().p_GDALGetRasterXSize(m_ds);
+  m_height = lib::singleton().p_GDALGetRasterYSize(m_ds);
 
   auto geom_col(tbl[WKB]);
   if ( typeid(blob_t) == geom_col->query_value.type()
@@ -100,7 +100,7 @@ inline bool rowset::fetch(std::vector<variant>& row)
       auto file("/vsimem/" + string_cast<char>(size_t(this)) + ".png");
       {
         auto del = [](void* ptr) { lib::singleton().p_GDALClose(GDALDatasetH(ptr)); };
-        unique_ptr<void, decltype(del)> ds(lib::singleton().p_GDALCreateCopy(drv, file.c_str(), *m_ds, false, 0, 0, 0), del);
+        unique_ptr<void, decltype(del)> ds(lib::singleton().p_GDALCreateCopy(drv, file.c_str(), m_ds, false, 0, 0, 0), del);
         if (!ds.get()) throw runtime_error("GDAL error");
       }
       {

@@ -4,6 +4,7 @@
 #define BRIG_GDAL_DETAIL_LIB_HPP
 
 #include <brig/detail/dynamic_loading.hpp>
+#include <brig/global.hpp>
 #include <stdexcept>
 
 #if defined(_WIN32) && !defined(CPL_DISABLE_STDCALL)
@@ -101,7 +102,7 @@ public:
 
 inline lib::lib() : p_VSIGetMemFileBuffer(0)
 {
-  auto handle = BRIG_DL_LIBRARY("gdal19.dll", "libgdal.so");
+  auto handle = BRIG_DL_LIBRARY(LibGdalWin, LibGdalLin);
   if (  handle
     && (p_GDALAllRegister = BRIG_GDAL_DL_FUNCTION(handle, GDALAllRegister))
     && (p_GDALClose = BRIG_GDAL_DL_FUNCTION(handle, GDALClose))

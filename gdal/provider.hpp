@@ -47,7 +47,7 @@ inline std::vector<identifier> provider::get_tables()
   using namespace std;
   using namespace detail;
 
-  unique_ptr<dataset> ds(m_allocator.allocate());
+  dataset ds(m_allocator.allocate());
   vector<identifier> res;
   identifier id;
   id.name = TBL;
@@ -60,7 +60,7 @@ inline std::vector<identifier> provider::get_geometry_layers()
   using namespace std;
   using namespace detail;
 
-  unique_ptr<dataset> ds(m_allocator.allocate());
+  dataset ds(m_allocator.allocate());
   vector<identifier> res;
   identifier id;
   id.name = TBL;
@@ -75,9 +75,9 @@ inline std::vector<pyramid_def> provider::get_raster_layers()
   using namespace brig::boost;
   using namespace detail;
 
-  unique_ptr<dataset> ds(m_allocator.allocate());
+  dataset ds(m_allocator.allocate());
   transform tr;
-  lib::check(lib::singleton().p_GDALGetGeoTransform(*ds, tr.coef));
+  lib::check(lib::singleton().p_GDALGetGeoTransform(ds, tr.coef));
   const box env(envelope(tr.pixel_to_proj(box(point(0, 0), point(1, 1)))));
   
   vector<pyramid_def> res;
@@ -99,7 +99,7 @@ inline table_def provider::get_table_def(const identifier&)
   using namespace std;
   using namespace detail;
 
-  unique_ptr<dataset> ds(m_allocator.allocate());
+  dataset ds(m_allocator.allocate());
   table_def res;
   res.id.name = TBL;
 
@@ -108,7 +108,7 @@ inline table_def provider::get_table_def(const identifier&)
     col.name = WKB;
     col.type = Geometry;
     auto del = [](void* ptr) { lib::singleton().p_OSRDestroySpatialReference(OGRSpatialReferenceH(ptr)); };
-    unique_ptr<void, decltype(del)> srs(lib::singleton().p_OSRNewSpatialReference(lib::singleton().p_GDALGetProjectionRef(*ds)), del);
+    unique_ptr<void, decltype(del)> srs(lib::singleton().p_OSRNewSpatialReference(lib::singleton().p_GDALGetProjectionRef(ds)), del);
     if (!srs.get()) throw runtime_error("GDAL error");
     lib::singleton().p_OSRAutoIdentifyEPSG(srs.get());
     const char* name(lib::singleton().p_OSRGetAuthorityName(srs.get(), 0));
@@ -142,17 +142,17 @@ inline brig::boost::box provider::get_extent(const table_def&)
   using namespace std;
   using namespace brig::boost;
   using namespace detail;
-  unique_ptr<dataset> ds(m_allocator.allocate());
+  dataset ds(m_allocator.allocate());
   transform tr;
-  lib::check(lib::singleton().p_GDALGetGeoTransform(*ds, tr.coef));
-  return envelope(tr.pixel_to_proj(box(point(0, 0), point(lib::singleton().p_GDALGetRasterXSize(*ds), lib::singleton().p_GDALGetRasterYSize(*ds)))));
+  lib::check(lib::singleton().p_GDALGetGeoTransform(ds, tr.coef));
+  return envelope(tr.pixel_to_proj(box(point(0, 0), point(lib::singleton().p_GDALGetRasterXSize(ds), lib::singleton().p_GDALGetRasterYSize(ds)))));
 }
 
 inline std::shared_ptr<rowset> provider::select(const table_def& tbl)
 {
   using namespace std;
   if (typeid(null_t) != tbl[PNG]->query_value.type()) throw runtime_error("GDAL error");
-  return make_shared<detail::rowset>(&m_allocator, tbl);
+  return make_shared<detail::rowset>(m_allocator, tbl);
 } // provider::
 
 } } // brig::gdal

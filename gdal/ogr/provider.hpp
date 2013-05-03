@@ -50,11 +50,11 @@ inline std::vector<identifier> provider::get_tables()
   using namespace std;
   using namespace gdal::detail;
 
-  unique_ptr<detail::datasource> ds(m_allocator.allocate(false));
+  detail::datasource ds(m_allocator.allocate(false));
   vector<identifier> res;
-  for (int i(0), count(lib::singleton().p_OGR_DS_GetLayerCount(*ds)); i < count; ++i)
+  for (int i(0), count(lib::singleton().p_OGR_DS_GetLayerCount(ds)); i < count; ++i)
   {
-    OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayer(*ds, i));
+    OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayer(ds, i));
     if (!lr) throw runtime_error("OGR error");
     identifier id;
     id.name = lib::singleton().p_OGR_L_GetName(lr);
@@ -68,11 +68,11 @@ inline std::vector<identifier> provider::get_geometry_layers()
   using namespace std;
   using namespace gdal::detail;
 
-  unique_ptr<detail::datasource> ds(m_allocator.allocate(false));
+  detail::datasource ds(m_allocator.allocate(false));
   vector<identifier> res;
-  for (int i(0), count(lib::singleton().p_OGR_DS_GetLayerCount(*ds)); i < count; ++i)
+  for (int i(0), count(lib::singleton().p_OGR_DS_GetLayerCount(ds)); i < count; ++i)
   {
-    OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayer(*ds, i));
+    OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayer(ds, i));
     if (!lr) throw runtime_error("OGR error");
     identifier id;
     id.name = lib::singleton().p_OGR_L_GetName(lr);
@@ -87,8 +87,8 @@ inline table_def provider::get_table_def(const identifier& tbl)
   using namespace std;
   using namespace gdal::detail;
 
-  unique_ptr<detail::datasource> ds(m_allocator.allocate(false));
-  OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayerByName(*ds, tbl.name.c_str()));
+  detail::datasource ds(m_allocator.allocate(false));
+  OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayerByName(ds, tbl.name.c_str()));
   if (!lr) throw runtime_error("OGR error");
 
   table_def res;
@@ -147,8 +147,8 @@ inline brig::boost::box provider::get_extent(const table_def& tbl)
   using namespace brig::boost;
   using namespace gdal::detail;
 
-  unique_ptr<detail::datasource> ds(m_allocator.allocate(false));
-  OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayerByName(*ds, tbl.id.name.c_str()));
+  detail::datasource ds(m_allocator.allocate(false));
+  OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayerByName(ds, tbl.id.name.c_str()));
   if (!lr) throw runtime_error("OGR error");
 
   OGREnvelope env;
@@ -158,7 +158,7 @@ inline brig::boost::box provider::get_extent(const table_def& tbl)
 
 inline std::shared_ptr<rowset> provider::select(const table_def& tbl)
 {
-  return std::make_shared<detail::rowset>(&m_allocator, tbl);
+  return std::make_shared<detail::rowset>(m_allocator, tbl);
 }
 
 inline table_def provider::fit_to_create(const table_def& tbl)
@@ -193,8 +193,8 @@ inline void provider::create(const table_def& tbl)
   using namespace std;
   using namespace gdal::detail;
 
-  unique_ptr<detail::datasource> ds(m_allocator.allocate(true));
-  if (lib::singleton().p_OGR_DS_GetLayerByName(*ds, tbl.id.name.c_str())) throw runtime_error("OGR error");
+  detail::datasource ds(m_allocator.allocate(true));
+  if (lib::singleton().p_OGR_DS_GetLayerByName(ds, tbl.id.name.c_str())) throw runtime_error("OGR error");
 
   auto geom_col(find_if(begin(tbl.columns), end(tbl.columns), [](const column_def& col){ return Geometry == col.type; }));
   if (geom_col == end(tbl.columns)) throw runtime_error("OGR error");
@@ -212,7 +212,7 @@ inline void provider::create(const table_def& tbl)
     proj = geom_col->proj;
   lib::check(lib::singleton().p_OSRImportFromProj4(srs.get(), proj.c_str()));
 
-  OGRLayerH lr(lib::singleton().p_OGR_DS_CreateLayer(*ds, tbl.id.name.c_str(), srs.get(), wkbUnknown, 0));
+  OGRLayerH lr(lib::singleton().p_OGR_DS_CreateLayer(ds, tbl.id.name.c_str(), srs.get(), wkbUnknown, 0));
   if (!lr) throw runtime_error("OGR error");
 
   for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
@@ -233,7 +233,7 @@ inline void provider::create(const table_def& tbl)
     lib::check(lib::singleton().p_OGR_L_CreateField(lr, fld.get(), true));
   }
   lib::check(lib::singleton().p_OGR_L_SyncToDisk(lr));
-  lib::check(lib::singleton().p_OGR_DS_SyncToDisk(*ds));
+  lib::check(lib::singleton().p_OGR_DS_SyncToDisk(ds));
 }
 
 inline void provider::drop(const table_def& tbl)
@@ -241,15 +241,15 @@ inline void provider::drop(const table_def& tbl)
   using namespace std;
   using namespace gdal::detail;
 
-  unique_ptr<detail::datasource> ds(m_allocator.allocate(true));
-  for (int i(0), count(lib::singleton().p_OGR_DS_GetLayerCount(*ds)); i < count; ++i)
+  detail::datasource ds(m_allocator.allocate(true));
+  for (int i(0), count(lib::singleton().p_OGR_DS_GetLayerCount(ds)); i < count; ++i)
   {
-    OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayer(*ds, i));
+    OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayer(ds, i));
     if (!lr) throw runtime_error("OGR error");
     if (tbl.id.name.compare(lib::singleton().p_OGR_L_GetName(lr)) == 0)
     {
-      lib::check(lib::singleton().p_OGR_DS_DeleteLayer(*ds, i));
-      lib::check(lib::singleton().p_OGR_DS_SyncToDisk(*ds));
+      lib::check(lib::singleton().p_OGR_DS_DeleteLayer(ds, i));
+      lib::check(lib::singleton().p_OGR_DS_SyncToDisk(ds));
       return;
     }
   }
@@ -258,7 +258,7 @@ inline void provider::drop(const table_def& tbl)
 
 inline std::shared_ptr<inserter> provider::get_inserter(const table_def& tbl)
 {
-  return std::make_shared<detail::inserter>(&m_allocator, tbl);
+  return std::make_shared<detail::inserter>(m_allocator, tbl);
 } // provider::
 
 } } } // brig::gdal::ogr

@@ -4,6 +4,7 @@
 #define BRIG_DATABASE_POSTGRES_DETAIL_LIB_HPP
 
 #include <brig/detail/dynamic_loading.hpp>
+#include <brig/global.hpp>
 #include <libpq-fe.h>
 
 namespace brig { namespace database { namespace postgres { namespace detail {
@@ -35,7 +36,7 @@ public:
 
 inline lib::lib() : p_PQstatus(0)
 {
-  auto handle = BRIG_DL_LIBRARY("libpq.dll", "libpq.so");
+  auto handle = BRIG_DL_LIBRARY(LibPostgresWin, LibPostgresLin);
   if (  handle
     && (p_PQclear = BRIG_DL_FUNCTION(handle, PQclear))
     && (p_PQconnectdb = BRIG_DL_FUNCTION(handle, PQconnectdb))

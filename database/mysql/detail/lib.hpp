@@ -4,6 +4,7 @@
 #define BRIG_DATABASE_MYSQL_DETAIL_LIB_HPP
 
 #include <brig/detail/dynamic_loading.hpp>
+#include <brig/global.hpp>
 #include <mysql.h>
 
 namespace brig { namespace database { namespace mysql { namespace detail {
@@ -40,7 +41,7 @@ public:
 
 inline lib::lib() : p_mysql_store_result(0)
 {
-  auto handle = BRIG_DL_LIBRARY("libmysql.dll", "libmysqlclient.so");
+  auto handle = BRIG_DL_LIBRARY(LibMysqlWin, LibMysqlLin);
   if (  handle
     && (p_mysql_close = BRIG_DL_FUNCTION(handle, mysql_close))
     && (p_mysql_error = BRIG_DL_FUNCTION(handle, mysql_error))

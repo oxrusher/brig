@@ -4,6 +4,7 @@
 #define BRIG_PROJ_DETAIL_LIB_HPP
 
 #include <brig/detail/dynamic_loading.hpp>
+#include <brig/global.hpp>
 #include <proj_api.h>
 
 namespace brig { namespace proj { namespace detail {
@@ -27,7 +28,7 @@ public:
 
 inline lib::lib() : p_pj_transform(0)
 {
-  auto handle(BRIG_DL_LIBRARY("libproj-0.dll", "libproj.so.0"));
+  auto handle(BRIG_DL_LIBRARY(LibProjWin, LibProjLin));
   if (  handle
     && (p_pj_ctx_alloc = BRIG_DL_FUNCTION(handle, pj_ctx_alloc))
     && (p_pj_ctx_free = BRIG_DL_FUNCTION(handle, pj_ctx_free))

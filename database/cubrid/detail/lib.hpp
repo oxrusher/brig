@@ -4,6 +4,7 @@
 #define BRIG_DATABASE_CUBRID_DETAIL_LIB_HPP
 
 #include <brig/detail/dynamic_loading.hpp>
+#include <brig/global.hpp>
 #include <cas_cci.h>
 
 namespace brig { namespace database { namespace cubrid { namespace detail {
@@ -36,7 +37,7 @@ public:
 
 inline lib::lib() : p_cci_set_autocommit(0), p_cci_get_version(0)
 {
-  auto handle = BRIG_DL_LIBRARY("cascci.dll", "libcascci.so");
+  auto handle = BRIG_DL_LIBRARY(LibCubridWin, LibCubridLin);
   if (  handle
     && (p_cci_bind_param = BRIG_DL_FUNCTION(handle, cci_bind_param))
     && (p_cci_close_req_handle = BRIG_DL_FUNCTION(handle, cci_close_req_handle))

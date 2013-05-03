@@ -5,6 +5,7 @@
 
 #include <curl/curl.h>
 #include <brig/detail/dynamic_loading.hpp>
+#include <brig/global.hpp>
 
 namespace brig { namespace osm { namespace detail {
 
@@ -31,7 +32,7 @@ public:
 
 inline lib::lib() : p_curl_version(0)
 {
-  auto handle(BRIG_DL_LIBRARY("libcurl.dll", "libcurl.so"));
+  auto handle(BRIG_DL_LIBRARY(LibCurlWin, LibCurlLin));
   if (  handle
   && (p_curl_easy_cleanup = BRIG_DL_FUNCTION(handle, curl_easy_cleanup))
   && (p_curl_easy_init = BRIG_DL_FUNCTION(handle, curl_easy_init))

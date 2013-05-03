@@ -4,6 +4,7 @@
 #define BRIG_DATABASE_SQLITE_DETAIL_LIB_HPP
 
 #include <brig/detail/dynamic_loading.hpp>
+#include <brig/global.hpp>
 #include <sqlite3.h>
 
 namespace brig { namespace database { namespace sqlite { namespace detail {
@@ -49,7 +50,7 @@ public:
 inline lib::lib() : p_sqlite3_step(0), p_spatialite_version(0)
 {
   // SQLite
-  auto handle = BRIG_DL_LIBRARY("libsqlite3-0.dll", "libsqlite3.so.0");
+  auto handle = BRIG_DL_LIBRARY(LibSqliteWin, LibSqliteLin);
   if (  handle
     && (p_sqlite3_auto_extension = BRIG_DL_FUNCTION(handle, sqlite3_auto_extension))
     && (p_sqlite3_bind_blob = BRIG_DL_FUNCTION(handle, sqlite3_bind_blob))
@@ -79,7 +80,7 @@ inline lib::lib() : p_sqlite3_step(0), p_spatialite_version(0)
    // SpatiaLite (optional)
    if (!empty())
    {
-     handle = BRIG_DL_LIBRARY("libspatialite.dll", "libspatialite.so");
+     handle = BRIG_DL_LIBRARY(LibSpatialiteWin, LibSpatialiteLin);
      if (handle)
      {
        p_spatialite_version = BRIG_DL_FUNCTION(handle, spatialite_version);

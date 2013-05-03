@@ -4,6 +4,7 @@
 #define BRIG_DATABASE_ODBC_DETAIL_LIB_HPP
 
 #include <brig/detail/dynamic_loading.hpp>
+#include <brig/global.hpp>
 #include <sql.h>
 #include <sqltypes.h>
 #include <sqlext.h>
@@ -42,7 +43,7 @@ public:
 
 inline lib::lib() : p_SQLSetEnvAttr(0)
 {
-  auto handle = BRIG_DL_LIBRARY("odbc32.dll", "libodbc.so");
+  auto handle = BRIG_DL_LIBRARY(LibOdbcWin, LibOdbcLin);
   if (  handle
     && (p_SQLAllocHandle = BRIG_DL_FUNCTION(handle, SQLAllocHandle))
     && (p_SQLBindParameter = BRIG_DL_FUNCTION(handle, SQLBindParameter))
