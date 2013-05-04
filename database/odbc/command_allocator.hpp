@@ -5,7 +5,6 @@
 
 #include <brig/database/command_allocator.hpp>
 #include <brig/database/odbc/detail/command.hpp>
-#include <brig/database/odbc/detail/lib.hpp>
 #include <string>
 
 namespace brig { namespace database { namespace odbc {
@@ -13,7 +12,7 @@ namespace brig { namespace database { namespace odbc {
 class command_allocator : public brig::database::command_allocator {
   std::string m_str;
 public:
-  command_allocator(const std::string& str) : m_str(str)  { detail::lib::singleton(); }
+  command_allocator(const std::string& str) : m_str(str)  {}
   command* allocate() override  { return new detail::command(m_str); }
 }; // command_allocator
 

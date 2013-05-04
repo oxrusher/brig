@@ -5,7 +5,6 @@
 
 #include <brig/database/command_allocator.hpp>
 #include <brig/database/mysql/detail/command.hpp>
-#include <brig/database/mysql/detail/lib.hpp>
 #include <string>
 
 namespace brig { namespace database { namespace mysql {
@@ -17,7 +16,7 @@ public:
   command_allocator(const std::string& host, int port, const std::string& db, const std::string& usr, const std::string& pwd)
     : m_host(host), m_db(db), m_usr(usr), m_pwd(pwd)
     , m_port(port)
-    { detail::lib::singleton(); }
+    {}
   command* allocate() override
     { return new detail::command(m_host, m_port, m_db, m_usr, m_pwd); }
 }; // command_allocator

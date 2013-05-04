@@ -11,7 +11,7 @@ namespace brig { namespace gdal { namespace detail {
 class dataset_allocator {
   std::string m_ds;
 public:
-  dataset_allocator(const std::string& ds) : m_ds(ds)  { lib::singleton(); }
+  dataset_allocator(const std::string& ds) : m_ds(ds)  {}
   dataset allocate()  { return dataset(m_ds); }
 }; // dataset_allocator
 

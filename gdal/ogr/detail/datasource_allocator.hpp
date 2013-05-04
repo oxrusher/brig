@@ -12,7 +12,7 @@ namespace brig { namespace gdal { namespace ogr { namespace detail {
 class datasource_allocator {
   std::string m_ds, m_drv;
 public:
-  datasource_allocator(const std::string& ds, const std::string& drv = std::string()) : m_ds(ds), m_drv(drv)  { gdal::detail::lib::singleton(); }
+  datasource_allocator(const std::string& ds, const std::string& drv = std::string()) : m_ds(ds), m_drv(drv)  {}
   datasource allocate(bool writable);
 }; // datasource_allocator
 
