@@ -45,7 +45,7 @@ inline rowset::rowset(datasource_allocator allocator, const table_def& tbl) : m_
   vector<column_def> cols = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
   for (auto col(begin(cols)); col != end(cols); ++col)
   {
-    if (Geometry == col->type)
+    if (column_type::Geometry == col->type)
       m_cols.push_back(-1);
     else
     {
@@ -58,7 +58,7 @@ inline rowset::rowset(datasource_allocator allocator, const table_def& tbl) : m_
   string attribute_filter;
   for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
   {
-    if (Geometry == col->type)
+    if (column_type::Geometry == col->type)
     {
       if (typeid(null_t) == col->query_value.type())
         lib::singleton().p_OGR_L_SetSpatialFilter(lr, 0);
@@ -95,7 +95,7 @@ inline std::vector<std::string> rowset::columns()
   {
     string col;
     if (m_cols[i] < 0)
-      col = WKB;
+      col = ColumnNameWkb;
     else
     {
       OGRFieldDefnH field_def(lib::singleton().p_OGR_FD_GetFieldDefn(feature_def, m_cols[i]));

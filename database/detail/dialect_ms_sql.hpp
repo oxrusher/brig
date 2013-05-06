@@ -84,10 +84,10 @@ inline std::string dialect_ms_sql::sql_spatial_detail(const table_def& tbl, cons
 
 inline column_type dialect_ms_sql::get_type(const identifier& type_lcase, int scale)
 {
-  if (!type_lcase.schema.empty()) return VoidColumn;
-  if (type_lcase.name.compare("geometry") == 0 || type_lcase.name.compare("geography") == 0) return Geometry;
-  if (type_lcase.name.compare("bit") == 0) return Integer;
-  if (type_lcase.name.compare("image") == 0) return Blob;
+  if (!type_lcase.schema.empty()) return column_type::Void;
+  if (type_lcase.name.compare("geometry") == 0 || type_lcase.name.compare("geography") == 0) return column_type::Geometry;
+  if (type_lcase.name.compare("bit") == 0) return column_type::Integer;
+  if (type_lcase.name.compare("image") == 0) return column_type::Blob;
   return get_iso_type(type_lcase.name, scale);
 }
 
@@ -112,18 +112,18 @@ inline column_def dialect_ms_sql::fit_column(const column_def& col)
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn: break;
-  case Blob: res.type_lcase.name = "varbinary(max)"; break;
-  case Double: res.type_lcase.name = "float"; break;
-  case Geometry:
+  case column_type::Void: break;
+  case column_type::Blob: res.type_lcase.name = "varbinary(max)"; break;
+  case column_type::Double: res.type_lcase.name = "float"; break;
+  case column_type::Geometry:
     res.type_lcase.name = "geometry";
     res.srid = col.epsg;
     res.epsg = col.epsg;
     if (typeid(blob_t) == col.query_value.type()) res.query_value = col.query_value;
     else res.query_value = blob_t();
     break;
-  case Integer: res.type_lcase.name = "bigint"; break;
-  case String:
+  case column_type::Integer: res.type_lcase.name = "bigint"; break;
+  case column_type::String:
     res.chars = (col.chars > 0 && col.chars < CharsLimit)? col.chars: CharsLimit;
     res.type_lcase.name = "nvarchar(" + string_cast<char>(res.chars) + ")";
     break;
@@ -138,25 +138,25 @@ inline table_def dialect_ms_sql::fit_table(const table_def& tbl, const std::stri
 
   table_def res(dialect::fit_table(tbl, schema));
 
-  if (find_if(begin(res.indexes), end(res.indexes), [&](const index_def& idx){ return Primary == idx.type; }) == end(res.indexes))
+  if (find_if(begin(res.indexes), end(res.indexes), [&](const index_def& idx){ return index_type::Primary == idx.type; }) == end(res.indexes))
   {
-    auto unq_idx(find_if(begin(res.indexes), end(res.indexes), [&](const index_def& idx){ return Unique == idx.type; }));
+    auto unq_idx(find_if(begin(res.indexes), end(res.indexes), [&](const index_def& idx){ return index_type::Unique == idx.type; }));
     if (unq_idx == end(res.indexes))
     {
       column_def col;
       col.name = fit_identifier("id");
-      col.type = Integer;
+      col.type = column_type::Integer;
       col.type_lcase.name = "bigint identity";
       col.not_null = true;
       res.columns.push_back(col);
 
       index_def idx;
-      idx.type = Primary;
+      idx.type = index_type::Primary;
       idx.columns.push_back(fit_identifier("id"));
       res.indexes.push_back(idx);
     }
     else
-      unq_idx->type = Primary;
+      unq_idx->type = index_type::Primary;
   }
 
   return res;
@@ -179,7 +179,7 @@ USING GEOMETRY_GRID WITH (BOUNDING_BOX = (" << xmin << ", " << ymin << ", " << x
 inline std::string dialect_ms_sql::sql_parameter(command* cmd, const column_def& param, size_t order)
 {
   const std::string marker(cmd->sql_param(order));
-  if (Geometry == param.type && !cmd->writable_geom()) return param.type_lcase.name + "::STGeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ").MakeValid()";
+  if (column_type::Geometry == param.type && !cmd->writable_geom()) return param.type_lcase.name + "::STGeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ").MakeValid()";
   return marker;
 }
 
@@ -189,9 +189,9 @@ inline std::string dialect_ms_sql::sql_column(command* cmd, const column_def& co
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "CONVERT(CHAR(19), " + id + ", 126) AS " + id;
-  if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "CONVERT(CHAR(10), " + id + ", 126) AS " + id;
-  if (Geometry == col.type && !cmd->readable_geom()) return id + ".STAsBinary() AS " + id;
+  if (column_type::String == col.type && col.type_lcase.name.find("time") != string::npos) return "CONVERT(CHAR(19), " + id + ", 126) AS " + id;
+  if (column_type::String == col.type && col.type_lcase.name.find("date") != string::npos) return "CONVERT(CHAR(10), " + id + ", 126) AS " + id;
+  if (column_type::Geometry == col.type && !cmd->readable_geom()) return id + ".STAsBinary() AS " + id;
   return id;
 }
 
@@ -218,7 +218,7 @@ inline void dialect_ms_sql::sql_intersect(command* cmd, const table_def& tbl, co
 
   if (!tbl.rtree(col) || boxes.size() < 2) return;
 
-  auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_def& i){ return Primary == i.type; }));
+  auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_def& i){ return index_type::Primary == i.type; }));
   if (idx == end(tbl.indexes)) throw runtime_error("unique columns error");
   keys = brig::detail::get_columns(tbl.columns, idx->columns);
   

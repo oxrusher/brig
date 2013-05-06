@@ -42,7 +42,7 @@ inline std::vector<pyramid_def> get_rasters(rowset* rs)
     lvl.geometry.name = string_cast<char>(row[6]);
     lvl.geometry.qualifier = string_cast<char>(row[7]);
     lvl.raster.name = string_cast<char>(row[8]);
-    lvl.raster.type = Blob;
+    lvl.raster.type = column_type::Blob;
     res.back().levels.push_back(lvl);
   }
   return res;

@@ -44,7 +44,7 @@ public:
   bool fetch(std::vector<variant>& row) override;
   void set_autocommit(bool autocommit) override;
   void commit() override;
-  DBMS system() override  { return Postgres; }
+  DBMS system() override  { return DBMS::Postgres; }
   std::string sql_param(size_t order) override  { return "$" + string_cast<char>(order + 1); }
 }; // command
 

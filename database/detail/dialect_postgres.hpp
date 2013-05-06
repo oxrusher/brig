@@ -124,11 +124,11 @@ inline column_type dialect_postgres::get_type(const identifier& type_lcase, int 
     && (type_lcase.name.compare("raster") == 0 || type_lcase.name.compare("geography") == 0 || type_lcase.name.compare("geometry") == 0)
     && (type_lcase.qualifier.empty() || is_ogc_type(type_lcase.qualifier))
      )
-    return Geometry;
-  if (!type_lcase.schema.empty()) return VoidColumn;
-  if (type_lcase.name.find("serial") != string::npos) return Integer;
-  if (type_lcase.name.compare("bytea") == 0) return Blob;
-  if (type_lcase.name.find("array") != string::npos && type_lcase.name.find("char") == string::npos && type_lcase.name.find("text") == string::npos) return VoidColumn;
+    return column_type::Geometry;
+  if (!type_lcase.schema.empty()) return column_type::Void;
+  if (type_lcase.name.find("serial") != string::npos) return column_type::Integer;
+  if (type_lcase.name.compare("bytea") == 0) return column_type::Blob;
+  if (type_lcase.name.find("array") != string::npos && type_lcase.name.find("char") == string::npos && type_lcase.name.find("text") == string::npos) return column_type::Void;
   return get_iso_type(type_lcase.name, scale);
 }
 
@@ -159,16 +159,16 @@ inline column_def dialect_postgres::fit_column(const column_def& col)
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn: break;
-  case Blob: res.type_lcase.name = "bytea"; break;
-  case Double: res.type_lcase.name = "double precision"; break;
-  case Geometry:
+  case column_type::Void: break;
+  case column_type::Blob: res.type_lcase.name = "bytea"; break;
+  case column_type::Double: res.type_lcase.name = "double precision"; break;
+  case column_type::Geometry:
     res.type_lcase.schema = "user-defined";
     res.type_lcase.name = "geometry";
     res.epsg = col.epsg;
     break;
-  case Integer: res.type_lcase.name = "bigint"; break;
-  case String:
+  case column_type::Integer: res.type_lcase.name = "bigint"; break;
+  case column_type::String:
     res.chars = (col.chars > 0 && col.chars < CharsLimit)? col.chars: CharsLimit;
     res.type_lcase.name = "varchar(" + string_cast<char>(res.chars) + ")";
     break;
@@ -184,7 +184,7 @@ inline std::string dialect_postgres::sql_srid(int epsg)
 
 inline std::string dialect_postgres::sql_column_def(const column_def& col)
 {
-  return Geometry == col.type? "": dialect::sql_column_def(col);
+  return column_type::Geometry == col.type? "": dialect::sql_column_def(col);
 }
 
 inline void dialect_postgres::sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql)
@@ -246,7 +246,7 @@ inline std::string dialect_postgres::sql_parameter(command* cmd, const column_de
   using namespace std;
 
   const string marker(cmd->sql_param(order));
-  if (Geometry == param.type && !cmd->writable_geom())
+  if (column_type::Geometry == param.type && !cmd->writable_geom())
   {
     if (param.type_lcase.name.compare("geography") == 0)
     {
@@ -265,9 +265,9 @@ inline std::string dialect_postgres::sql_column(command* cmd, const column_def& 
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
-  if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
-  if (Geometry == col.type && !cmd->readable_geom())
+  if (column_type::String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
+  if (column_type::String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
+  if (column_type::Geometry == col.type && !cmd->readable_geom())
   {
     if (col.type_lcase.name.compare("raster") == 0) return "ST_AsBinary(ST_ConvexHull(" + id + ")) AS " + id;
     if (col.type_lcase.name.compare("geography") == 0 || col.type_lcase.name.compare("geometry") == 0) return "ST_AsBinary(" + id + ") AS " + id;

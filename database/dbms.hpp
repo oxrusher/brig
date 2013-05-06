@@ -5,8 +5,8 @@
 
 namespace brig { namespace database {
 
-enum DBMS {
-  VoidSystem,
+enum class DBMS {
+  Void,
   CUBRID,
   DB2,
   Informix,

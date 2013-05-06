@@ -17,14 +17,14 @@ inline void sql_drop(dialect* dct, const table_def& tbl, std::vector<std::string
   using namespace std;
 
   for (auto idx(begin(tbl.indexes)); idx != end(tbl.indexes); ++idx)
-    if (Spatial == idx->type)
+    if (index_type::Spatial == idx->type)
     {
       identifier lr(tbl.id);
       lr.qualifier = idx->columns.front();
       dct->sql_drop_spatial_index(lr, sql);
     }
   for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
-    if (Geometry == col->type)
+    if (column_type::Geometry == col->type)
     {
       identifier lr(tbl.id);
       lr.qualifier = col->name;

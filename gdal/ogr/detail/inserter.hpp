@@ -47,7 +47,7 @@ inline inserter::inserter(datasource_allocator allocator, const table_def& tbl) 
     OGRFieldDefnH field_def(lib::singleton().p_OGR_FD_GetFieldDefn(m_feature_def, i));
     if (!field_def) throw runtime_error("OGR error");
     auto col(find_column(begin(cols), end(cols), lib::singleton().p_OGR_Fld_GetNameRef(field_def)));
-    if (!col || Geometry == col->type) continue;
+    if (!col || column_type::Geometry == col->type) continue;
     auto pos(distance(cols.data(), col));
     m_fields[pos] = i;
   }

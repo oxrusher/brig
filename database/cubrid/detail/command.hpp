@@ -31,7 +31,7 @@ public:
   bool fetch(std::vector<variant>& row) override;
   void set_autocommit(bool autocommit) override;
   void commit() override;
-  DBMS system() override  { return CUBRID; }
+  DBMS system() override  { return DBMS::CUBRID; }
 }; // command
 
 inline void command::check(int r)

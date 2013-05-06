@@ -61,10 +61,10 @@ ORDER BY i.is_primary_key DESC, i.index_name, k.key_order";
 
 inline column_type dialect_cubrid::get_type(const identifier& type_lcase, int scale)
 {
-  if (!type_lcase.schema.empty()) return VoidColumn;
-  if (type_lcase.name.compare("short") == 0) return Integer;
-  if (type_lcase.name.find("bit") != std::string::npos) return Blob;
-  if (type_lcase.name.compare("string") == 0) return String;
+  if (!type_lcase.schema.empty()) return column_type::Void;
+  if (type_lcase.name.compare("short") == 0) return column_type::Integer;
+  if (type_lcase.name.find("bit") != std::string::npos) return column_type::Blob;
+  if (type_lcase.name.compare("string") == 0) return column_type::String;
   return get_iso_type(type_lcase.name, scale);
 }
 
@@ -80,12 +80,12 @@ inline column_def dialect_cubrid::fit_column(const column_def& col)
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn:
-  case Geometry: break;
-  case Blob: res.type_lcase.name = "bit varying"; break;
-  case Double: res.type_lcase.name = "double"; break;
-  case Integer: res.type_lcase.name = "bigint"; break;
-  case String: res.type_lcase.name = "string"; break;
+  case column_type::Void:
+  case column_type::Geometry: break;
+  case column_type::Blob: res.type_lcase.name = "bit varying"; break;
+  case column_type::Double: res.type_lcase.name = "double"; break;
+  case column_type::Integer: res.type_lcase.name = "bigint"; break;
+  case column_type::String: res.type_lcase.name = "string"; break;
   }
   if (col.not_null) res.not_null = true;
   return res;
@@ -93,7 +93,7 @@ inline column_def dialect_cubrid::fit_column(const column_def& col)
 
 inline std::string dialect_cubrid::sql_parameter(command* cmd, const column_def& param, size_t order)
 {
-  if (Geometry == param.type && !cmd->writable_geom()) throw std::runtime_error("datatype error");
+  if (column_type::Geometry == param.type && !cmd->writable_geom()) throw std::runtime_error("datatype error");
   return cmd->sql_param(order);
 }
 
@@ -103,9 +103,9 @@ inline std::string dialect_cubrid::sql_column(command* cmd, const column_def& co
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
-  if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
-  if (Geometry == col.type && !cmd->readable_geom()) throw runtime_error("datatype error");
+  if (column_type::String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
+  if (column_type::String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
+  if (column_type::Geometry == col.type && !cmd->readable_geom()) throw runtime_error("datatype error");
   return id;
 }
 

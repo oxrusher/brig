@@ -32,7 +32,7 @@ inline void sql_create(dialect* dct, const table_def& tbl, std::vector<std::stri
       str += col_def;
     }
 
-    auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_def& idx_){ return Primary == idx_.type; }));
+    auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_def& idx_){ return index_type::Primary == idx_.type; }));
     if (idx != end(tbl.indexes))
     {
       str += ", PRIMARY KEY (";
@@ -49,20 +49,20 @@ inline void sql_create(dialect* dct, const table_def& tbl, std::vector<std::stri
   }
 
   for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
-    if (Geometry == col->type)
+    if (column_type::Geometry == col->type)
       dct->sql_register_spatial_column(tbl, col->name, sql);
 
   for (auto idx(begin(tbl.indexes)); idx != end(tbl.indexes); ++idx)
     switch (idx->type)
     {
     default: throw runtime_error("index error");
-    case Primary: break;
-    case Unique:
-    case Duplicate:
+    case index_type::Primary: break;
+    case index_type::Unique:
+    case index_type::Duplicate:
       {
       string str;
       str += "CREATE ";
-      if (Unique == idx->type) str += "UNIQUE ";
+      if (index_type::Unique == idx->type) str += "UNIQUE ";
       str += "INDEX " + dct->sql_identifier(idx->id.name) + " ON " + dct->sql_identifier(tbl.id.name) + " (";
       for (auto col(begin(idx->columns)); col != end(idx->columns); ++col)
       {
@@ -73,7 +73,7 @@ inline void sql_create(dialect* dct, const table_def& tbl, std::vector<std::stri
       sql.push_back(str);
       }
       break;
-    case Spatial: sql.push_back(dct->sql_create_spatial_index(tbl, idx->columns.front())); break;
+    case index_type::Spatial: sql.push_back(dct->sql_create_spatial_index(tbl, idx->columns.front())); break;
     }
 }
 

@@ -28,7 +28,7 @@ inline void sql_select(dialect* dct, command* cmd, const table_def& tbl, std::st
   string sql_infix, sql_counter, sql_suffix, sql_conditions;
   if (tbl.query_rows >= 0) dct->sql_limit(tbl.query_rows, sql_infix, sql_counter, sql_suffix);
   for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
-    if (Geometry != col->type && typeid(null_t) != col->query_value.type())
+    if (column_type::Geometry != col->type && typeid(null_t) != col->query_value.type())
     {
       if (!sql_conditions.empty()) sql_conditions += "AND ";
       sql_conditions += col->query_expression.empty()? col->name: col->query_expression;
@@ -37,7 +37,7 @@ inline void sql_select(dialect* dct, command* cmd, const table_def& tbl, std::st
     }
 
   // not spatial first
-  auto geom_col(find_if(begin(tbl.columns), end(tbl.columns), [](const column_def& col){ return Geometry == col.type && typeid(null_t) != col.query_value.type(); }));
+  auto geom_col(find_if(begin(tbl.columns), end(tbl.columns), [](const column_def& col){ return column_type::Geometry == col.type && typeid(null_t) != col.query_value.type(); }));
   if (geom_col == end(tbl.columns))
   {
     if (!sql_counter.empty()) sql += "SELECT * FROM (";

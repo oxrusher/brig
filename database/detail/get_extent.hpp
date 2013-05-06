@@ -24,9 +24,9 @@ inline brig::boost::box get_extent(dialect* dct, command* cmd, const table_def& 
   vector<string> query_columns(tbl.query_columns);
   if (query_columns.empty())
     for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
-      if (Geometry == col->type) query_columns.push_back(col->name);
+      if (column_type::Geometry == col->type) query_columns.push_back(col->name);
   if ( query_columns.size() != 1
-    || Geometry != tbl[ query_columns.front() ]->type
+    || column_type::Geometry != tbl[ query_columns.front() ]->type
      ) throw runtime_error("extent error");
 
   const string sql(dct->sql_extent(tbl, query_columns.front()));

@@ -22,7 +22,7 @@ inline table_def get_table_def(dialect* dct, command* cmd, const identifier& tbl
   using namespace std;
   using namespace brig::unicode;
 
-  if (cmd->system() == SQLite) return get_table_def_sqlite(dct, cmd, tbl);
+  if (cmd->system() == DBMS::SQLite) return get_table_def_sqlite(dct, cmd, tbl);
 
   // columns
   table_def res;
@@ -56,7 +56,7 @@ inline table_def get_table_def(dialect* dct, command* cmd, const identifier& tbl
 
     if (id.schema != idx.id.schema || id.name != idx.id.name)
     {
-      if (VoidIndex != idx.type) res.indexes.push_back(move(idx));
+      if (index_type::Void != idx.type) res.indexes.push_back(move(idx));
 
       idx = index_def();
       idx.id = id;
@@ -64,24 +64,24 @@ inline table_def get_table_def(dialect* dct, command* cmd, const identifier& tbl
       numeric_cast(row[2], primary);
       numeric_cast(row[3], unique);
       numeric_cast(row[4], spatial);
-      if (primary) idx.type = Primary;
-      else if (unique) idx.type = Unique;
-      else if (spatial) idx.type = Spatial;
-      else idx.type = Duplicate;
+      if (primary) idx.type = index_type::Primary;
+      else if (unique) idx.type = index_type::Unique;
+      else if (spatial) idx.type = index_type::Spatial;
+      else idx.type = index_type::Duplicate;
     }
 
     const string col_name(string_cast<char>(row[5]));
     idx.columns.push_back(col_name);
-    if (!find_column(begin(res.columns), end(res.columns), col_name)) idx.type = VoidIndex; // expression
+    if (!find_column(begin(res.columns), end(res.columns), col_name)) idx.type = index_type::Void; // expression
 
     int desc(0);
-    if (numeric_cast(row[6], desc) && desc) idx.type = VoidIndex; // descending
+    if (numeric_cast(row[6], desc) && desc) idx.type = index_type::Void; // descending
   }
-  if (VoidIndex != idx.type) res.indexes.push_back(move(idx));
+  if (index_type::Void != idx.type) res.indexes.push_back(move(idx));
 
   // srid, epsg, type qualifier
   for (auto col(begin(res.columns)); col != end(res.columns); ++col)
-    if (Geometry == col->type)
+    if (column_type::Geometry == col->type)
     {
       const string sql(dct->sql_spatial_detail(res, col->name));
       cmd->exec(sql);

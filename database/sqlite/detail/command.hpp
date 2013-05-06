@@ -41,7 +41,7 @@ public:
   bool fetch(std::vector<variant>& row) override;
   void set_autocommit(bool autocommit) override;
   void commit() override;
-  DBMS system() override  { return SQLite; }
+  DBMS system() override  { return DBMS::SQLite; }
   bool readable_geom() override { return true; }
 }; // command
 

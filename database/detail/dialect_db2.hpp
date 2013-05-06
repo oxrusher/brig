@@ -84,9 +84,9 @@ inline column_type dialect_db2::get_type(const identifier& type_lcase, int scale
 {
   using namespace std;
 
-  if (type_lcase.schema.compare("db2gse") == 0 && is_ogc_type(type_lcase.name)) return Geometry;
-  if (!type_lcase.schema.empty() && type_lcase.schema.compare("sysibm") != 0) return VoidColumn;
-  if (type_lcase.name.find("graphic") != string::npos) return String;
+  if (type_lcase.schema.compare("db2gse") == 0 && is_ogc_type(type_lcase.name)) return column_type::Geometry;
+  if (!type_lcase.schema.empty() && type_lcase.schema.compare("sysibm") != 0) return column_type::Void;
+  if (type_lcase.name.find("graphic") != string::npos) return column_type::String;
   return get_iso_type(type_lcase.name, scale);
 }
 
@@ -112,16 +112,16 @@ inline column_def dialect_db2::fit_column(const column_def& col)
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn: break;
-  case Blob: res.type_lcase.name = "blob"; break;
-  case Double: res.type_lcase.name = "double"; break;
-  case Geometry:
+  case column_type::Void: break;
+  case column_type::Blob: res.type_lcase.name = "blob"; break;
+  case column_type::Double: res.type_lcase.name = "double"; break;
+  case column_type::Geometry:
     res.type_lcase.schema = "db2gse";
     res.type_lcase.name = "st_geometry";
     res.epsg = col.epsg;
     break;
-  case Integer: res.type_lcase.name = "bigint"; break;
-  case String:
+  case column_type::Integer: res.type_lcase.name = "bigint"; break;
+  case column_type::String:
     res.chars = (col.chars > 0 && col.chars < CharsLimit)? col.chars: CharsLimit;
     res.type_lcase.name = "vargraphic(" + string_cast<char>(res.chars) + ")";
     break;
@@ -170,7 +170,7 @@ inline std::string dialect_db2::sql_create_spatial_index(const table_def& tbl, c
 inline std::string dialect_db2::sql_parameter(command* cmd, const column_def& param, size_t order)
 {
   const std::string marker(cmd->sql_param(order));
-  if (Geometry == param.type && !cmd->writable_geom()) return param.type_lcase.to_string() + "(CAST(" + marker + " AS BLOB (100M)), " + string_cast<char>(param.srid) + ")";
+  if (column_type::Geometry == param.type && !cmd->writable_geom()) return param.type_lcase.to_string() + "(CAST(" + marker + " AS BLOB (100M)), " + string_cast<char>(param.srid) + ")";
   return marker;
 }
 
@@ -180,9 +180,9 @@ inline std::string dialect_db2::sql_column(command* cmd, const column_def& col)
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
-  if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
-  if (Geometry == col.type && !cmd->readable_geom()) return "DB2GSE.ST_AsBinary(" + id + ") AS " + id;
+  if (column_type::String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
+  if (column_type::String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
+  if (column_type::Geometry == col.type && !cmd->readable_geom()) return "DB2GSE.ST_AsBinary(" + id + ") AS " + id;
   return id;
 }
 

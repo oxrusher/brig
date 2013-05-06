@@ -40,7 +40,7 @@ public:
   bool fetch(std::vector<variant>& row) override;
   void set_autocommit(bool autocommit) override;
   void commit() override;
-  DBMS system() override  { return Oracle; }
+  DBMS system() override  { return DBMS::Oracle; }
   std::string sql_param(size_t order) override  { return ":" + string_cast<char>(order + 1); }
   bool readable_geom() override { return true; }
   bool writable_geom() override { return true; }

@@ -76,7 +76,7 @@ inline std::vector<identifier> provider::get_geometry_layers()
     if (!lr) throw runtime_error("OGR error");
     identifier id;
     id.name = lib::singleton().p_OGR_L_GetName(lr);
-    id.qualifier = WKB;
+    id.qualifier = ColumnNameWkb;
     res.push_back(id);
   }
   return res;
@@ -95,8 +95,8 @@ inline table_def provider::get_table_def(const identifier& tbl)
   res.id.name = tbl.name;
 
   column_def col;
-  col.name = WKB;
-  col.type = Geometry;
+  col.name = ColumnNameWkb;
+  col.type = column_type::Geometry;
   OGRSpatialReferenceH srs(lib::singleton().p_OGR_L_GetSpatialRef(lr));
   if (srs)
   {
@@ -124,17 +124,17 @@ inline table_def provider::get_table_def(const identifier& tbl)
     OGRFieldDefnH field_def(lib::singleton().p_OGR_FD_GetFieldDefn(feature_def, i));
     if (!field_def) throw runtime_error("OGR error");
     col.name = lib::singleton().p_OGR_Fld_GetNameRef(field_def);
-    if (col.name.empty() || col.name.compare(WKB) == 0) throw runtime_error("OGR name error");
+    if (col.name.empty() || col.name.compare(ColumnNameWkb) == 0) throw runtime_error("OGR name error");
     switch (lib::singleton().p_OGR_Fld_GetType(field_def))
     {
-    default: col.type = VoidColumn; break;
-    case OFTInteger: col.type = Integer; break;
-    case OFTReal: col.type = Double; break;
+    default: col.type = column_type::Void; break;
+    case OFTInteger: col.type = column_type::Integer; break;
+    case OFTReal: col.type = column_type::Double; break;
     case OFTDate:
     case OFTTime:
     case OFTDateTime:
-    case OFTString: col.type = String; break;
-    case OFTBinary: col.type = Blob; break;
+    case OFTString: col.type = column_type::String; break;
+    case OFTBinary: col.type = column_type::Blob; break;
     }
     res.columns.push_back(col);
   }
@@ -174,8 +174,8 @@ inline table_def provider::fit_to_create(const table_def& tbl)
     col.type = col_iter->type;
     switch (col.type)
     {
-    case Geometry:
-      col.name = WKB;
+    case column_type::Geometry:
+      col.name = ColumnNameWkb;
       col.epsg = col_iter->epsg;
       col.proj = col_iter->proj;
       break;
@@ -196,7 +196,7 @@ inline void provider::create(const table_def& tbl)
   detail::datasource ds(m_allocator.allocate(true));
   if (lib::singleton().p_OGR_DS_GetLayerByName(ds, tbl.id.name.c_str())) throw runtime_error("OGR error");
 
-  auto geom_col(find_if(begin(tbl.columns), end(tbl.columns), [](const column_def& col){ return Geometry == col.type; }));
+  auto geom_col(find_if(begin(tbl.columns), end(tbl.columns), [](const column_def& col){ return column_type::Geometry == col.type; }));
   if (geom_col == end(tbl.columns)) throw runtime_error("OGR error");
   auto del = [](void* ptr) { lib::singleton().p_OSRDestroySpatialReference(OGRSpatialReferenceH(ptr)); };
   unique_ptr<void, decltype(del)> srs(lib::singleton().p_OSRNewSpatialReference("GEOGCS[\"WGS 84\", DATUM[\"WGS_1984\", SPHEROID[\"WGS 84\",6378137,298.257223563]], PRIMEM[\"Greenwich\",0], UNIT[\"degree\",0.01745329251994328]]"), del);
@@ -217,16 +217,16 @@ inline void provider::create(const table_def& tbl)
 
   for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
   {
-    if (Geometry == col->type) continue;
+    if (column_type::Geometry == col->type) continue;
     OGRFieldType type(OFTString);
     switch (col->type)
     {
-    case VoidColumn:
-    case Geometry: throw runtime_error("OGR error");
-    case Blob: type = OFTBinary; break;
-    case Double: type = OFTReal; break;
-    case Integer: type = OFTInteger; break;
-    case String: type = OFTString; break;
+    case column_type::Void:
+    case column_type::Geometry: throw runtime_error("OGR error");
+    case column_type::Blob: type = OFTBinary; break;
+    case column_type::Double: type = OFTReal; break;
+    case column_type::Integer: type = OFTInteger; break;
+    case column_type::String: type = OFTString; break;
     };
     auto del = [](void* ptr) { lib::singleton().p_OGR_Fld_Destroy(OGRFieldDefnH(ptr)); };
     unique_ptr<void, decltype(del)> fld(lib::singleton().p_OGR_Fld_Create(col->name.c_str(), type), del);

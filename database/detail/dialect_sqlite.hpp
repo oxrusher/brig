@@ -88,15 +88,15 @@ inline column_def dialect_sqlite::fit_column(const column_def& col)
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn: break;
-  case Blob: res.type_lcase.name = "blob"; break;
-  case Double: res.type_lcase.name = "real"; break; // real affinity
-  case Geometry:
+  case column_type::Void: break;
+  case column_type::Blob: res.type_lcase.name = "blob"; break;
+  case column_type::Double: res.type_lcase.name = "real"; break; // real affinity
+  case column_type::Geometry:
     res.type_lcase.name = "geometry";
     res.epsg = col.epsg;
     break;
-  case Integer: res.type_lcase.name = "integer"; break; // integer affinity
-  case String: res.type_lcase.name = "text"; break; // text affinity
+  case column_type::Integer: res.type_lcase.name = "integer"; break; // integer affinity
+  case column_type::String: res.type_lcase.name = "text"; break; // text affinity
   }
   if (col.not_null) res.not_null = true;
   return res;
@@ -109,7 +109,7 @@ inline std::string dialect_sqlite::sql_srid(int epsg)
 
 inline std::string dialect_sqlite::sql_column_def(const column_def& col)
 {
-  return Geometry == col.type? "": dialect::sql_column_def(col);
+  return column_type::Geometry == col.type? "": dialect::sql_column_def(col);
 }
 
 inline void dialect_sqlite::sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql)
@@ -157,7 +157,7 @@ inline void dialect_sqlite::init_raster(pyramid_def& raster)
     {
       column_def col;
       col.name = "pixel_x_size";
-      col.type = Double;
+      col.type = column_type::Double;
       col.query_expression = hint? "+pixel_x_size": "";
       col.query_value = lvl.resolution_x;
       lvl.query_conditions.push_back(col);
@@ -165,7 +165,7 @@ inline void dialect_sqlite::init_raster(pyramid_def& raster)
     {
       column_def col;
       col.name = "pixel_y_size";
-      col.type = Double;
+      col.type = column_type::Double;
       col.query_expression = hint? "+pixel_y_size": "";
       col.query_value = lvl.resolution_y;
       lvl.query_conditions.push_back(col);
@@ -176,7 +176,7 @@ inline void dialect_sqlite::init_raster(pyramid_def& raster)
 inline std::string dialect_sqlite::sql_parameter(command* cmd, const column_def& param, size_t order)
 {
   const std::string marker(cmd->sql_param(order));
-  if (Geometry == param.type && !cmd->writable_geom()) return "GeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ")";
+  if (column_type::Geometry == param.type && !cmd->writable_geom()) return "GeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ")";
   return marker;
 }
 
@@ -186,7 +186,7 @@ inline std::string dialect_sqlite::sql_column(command* cmd, const column_def& co
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (Geometry == col.type && !cmd->readable_geom()) return "AsBinary(" + id + ") AS " + id;
+  if (column_type::Geometry == col.type && !cmd->readable_geom()) return "AsBinary(" + id + ") AS " + id;
   return id;
 }
 
@@ -203,7 +203,7 @@ inline void dialect_sqlite::sql_intersect(command*, const table_def& tbl, const 
 
   column_def key;
   key.name = "rowid";
-  key.type = Integer;
+  key.type = column_type::Integer;
   key.type_lcase.name = "int";
   keys.push_back(key);
 

@@ -73,10 +73,10 @@ inline table_def dialect::fit_table(const table_def& tbl, const std::string& sch
   for (auto col_iter(begin(tbl.columns)); col_iter != end(tbl.columns); ++col_iter)
   {
     res.columns.push_back(fit_column(*col_iter));
-    if (Geometry == col_iter->type && !tbl.rtree(col_iter->name))
+    if (column_type::Geometry == col_iter->type && !tbl.rtree(col_iter->name))
     {
       index_def idx;
-      idx.type = Spatial;
+      idx.type = index_type::Spatial;
       idx.columns.push_back(col_iter->name);
       res.indexes.push_back(idx);
     }
@@ -86,14 +86,14 @@ inline table_def dialect::fit_table(const table_def& tbl, const std::string& sch
   for (auto idx_iter(begin(res.indexes)); idx_iter != end(res.indexes); ++idx_iter)
   {
     idx_iter->id = identifier();
-    if (Primary != idx_iter->type) idx_iter->id.name = fit_identifier(res.id.name + "_idx_" + string_cast<char>(++suffix));
+    if (index_type::Primary != idx_iter->type) idx_iter->id.name = fit_identifier(res.id.name + "_idx_" + string_cast<char>(++suffix));
     for (auto col_iter(begin(idx_iter->columns)); col_iter != end(idx_iter->columns); ++col_iter)
     {
       *col_iter = fit_identifier(*col_iter);
       // DB2: When UNIQUE is used, null values are treated as any other values. For example, if the key is a single column that may contain null values, that column may contain no more than one null value.
       // Informix: Null values are never allowed in a primary-key column
       // Ingres: All columns in a UNIQUE constraint MUST be created as NOT NULL
-      if (Primary == idx_iter->type || Unique == idx_iter->type) res[*col_iter]->not_null = true;
+      if (index_type::Primary == idx_iter->type || index_type::Unique == idx_iter->type) res[*col_iter]->not_null = true;
     }
   }
 

@@ -84,9 +84,9 @@ inline std::string dialect_mysql::sql_spatial_detail(const table_def& tbl, const
 
 inline column_type dialect_mysql::get_type(const identifier& type_lcase, int scale)
 {
-  if (!type_lcase.schema.empty()) return VoidColumn;
-  if (is_ogc_type(type_lcase.name)) return Geometry;
-  if (type_lcase.name.compare("fixed") == 0) return scale == 0? Integer: Double;
+  if (!type_lcase.schema.empty()) return column_type::Void;
+  if (is_ogc_type(type_lcase.name)) return column_type::Geometry;
+  if (type_lcase.name.compare("fixed") == 0) return scale == 0? column_type::Integer: column_type::Double;
   return get_iso_type(type_lcase.name, scale);
 }
 
@@ -114,17 +114,17 @@ inline column_def dialect_mysql::fit_column(const column_def& col)
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn: break;
-  case Blob: res.type_lcase.name = "longblob"; break;
-  case Double: res.type_lcase.name = "double"; break;
-  case Geometry:
+  case column_type::Void: break;
+  case column_type::Blob: res.type_lcase.name = "longblob"; break;
+  case column_type::Double: res.type_lcase.name = "double"; break;
+  case column_type::Geometry:
     res.type_lcase.name = "geometry";
     res.srid = col.epsg;
     res.epsg = col.epsg;
     res.not_null = true; // columns in spatial indexes must be declared NOT NULL
     break;
-  case Integer: res.type_lcase.name = "bigint"; break;
-  case String:
+  case column_type::Integer: res.type_lcase.name = "bigint"; break;
+  case column_type::String:
     res.chars = (col.chars > 0 && col.chars < CharsLimit)? col.chars: CharsLimit;
     res.type_lcase.name = "nvarchar(" + string_cast<char>(res.chars) + ")";
     break;
@@ -146,7 +146,7 @@ inline std::string dialect_mysql::sql_create_spatial_index(const table_def& tbl,
 inline std::string dialect_mysql::sql_parameter(command* cmd, const column_def& param, size_t order)
 {
   const std::string marker(cmd->sql_param(order));
-  if (Geometry == param.type && !cmd->writable_geom()) return "GeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ")";
+  if (column_type::Geometry == param.type && !cmd->writable_geom()) return "GeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ")";
   return marker;
 }
 
@@ -156,9 +156,9 @@ inline std::string dialect_mysql::sql_column(command* cmd, const column_def& col
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "DATE_FORMAT(" + id + ", '%Y-%m-%dT%T') AS " + id;
-  if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "DATE_FORMAT(" + id + ", '%Y-%m-%d') AS " + id;
-  if (Geometry == col.type && !cmd->readable_geom()) return "AsBinary(" + id + ") AS " + id;
+  if (column_type::String == col.type && col.type_lcase.name.find("time") != string::npos) return "DATE_FORMAT(" + id + ", '%Y-%m-%dT%T') AS " + id;
+  if (column_type::String == col.type && col.type_lcase.name.find("date") != string::npos) return "DATE_FORMAT(" + id + ", '%Y-%m-%d') AS " + id;
+  if (column_type::Geometry == col.type && !cmd->readable_geom()) return "AsBinary(" + id + ") AS " + id;
   return id;
 }
 

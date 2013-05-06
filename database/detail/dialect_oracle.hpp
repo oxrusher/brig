@@ -107,10 +107,10 @@ LEFT JOIN MDSYS.SDO_COORD_REF_SYS s ON c.SRID = s.SRID";
 
 inline column_type dialect_oracle::get_type(const identifier& type_lcase, int scale)
 {
-  if (type_lcase.schema.compare("mdsys") == 0 && (type_lcase.name.compare("sdo_geometry") == 0 || is_ogc_type(type_lcase.name))) return Geometry;
-  if (!type_lcase.schema.empty()) return VoidColumn;
-  if (type_lcase.name.compare("long") == 0) return String;
-  if (type_lcase.name.compare("bfile") == 0 || type_lcase.name.find("raw") != std::string::npos) return Blob;
+  if (type_lcase.schema.compare("mdsys") == 0 && (type_lcase.name.compare("sdo_geometry") == 0 || is_ogc_type(type_lcase.name))) return column_type::Geometry;
+  if (!type_lcase.schema.empty()) return column_type::Void;
+  if (type_lcase.name.compare("long") == 0) return column_type::String;
+  if (type_lcase.name.compare("bfile") == 0 || type_lcase.name.find("raw") != std::string::npos) return column_type::Blob;
   return get_iso_type(type_lcase.name, scale);
 }
 
@@ -154,18 +154,18 @@ inline column_def dialect_oracle::fit_column(const column_def& col)
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn: break;
-  case Blob: res.type_lcase.name = "blob"; break;
-  case Double: res.type_lcase.name = "binary_double"; break;
-  case Geometry:
+  case column_type::Void: break;
+  case column_type::Blob: res.type_lcase.name = "blob"; break;
+  case column_type::Double: res.type_lcase.name = "binary_double"; break;
+  case column_type::Geometry:
     res.type_lcase.schema = "mdsys";
     res.type_lcase.name = "sdo_geometry";
     res.epsg = col.epsg;
     if (typeid(blob_t) == col.query_value.type()) res.query_value = col.query_value;
     else res.query_value = blob_t();
     break;
-  case Integer: res.type_lcase.name = "number(19)"; break;
-  case String:
+  case column_type::Integer: res.type_lcase.name = "number(19)"; break;
+  case column_type::String:
     res.chars = (col.chars > 0 && col.chars < CharsLimit)? col.chars: CharsLimit;
     res.type_lcase.name = "nvarchar2(" + string_cast<char>(res.chars) + ")";
     break;
@@ -180,18 +180,18 @@ inline table_def dialect_oracle::fit_table(const table_def& tbl, const std::stri
 
   table_def res(dialect::fit_table(tbl, schema));
 
-  if (find_if(begin(res.indexes), end(res.indexes), [&](const index_def& idx){ return Primary == idx.type || Unique == idx.type; }) == end(res.indexes))
+  if (find_if(begin(res.indexes), end(res.indexes), [&](const index_def& idx){ return index_type::Primary == idx.type || index_type::Unique == idx.type; }) == end(res.indexes))
   {
     column_def col;
     col.name = fit_identifier("ID");
-    col.type = String;
+    col.type = column_type::String;
     col.type_lcase.name = "nvarchar2(32) default sys_guid()";
     col.chars = 32;
     col.not_null = true;
     res.columns.push_back(col);
 
     index_def idx;
-    idx.type = Primary;
+    idx.type = index_type::Primary;
     idx.columns.push_back(fit_identifier("ID"));
     res.indexes.push_back(idx);
   }
@@ -235,7 +235,7 @@ inline std::string dialect_oracle::sql_parameter(command* cmd, const column_def&
   using namespace std;
 
   const string marker(cmd->sql_param(order));
-  if (Geometry == param.type && !cmd->writable_geom())
+  if (column_type::Geometry == param.type && !cmd->writable_geom())
   {
     string sql;
     const bool conv(param.type_lcase.name.compare("sdo_geometry") != 0);
@@ -253,9 +253,9 @@ inline std::string dialect_oracle::sql_column(command* cmd, const column_def& co
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
-  if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
-  if (Geometry == col.type && !cmd->readable_geom()) return col.type_lcase.to_string() + ".GET_WKB(" + id + ") AS " + id;
+  if (column_type::String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", 'YYYY-MM-DD') || 'T' || TO_CHAR(" + id + ", 'HH24:MI:SS')) AS " + id;
+  if (column_type::String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", 'YYYY-MM-DD') AS " + id;
+  if (column_type::Geometry == col.type && !cmd->readable_geom()) return col.type_lcase.to_string() + ".GET_WKB(" + id + ") AS " + id;
   return id;
 }
 
@@ -277,8 +277,8 @@ inline void dialect_oracle::sql_intersect(command* cmd, const table_def& tbl, co
 
   if (!tbl.rtree(col) || boxes.size() < 2) return;
 
-  auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_def& i){ return Primary == i.type; }));
-  if (idx == end(tbl.indexes)) idx = find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_def& i){ return Unique == i.type; });
+  auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_def& i){ return index_type::Primary == i.type; }));
+  if (idx == end(tbl.indexes)) idx = find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_def& i){ return index_type::Unique == i.type; });
   if (idx == end(tbl.indexes)) throw runtime_error("unique columns error");
   keys = brig::detail::get_columns(tbl.columns, idx->columns);
 

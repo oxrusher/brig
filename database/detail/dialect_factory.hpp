@@ -22,16 +22,16 @@ inline dialect* dialect_factory(DBMS sys)
 {
   switch (sys)
   {
-  case VoidSystem: break;
-  case CUBRID: return new dialect_cubrid();
-  case DB2: return new dialect_db2();
-  case Informix: return new dialect_informix();
-  case Ingres: return new dialect_ingres();
-  case MS_SQL: return new dialect_ms_sql();
-  case MySQL: return new dialect_mysql();
-  case Oracle: return new dialect_oracle();
-  case Postgres: return new dialect_postgres();
-  case SQLite: return new dialect_sqlite();
+  case DBMS::Void: break;
+  case DBMS::CUBRID: return new dialect_cubrid();
+  case DBMS::DB2: return new dialect_db2();
+  case DBMS::Informix: return new dialect_informix();
+  case DBMS::Ingres: return new dialect_ingres();
+  case DBMS::MS_SQL: return new dialect_ms_sql();
+  case DBMS::MySQL: return new dialect_mysql();
+  case DBMS::Oracle: return new dialect_oracle();
+  case DBMS::Postgres: return new dialect_postgres();
+  case DBMS::SQLite: return new dialect_sqlite();
   }
   throw std::runtime_error("DBMS error");
 }

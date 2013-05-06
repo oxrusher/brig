@@ -3,7 +3,6 @@
 #ifndef BRIG_DATABASE_DETAIL_SIMPLE_RASTERS_HPP
 #define BRIG_DATABASE_DETAIL_SIMPLE_RASTERS_HPP
 
-#include <brig/global.hpp>
 #include <brig/table_def.hpp>
 #include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>
@@ -16,7 +15,7 @@ inline column_def simple_rasters_column(const std::string& name, column_type typ
   col.name = name;
   col.type = type;
   col.not_null = true;
-  if (String == type)
+  if (column_type::String == type)
     // MySQL:
     // Max key length is 1000 bytes.
     // The problem with UTF-8 is that every character reserves 3 bytes for the worst case.
@@ -32,19 +31,19 @@ inline table_def simple_rasters_table(bool schema)
 
   tbl.indexes.push_back(index_def());
   index_def& idx(tbl.indexes.back());
-  idx.type = Primary;
+  idx.type = index_type::Primary;
 
-  if (schema)  { tbl.columns.push_back( simple_rasters_column("schema", String) ); idx.columns.push_back("schema"); }
-  tbl.columns.push_back( simple_rasters_column("table", String) ); idx.columns.push_back("table");
-  tbl.columns.push_back( simple_rasters_column("raster", String) ); idx.columns.push_back("raster");
+  if (schema)  { tbl.columns.push_back( simple_rasters_column("schema", column_type::String) ); idx.columns.push_back("schema"); }
+  tbl.columns.push_back( simple_rasters_column("table", column_type::String) ); idx.columns.push_back("table");
+  tbl.columns.push_back( simple_rasters_column("raster", column_type::String) ); idx.columns.push_back("raster");
 
-  if (schema) tbl.columns.push_back( simple_rasters_column("base_schema", String) );
-  tbl.columns.push_back( simple_rasters_column("base_table", String) );
-  tbl.columns.push_back( simple_rasters_column("base_raster", String) );
+  if (schema) tbl.columns.push_back( simple_rasters_column("base_schema", column_type::String) );
+  tbl.columns.push_back( simple_rasters_column("base_table", column_type::String) );
+  tbl.columns.push_back( simple_rasters_column("base_raster", column_type::String) );
 
-  tbl.columns.push_back( simple_rasters_column("geometry", String) );
-  tbl.columns.push_back( simple_rasters_column("resolution_x", Double) );
-  tbl.columns.push_back( simple_rasters_column("resolution_y", Double) );
+  tbl.columns.push_back( simple_rasters_column("geometry", column_type::String) );
+  tbl.columns.push_back( simple_rasters_column("resolution_x", column_type::Double) );
+  tbl.columns.push_back( simple_rasters_column("resolution_y", column_type::Double) );
 
   return tbl;
 }

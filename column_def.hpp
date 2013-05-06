@@ -4,7 +4,7 @@
 #define BRIG_COLUMN_DEF_HPP
 
 #include <algorithm>
-#include <brig/global.hpp>
+#include <brig/column_type.hpp>
 #include <brig/identifier.hpp>
 #include <brig/variant.hpp>
 #include <iterator>
@@ -23,7 +23,7 @@ struct column_def {
   std::string query_expression;
   variant query_value;
 
-  column_def() : type(VoidColumn), chars(-1), srid(-1), epsg(-1), not_null(false)  {}
+  column_def() : type(column_type::Void), chars(-1), srid(-1), epsg(-1), not_null(false)  {}
 }; // column_def
 
 template <typename Iterator>

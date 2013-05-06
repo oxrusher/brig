@@ -97,8 +97,8 @@ inline std::vector<std::string> rowset::columns()
   std::vector<std::string> cols;
   for (size_t i(0); i < m_cols.size(); ++i)
   {
-    if (m_cols[i]) cols.push_back(PNG);
-    else cols.push_back(WKB);
+    if (m_cols[i]) cols.push_back(ColumnNamePng);
+    else cols.push_back(ColumnNameWkb);
   }
   return cols;
 }

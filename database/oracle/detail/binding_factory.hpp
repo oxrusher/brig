@@ -11,7 +11,6 @@
 #include <brig/database/oracle/detail/binding_string.hpp>
 #include <brig/database/oracle/detail/get_charset_form.hpp>
 #include <brig/database/oracle/detail/handles.hpp>
-#include <brig/global.hpp>
 #include <brig/variant.hpp>
 #include <stdexcept>
 
@@ -37,17 +36,17 @@ inline binding* binding_visitor::operator()(const null_t&) const
   switch (param.type)
   {
     default: throw std::runtime_error("OCI type error");
-    case Blob: return new binding_blob(hnd, i, 0, 0);
-    case Double: return new binding_impl<double, SQLT_FLT>(hnd, i);
-    case Geometry: return new binding_geometry(hnd, i, blob_t(), param.srid);
-    case Integer: return new binding_impl<int64_t, SQLT_INT>(hnd, i);
-    case String: return new binding_string(hnd, i, std::string(), get_charset_form(param.type_lcase));
+    case column_type::Blob: return new binding_blob(hnd, i, 0, 0);
+    case column_type::Double: return new binding_impl<double, SQLT_FLT>(hnd, i);
+    case column_type::Geometry: return new binding_geometry(hnd, i, blob_t(), param.srid);
+    case column_type::Integer: return new binding_impl<int64_t, SQLT_INT>(hnd, i);
+    case column_type::String: return new binding_string(hnd, i, std::string(), get_charset_form(param.type_lcase));
   };
 }
 
 inline binding* binding_visitor::operator()(const blob_t& r) const
 {
-  if (Geometry == param.type)
+  if (column_type::Geometry == param.type)
     return new binding_geometry(hnd, i, r, param.srid);
   else
     return new binding_blob(hnd, i, (void*)r.data(), ub4(r.size()));

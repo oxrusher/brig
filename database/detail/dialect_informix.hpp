@@ -155,10 +155,10 @@ LEFT JOIN sde.spatial_references s ON c.srid = s.srid";
 
 inline column_type dialect_informix::get_type(const identifier& type_lcase, int scale)
 {
-  if (!type_lcase.schema.empty()) return VoidColumn;
-  if (is_ogc_type(type_lcase.name)) return Geometry;
-  if (type_lcase.name.find("serial") != std::string::npos) return Integer;
-  if (type_lcase.name.compare("byte") == 0) return Blob;
+  if (!type_lcase.schema.empty()) return column_type::Void;
+  if (is_ogc_type(type_lcase.name)) return column_type::Geometry;
+  if (type_lcase.name.find("serial") != std::string::npos) return column_type::Integer;
+  if (type_lcase.name.compare("byte") == 0) return column_type::Blob;
   return get_iso_type(type_lcase.name, scale);
 }
 
@@ -181,15 +181,15 @@ inline column_def dialect_informix::fit_column(const column_def& col)
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn: break;
-  case Blob: res.type_lcase.name = "byte"; break;
-  case Double: res.type_lcase.name = "double precision"; break;
-  case Geometry:
+  case column_type::Void: break;
+  case column_type::Blob: res.type_lcase.name = "byte"; break;
+  case column_type::Double: res.type_lcase.name = "double precision"; break;
+  case column_type::Geometry:
     res.type_lcase.name = "st_geometry";
     res.epsg = col.epsg;
     break;
-  case Integer: res.type_lcase.name = "int8"; break;
-  case String:
+  case column_type::Integer: res.type_lcase.name = "int8"; break;
+  case column_type::String:
     res.chars = (col.chars > 0 && col.chars < CharsLimit)? col.chars: CharsLimit;
     res.type_lcase.name = "varchar(" + string_cast<char>(res.chars) + ")";
     break;
@@ -236,7 +236,7 @@ inline std::string dialect_informix::sql_parameter(command* cmd, const column_de
   using namespace std;
 
   const string marker(cmd->sql_param(order));
-  if (Geometry == param.type && !cmd->writable_geom())
+  if (column_type::Geometry == param.type && !cmd->writable_geom())
   {
     const string suffix("(" + marker + ", " + string_cast<char>(param.srid) + ")");
          if ( param.type_lcase.name.compare("st_geometry") == 0
@@ -262,9 +262,9 @@ inline std::string dialect_informix::sql_column(command* cmd, const column_def& 
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", '%Y-%m-%d') || 'T' || TO_CHAR(" + id + ", '%H:%M:%S')) AS " + id;
-  if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", '%Y-%m-%d') AS " + id;
-  if (Geometry == col.type && !cmd->readable_geom()) return "ST_AsBinary(" + id + ") AS " + id;
+  if (column_type::String == col.type && col.type_lcase.name.find("time") != string::npos) return "(TO_CHAR(" + id + ", '%Y-%m-%d') || 'T' || TO_CHAR(" + id + ", '%H:%M:%S')) AS " + id;
+  if (column_type::String == col.type && col.type_lcase.name.find("date") != string::npos) return "TO_CHAR(" + id + ", '%Y-%m-%d') AS " + id;
+  if (column_type::Geometry == col.type && !cmd->readable_geom()) return "ST_AsBinary(" + id + ") AS " + id;
   return id;
 }
 

@@ -27,7 +27,7 @@ inline table_def get_table_def_sqlite(dialect* dct, command* cmd, const identifi
   table_def res;
   res.id = tbl;
   index_def pri_idx;
-  pri_idx.type = Primary;
+  pri_idx.type = index_type::Primary;
   vector<variant> row;
   cmd->exec("PRAGMA TABLE_INFO(" + dct->sql_identifier(tbl.name) + ")");
   while (cmd->fetch(row))
@@ -36,7 +36,7 @@ inline table_def get_table_def_sqlite(dialect* dct, command* cmd, const identifi
     col.name = string_cast<char>(row[1]);
     col.type_lcase.name = brig::unicode::transform<char>(string_cast<char>(row[2]), brig::unicode::lower_case);
 
-    if (is_ogc_type(col.type_lcase.name)) col.type = Geometry;
+    if (is_ogc_type(col.type_lcase.name)) col.type = column_type::Geometry;
     else col.type = get_iso_type(col.type_lcase.name, -1);
 
     int not_null(0);
@@ -61,7 +61,7 @@ inline table_def get_table_def_sqlite(dialect* dct, command* cmd, const identifi
     idx.id.name = string_cast<char>(row[1]);
     if (idx.id.name.empty()) continue;
     int unique(0);
-    idx.type = (numeric_cast(row[2], unique) && !unique)? Duplicate: Unique;
+    idx.type = (numeric_cast(row[2], unique) && !unique)? index_type::Duplicate: index_type::Unique;
     res.indexes.push_back(idx);
   }
 
@@ -86,7 +86,7 @@ inline table_def get_table_def_sqlite(dialect* dct, command* cmd, const identifi
   // srid, epsg, spatial index
   for (size_t i(0); i < res.columns.size(); ++i)
   {
-    if (Geometry == res.columns[i].type)
+    if (column_type::Geometry == res.columns[i].type)
     {
       cmd->exec("\
 SELECT c.SRID, (CASE s.AUTH_NAME WHEN 'epsg' THEN s.AUTH_SRID ELSE NULL END) epsg, c.SPATIAL_INDEX_ENABLED \
@@ -100,7 +100,7 @@ LEFT JOIN SPATIAL_REF_SYS s ON c.SRID = s.SRID");
         if (numeric_cast(row[2], indexed) && indexed == 1)
         {
           index_def idx;
-          idx.type = Spatial;
+          idx.type = index_type::Spatial;
           idx.columns.push_back(res.columns[i].name);
           res.indexes.push_back(idx);
         }

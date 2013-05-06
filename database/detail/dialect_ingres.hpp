@@ -115,10 +115,10 @@ LEFT JOIN spatial_ref_sys s ON c.srid = s.srid";
 
 inline column_type dialect_ingres::get_type(const identifier& type_lcase, int scale)
 {
-  if (!type_lcase.schema.empty()) return VoidColumn;
-  if (is_ogc_type(type_lcase.name)) return Geometry;
-  if (type_lcase.name.find("byte") != std::string::npos) return Blob;
-  if (type_lcase.name.compare("c") == 0) return String;
+  if (!type_lcase.schema.empty()) return column_type::Void;
+  if (is_ogc_type(type_lcase.name)) return column_type::Geometry;
+  if (type_lcase.name.find("byte") != std::string::npos) return column_type::Blob;
+  if (type_lcase.name.compare("c") == 0) return column_type::String;
   return get_iso_type(type_lcase.name, scale);
 }
 
@@ -144,17 +144,17 @@ inline column_def dialect_ingres::fit_column(const column_def& col)
   res.type = col.type;
   switch (res.type)
   {
-  case VoidColumn: break;
-  case Blob: res.type_lcase.name = "long byte"; break;
-  case Double: res.type_lcase.name = "double precision"; break;
-  case Geometry:
+  case column_type::Void: break;
+  case column_type::Blob: res.type_lcase.name = "long byte"; break;
+  case column_type::Double: res.type_lcase.name = "double precision"; break;
+  case column_type::Geometry:
     res.type_lcase.name = "geometry";
     res.epsg = col.epsg;
     // todo: invalid spatial index
     // res.query_value = (typeid(blob_t) == col.query_value.type())? col.query_value: blob_t();
     break;
-  case Integer: res.type_lcase.name = "bigint"; break;
-  case String:
+  case column_type::Integer: res.type_lcase.name = "bigint"; break;
+  case column_type::String:
     res.chars = (col.chars > 0 && col.chars < CharsLimit)? col.chars: CharsLimit;
     res.type_lcase.name = "nvarchar(" + string_cast<char>(res.chars) + ")";
     break;
@@ -170,7 +170,7 @@ inline table_def dialect_ingres::fit_table(const table_def& tbl, const std::stri
   table_def res(dialect::fit_table(tbl, schema));
 
   // todo: invalid spatial index
-  auto new_end(remove_if(begin(res.indexes), end(res.indexes), [](const index_def& idx){ return Spatial == idx.type; }));
+  auto new_end(remove_if(begin(res.indexes), end(res.indexes), [](const index_def& idx){ return index_type::Spatial == idx.type; }));
   res.indexes.resize(distance(begin(res.indexes), new_end));
 
   return res;
@@ -185,7 +185,7 @@ inline std::string dialect_ingres::sql_column_def(const column_def& col)
 {
   std::string str;
   str += sql_identifier(col.name) + " " + col.type_lcase.to_string();
-  if (Geometry == col.type) str += " SRID " + string_cast<char>(col.srid);
+  if (column_type::Geometry == col.type) str += " SRID " + string_cast<char>(col.srid);
   if (col.not_null) str += " NOT NULL";
   return str;
 }
@@ -207,7 +207,7 @@ WITH STRUCTURE=RTREE, RANGE=((" << xmin << ", " << ymin << "), (" << xmax << ", 
 inline std::string dialect_ingres::sql_parameter(command* cmd, const column_def& param, size_t order)
 {
   const std::string marker(cmd->sql_param(order));
-  if (Geometry == param.type && !cmd->writable_geom()) return "GeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ")";
+  if (column_type::Geometry == param.type && !cmd->writable_geom()) return "GeomFromWKB(" + marker + ", " + string_cast<char>(param.srid) + ")";
   return marker;
 }
 
@@ -217,9 +217,9 @@ inline std::string dialect_ingres::sql_column(command* cmd, const column_def& co
 
   const string id(sql_identifier(col.name));
   if (!col.query_expression.empty()) return col.query_expression + " AS " + id;
-  if (String == col.type && (col.type_lcase.name.find("time") != string::npos || col.type_lcase.name.compare("ingresdate") == 0)) return "DATE_FORMAT(" + id + ", '%Y-%m-%dT%T') AS " + id;
-  if (String == col.type && col.type_lcase.name.find("date") != string::npos) return "DATE_FORMAT(" + id + ", '%Y-%m-%d') AS " + id;
-  if (Geometry == col.type && !cmd->readable_geom()) return "AsBinary(" + id + ") AS " + id;
+  if (column_type::String == col.type && (col.type_lcase.name.find("time") != string::npos || col.type_lcase.name.compare("ingresdate") == 0)) return "DATE_FORMAT(" + id + ", '%Y-%m-%dT%T') AS " + id;
+  if (column_type::String == col.type && col.type_lcase.name.find("date") != string::npos) return "DATE_FORMAT(" + id + ", '%Y-%m-%d') AS " + id;
+  if (column_type::Geometry == col.type && !cmd->readable_geom()) return "AsBinary(" + id + ") AS " + id;
   return id;
 }
 

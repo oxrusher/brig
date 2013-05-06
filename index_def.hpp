@@ -3,7 +3,7 @@
 #ifndef BRIG_INDEX_DEF_HPP
 #define BRIG_INDEX_DEF_HPP
 
-#include <brig/global.hpp>
+#include <brig/index_type.hpp>
 #include <brig/identifier.hpp>
 #include <string>
 #include <vector>
@@ -15,7 +15,7 @@ struct index_def {
   index_type type;
   std::vector<std::string> columns;
 
-  index_def() : type(VoidIndex)  {}
+  index_def() : type(index_type::Void)  {}
 }; // index_def
 
 } // brig

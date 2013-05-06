@@ -41,12 +41,12 @@ inline int bind(int req, size_t order, const column_def& param)
 
   switch (param.type)
   {
-  case VoidColumn: break;
-  case Blob:
-  case Geometry: visitor.type = CCI_U_TYPE_VARBIT; break;
-  case Double: visitor.type = CCI_U_TYPE_DOUBLE; break;
-  case Integer: visitor.type = CCI_U_TYPE_BIGINT; break;
-  case String: visitor.type
+  case column_type::Void: break;
+  case column_type::Blob:
+  case column_type::Geometry: visitor.type = CCI_U_TYPE_VARBIT; break;
+  case column_type::Double: visitor.type = CCI_U_TYPE_DOUBLE; break;
+  case column_type::Integer: visitor.type = CCI_U_TYPE_BIGINT; break;
+  case column_type::String: visitor.type
     = (param.type_lcase.name.find("nchar") != std::string::npos || param.type_lcase.name.find("national") != std::string::npos)
     ? CCI_U_TYPE_VARNCHAR
     : CCI_U_TYPE_STRING;

@@ -37,7 +37,7 @@ public:
   bool fetch(std::vector<variant>& row) override;
   void set_autocommit(bool autocommit) override;
   void commit() override;
-  DBMS system() override  { return MySQL; }
+  DBMS system() override  { return DBMS::MySQL; }
 }; // command
 
 inline void command::check(bool r)

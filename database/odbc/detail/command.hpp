@@ -54,7 +54,7 @@ inline void command::close_all()
   using namespace std;
 
   close_stmt();
-  m_sys = VoidSystem;
+  m_sys = DBMS::Void;
   if (SQL_NULL_HANDLE != m_dbc)
   {
     SQLHANDLE dbc(SQL_NULL_HANDLE); swap(dbc, m_dbc);
@@ -88,7 +88,7 @@ inline void command::check(SQLSMALLINT type, SQLHANDLE handle, SQLRETURN r)
   throw runtime_error(msg.empty()? "ODBC error": brig::unicode::transform<char>(msg));
 }
 
-inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(SQL_NULL_HANDLE), m_stmt(SQL_NULL_HANDLE), m_sys(VoidSystem)
+inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(SQL_NULL_HANDLE), m_stmt(SQL_NULL_HANDLE), m_sys(DBMS::Void)
 {
   using namespace std;
   using namespace brig::unicode;
@@ -121,21 +121,21 @@ inline command::command(const std::string& str) : m_env(SQL_NULL_HANDLE), m_dbc(
   if (SQL_SUCCEEDED(lib::singleton().p_SQLGetInfoW(m_dbc, SQL_DBMS_NAME, buf, SQL_MAX_MESSAGE_LENGTH, &len)))
   {
     const string sys(transform<char>(buf, lower_case));
-         if (sys.find("cubrid") != string::npos) m_sys = CUBRID;
-    else if (sys.find("db2") != string::npos) m_sys = DB2;
-    else if (sys.find("informix") != string::npos) m_sys = Informix;
-    else if (sys.find("ingres") != string::npos) m_sys = Ingres;
+         if (sys.find("cubrid") != string::npos) m_sys = DBMS::CUBRID;
+    else if (sys.find("db2") != string::npos) m_sys = DBMS::DB2;
+    else if (sys.find("informix") != string::npos) m_sys = DBMS::Informix;
+    else if (sys.find("ingres") != string::npos) m_sys = DBMS::Ingres;
     else if (sys.find("microsoft") != string::npos
           && sys.find("sql") != string::npos
-          && sys.find("server") != string::npos) m_sys = MS_SQL;
-    else if (sys.find("mysql") != string::npos) m_sys = MySQL;
-    else if (sys.find("oracle") != string::npos) m_sys = Oracle;
-    else if (sys.find("postgres") != string::npos) m_sys = Postgres;
-    else if (sys.find("sqlite") != string::npos) m_sys = SQLite;
+          && sys.find("server") != string::npos) m_sys = DBMS::MS_SQL;
+    else if (sys.find("mysql") != string::npos) m_sys = DBMS::MySQL;
+    else if (sys.find("oracle") != string::npos) m_sys = DBMS::Oracle;
+    else if (sys.find("postgres") != string::npos) m_sys = DBMS::Postgres;
+    else if (sys.find("sqlite") != string::npos) m_sys = DBMS::SQLite;
   }
 
   // http://www.ibm.com/Search/?q=Delimited+Identifiers+in+ODBC
-  if (Informix == m_sys)
+  if (DBMS::Informix == m_sys)
   {
     try
     {
