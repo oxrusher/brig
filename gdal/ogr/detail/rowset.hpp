@@ -3,7 +3,6 @@
 #ifndef BRIG_GDAL_OGR_DETAIL_ROWSET_HPP
 #define BRIG_GDAL_OGR_DETAIL_ROWSET_HPP
 
-#include <algorithm>
 #include <brig/boost/envelope.hpp>
 #include <brig/boost/geom_from_wkb.hpp>
 #include <brig/boost/geometry.hpp>
@@ -26,13 +25,20 @@ class rowset : public brig::rowset {
   OGRLayerH m_lr;
   std::vector<int> m_cols;
   int m_rows;
+
+  int m_next_feature_layer;
+  bool m_has_layers_non_empty;
+  std::shared_ptr<void> next_feature();
+
 public:
   rowset(datasource_allocator allocator, const table_def& tbl);
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
 }; // rowset
 
-inline rowset::rowset(datasource_allocator allocator, const table_def& tbl) : m_ds(allocator.allocate(false)), m_lr(0)
+inline rowset::rowset(datasource_allocator allocator, const table_def& tbl)
+  : m_ds(allocator.allocate(false)), m_lr(0)
+  , m_next_feature_layer(0), m_has_layers_non_empty(false)
 {
   using namespace std;
   using namespace brig::boost;
@@ -77,8 +83,6 @@ inline rowset::rowset(datasource_allocator allocator, const table_def& tbl) : m_
   }
   lib::check(lib::singleton().p_OGR_L_SetAttributeFilter(lr, attribute_filter.empty()? 0: attribute_filter.c_str()));
 
-  lib::singleton().p_OGR_L_ResetReading(lr);
-
   swap(lr, m_lr);
 }
 
@@ -108,6 +112,34 @@ inline std::vector<std::string> rowset::columns()
   return cols;
 }
 
+std::shared_ptr<void> rowset::next_feature()
+{
+  using namespace std;
+  using namespace gdal::detail;
+
+  while (true)
+  {
+    if (m_next_feature_layer >= lib::singleton().p_OGR_DS_GetLayerCount(m_ds)) return std::shared_ptr<void>();
+
+    OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayer(m_ds, m_next_feature_layer));
+    if (!lr) throw runtime_error("OGR error");
+
+    std::shared_ptr<void> feature;
+    while( bool(feature = shared_ptr<void>(lib::singleton().p_OGR_L_GetNextFeature(lr), [](void* ptr) { lib::singleton().p_OGR_F_Destroy(OGRFeatureH(ptr)); })) )
+    {
+      m_has_layers_non_empty = true;
+      if (lr == m_lr) return feature;
+    }
+
+    ++m_next_feature_layer;
+    if (m_next_feature_layer >= lib::singleton().p_OGR_DS_GetLayerCount(m_ds) && m_has_layers_non_empty)
+    {
+      m_next_feature_layer = 0;
+      m_has_layers_non_empty = false;
+    }
+  }
+}
+
 inline bool rowset::fetch(std::vector<variant>& row)
 {
   using namespace std;
@@ -115,10 +147,8 @@ inline bool rowset::fetch(std::vector<variant>& row)
 
   if (!m_lr || m_rows == 0) return false;
   if (m_rows > 0) --m_rows;
-  auto del = [](void* ptr) { lib::singleton().p_OGR_F_Destroy(OGRFeatureH(ptr)); };
-  unique_ptr<void, decltype(del)> feature(lib::singleton().p_OGR_L_GetNextFeature(m_lr), del);
-  if (!feature.get()) return false;
-
+  auto feature(next_feature());
+  if (!bool(feature)) return false;
   row.resize(m_cols.size());
   for (size_t i(0); i < m_cols.size(); ++i)
   {

@@ -15,6 +15,7 @@
   #define BRIG_GDAL_DL_FUNCTION(lib, fun) BRIG_DL_FUNCTION(lib, fun)
 #endif
 
+#include <cpl_conv.h>
 #include <cpl_vsi.h>
 #include <gdal.h>
 #include <ogr_api.h>
@@ -26,6 +27,7 @@ class lib {
   lib();
 
 public:
+  decltype(CPLSetConfigOption) *p_CPLSetConfigOption;
   decltype(GDALAllRegister) *p_GDALAllRegister;
   decltype(GDALClose) *p_GDALClose;
   decltype(GDALCreateCopy) *p_GDALCreateCopy;
@@ -75,7 +77,6 @@ public:
   decltype(OGR_L_GetName) *p_OGR_L_GetName;
   decltype(OGR_L_GetNextFeature) *p_OGR_L_GetNextFeature;
   decltype(OGR_L_GetSpatialRef) *p_OGR_L_GetSpatialRef;
-  decltype(OGR_L_ResetReading) *p_OGR_L_ResetReading;
   decltype(OGR_L_SetAttributeFilter) *p_OGR_L_SetAttributeFilter;
   decltype(OGR_L_SetSpatialFilter) *p_OGR_L_SetSpatialFilter;
   decltype(OGR_L_SetSpatialFilterRect) *p_OGR_L_SetSpatialFilterRect;
@@ -104,6 +105,7 @@ inline lib::lib() : p_VSIGetMemFileBuffer(0)
 {
   auto handle = BRIG_DL_LIBRARY(LibGdalWin, LibGdalLin);
   if (  handle
+    && (p_CPLSetConfigOption = BRIG_GDAL_DL_FUNCTION(handle, CPLSetConfigOption))
     && (p_GDALAllRegister = BRIG_GDAL_DL_FUNCTION(handle, GDALAllRegister))
     && (p_GDALClose = BRIG_GDAL_DL_FUNCTION(handle, GDALClose))
     && (p_GDALCreateCopy = BRIG_GDAL_DL_FUNCTION(handle, GDALCreateCopy))
@@ -153,7 +155,6 @@ inline lib::lib() : p_VSIGetMemFileBuffer(0)
     && (p_OGR_L_GetName = BRIG_GDAL_DL_FUNCTION(handle, OGR_L_GetName))
     && (p_OGR_L_GetNextFeature = BRIG_GDAL_DL_FUNCTION(handle, OGR_L_GetNextFeature))
     && (p_OGR_L_GetSpatialRef = BRIG_GDAL_DL_FUNCTION(handle, OGR_L_GetSpatialRef))
-    && (p_OGR_L_ResetReading = BRIG_GDAL_DL_FUNCTION(handle, OGR_L_ResetReading))
     && (p_OGR_L_SetAttributeFilter = BRIG_GDAL_DL_FUNCTION(handle, OGR_L_SetAttributeFilter))
     && (p_OGR_L_SetSpatialFilter = BRIG_GDAL_DL_FUNCTION(handle, OGR_L_SetSpatialFilter))
     && (p_OGR_L_SetSpatialFilterRect = BRIG_GDAL_DL_FUNCTION(handle, OGR_L_SetSpatialFilterRect))
@@ -176,6 +177,7 @@ inline lib::lib() : p_VSIGetMemFileBuffer(0)
   {
     p_GDALAllRegister();
     p_OGRRegisterAll();
+    p_CPLSetConfigOption("OGR_INTERLEAVED_READING", "YES");
   }
 } // lib::
 
