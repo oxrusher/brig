@@ -50,7 +50,7 @@ struct dialect {
   virtual std::string sql_hint(const table_def& /*tbl*/, const std::string& /*col*/)  { return ""; }
   virtual bool need_to_normalize_hemisphere(const column_def& /*col*/)  { return false; }
   virtual void sql_intersect
-    ( command* /*cmd*/, const table_def& /*tbl*/, const std::string& /*col*/, const std::vector<brig::boost::box>& /*boxes*/
+    ( command* /*cmd*/, const table_def& /*tbl*/, const std::string& /*col*/, const std::vector<boost::box>& /*boxes*/
     , std::string& /*sql*/, std::vector<column_def>& /*keys*/
     )
     {}

@@ -20,7 +20,7 @@ class rowset_lite : public brig::rowset {
   int m_rows;
   tiles m_iter;
 public:
-  rowset_lite(size_t cols, int zoom, const brig::boost::box& env, int rows) : m_cols(cols), m_rows(rows), m_iter(zoom, env)  {}
+  rowset_lite(size_t cols, int zoom, const boost::box& env, int rows) : m_cols(cols), m_rows(rows), m_iter(zoom, env)  {}
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
 }; // rowset

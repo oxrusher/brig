@@ -16,7 +16,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline brig::boost::box get_extent(dialect* dct, command* cmd, const table_def& tbl)
+inline boost::box get_extent(dialect* dct, command* cmd, const table_def& tbl)
 {
   using namespace std;
   using namespace brig::boost;

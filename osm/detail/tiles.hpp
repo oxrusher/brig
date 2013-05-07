@@ -11,11 +11,11 @@ namespace brig { namespace osm { namespace detail {
 
 class tiles {
   const int m_zoom;
-  const brig::boost::box m_env;
+  const boost::box m_env;
   tile m_next;
   bool find_in(const tile& tl);
 public:
-  tiles(int zoom, const brig::boost::box& env);
+  tiles(int zoom, const boost::box& env);
   bool fetch(tile& tl);
 }; // tiles
 
@@ -40,7 +40,7 @@ inline bool tiles::find_in(const tile& tl)
   return true;
 }
 
-inline tiles::tiles(int zoom, const brig::boost::box& env)
+inline tiles::tiles(int zoom, const boost::box& env)
   : m_zoom(zoom), m_env(env), m_next(0, 0, -1)
 {
   find_in(tile(0, 0, 0));

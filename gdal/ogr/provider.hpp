@@ -31,17 +31,16 @@ public:
   std::vector<identifier> get_geometry_layers() override;
   std::vector<pyramid_def> get_raster_layers() override  { return std::vector<pyramid_def>(); }
   table_def get_table_def(const identifier& tbl) override;
-  brig::boost::box get_extent(const table_def& tbl) override;
+  boost::box get_extent(const table_def& tbl) override;
   std::shared_ptr<rowset> select(const table_def& tbl) override;
 
+  bool is_readonly() override  { return false; }
   table_def fit_to_create(const table_def& tbl) override;
   void create(const table_def& tbl) override;
   void drop(const table_def& tbl) override;
-  
   pyramid_def fit_to_reg(const pyramid_def&) override  { throw std::runtime_error("OGR error"); }
   void reg(const pyramid_def&) override  { throw std::runtime_error("OGR error"); }
   void unreg(const pyramid_def&) override  { throw std::runtime_error("OGR error"); }
-
   std::shared_ptr<inserter> get_inserter(const table_def& tbl) override;
 }; // provider
 
@@ -141,7 +140,7 @@ inline table_def provider::get_table_def(const identifier& tbl)
   return res;
 }
 
-inline brig::boost::box provider::get_extent(const table_def& tbl)
+inline boost::box provider::get_extent(const table_def& tbl)
 {
   using namespace std;
   using namespace brig::boost;

@@ -50,7 +50,7 @@ struct dialect_sqlite : dialect {
   std::string sql_parameter(command* cmd, const column_def& param, size_t order) override;
   std::string sql_column(command* cmd, const column_def& col) override;
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
-  void sql_intersect(command* cmd, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys) override;
+  void sql_intersect(command* cmd, const table_def& tbl, const std::string& col, const std::vector<boost::box>& boxes, std::string& sql, std::vector<column_def>& keys) override;
   std::string sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box) override;
 }; // dialect_sqlite
 
@@ -195,7 +195,7 @@ inline void dialect_sqlite::sql_limit(int rows, std::string&, std::string&, std:
   sql_suffix = "LIMIT " + string_cast<char>(rows);
 }
 
-inline void dialect_sqlite::sql_intersect(command*, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys)
+inline void dialect_sqlite::sql_intersect(command*, const table_def& tbl, const std::string& col, const std::vector<boost::box>& boxes, std::string& sql, std::vector<column_def>& keys)
 {
   using namespace std;
 

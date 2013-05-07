@@ -42,13 +42,15 @@ public:
   std::vector<identifier> get_geometry_layers() override;
   std::vector<pyramid_def> get_raster_layers() override;
   table_def get_table_def(const identifier& tbl) override;
-  brig::boost::box get_extent(const table_def& tbl) override;
+  boost::box get_extent(const table_def& tbl) override;
   std::shared_ptr<rowset> select(const table_def& tbl) override;
+
+  bool is_readonly() override  { return false; }
 
   table_def fit_to_create(const table_def& tbl) override;
   void create(const table_def& tbl) override;
   void drop(const table_def& tbl) override;
-  
+
   pyramid_def fit_to_reg(const pyramid_def& raster) override;
   void reg(const pyramid_def& raster) override;
   void unreg(const pyramid_def& raster) override;
@@ -97,7 +99,7 @@ table_def provider<Threading>::get_table_def(const identifier& tbl)
 }
 
 template <bool Threading>
-brig::boost::box provider<Threading>::get_extent(const table_def& tbl)
+boost::box provider<Threading>::get_extent(const table_def& tbl)
 {
   using namespace std;
   using namespace detail;

@@ -45,7 +45,7 @@ struct dialect_ms_sql : dialect {
   void sql_limit(int rows, std::string& sql_infix, std::string& sql_counter, std::string& sql_suffix) override;
   std::string sql_hint(const table_def& tbl, const std::string& col) override;
   bool need_to_normalize_hemisphere(const column_def& col) override;
-  void sql_intersect(command* cmd, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys) override;
+  void sql_intersect(command* cmd, const table_def& tbl, const std::string& col, const std::vector<boost::box>& boxes, std::string& sql, std::vector<column_def>& keys) override;
   std::string sql_intersect(const table_def& tbl, const std::string& col, const boost::box& box) override;
 }; // dialect_ms_sql
 
@@ -212,7 +212,7 @@ inline bool dialect_ms_sql::need_to_normalize_hemisphere(const column_def& col)
   return col.type_lcase.name.compare("geography") == 0;
 }
 
-inline void dialect_ms_sql::sql_intersect(command* cmd, const table_def& tbl, const std::string& col, const std::vector<brig::boost::box>& boxes, std::string& sql, std::vector<column_def>& keys)
+inline void dialect_ms_sql::sql_intersect(command* cmd, const table_def& tbl, const std::string& col, const std::vector<boost::box>& boxes, std::string& sql, std::vector<column_def>& keys)
 {
   using namespace std;
 

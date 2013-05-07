@@ -11,15 +11,15 @@
 namespace brig { namespace osm { namespace detail {
 
 class tile {
-  brig::boost::point get_point() const;
+  boost::point get_point() const;
 public:
   int x, y, z;
   tile(int x_, int y_, int z_) : x(x_), y(y_), z(z_)  {}
-  brig::boost::box get_box() const;
+  boost::box get_box() const;
   bool is_valid() const;
 }; // tile
 
-inline brig::boost::point tile::get_point() const
+inline boost::point tile::get_point() const
 {
   using namespace std;
   static const double BRIG_OSM_PI = 3.1415926535897932384;
@@ -42,10 +42,10 @@ inline brig::boost::point tile::get_point() const
   const double ts(tan(0.5 * (BRIG_OSM_PI * 0.5 - lat_rad)) / con);
   const double merc_y(0 - BRIG_OSM_RMAJOR * log(ts));
 
-  return brig::boost::point(merc_x, merc_y);
+  return boost::point(merc_x, merc_y);
 }
 
-inline brig::boost::box tile::get_box() const
+inline boost::box tile::get_box() const
 {
   using namespace brig::boost;
   auto a(get_point()), b(tile(x + 1, y + 1, z).get_point());

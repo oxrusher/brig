@@ -9,7 +9,7 @@
 
 namespace brig { namespace database { namespace detail {
 
-inline void normalize_hemisphere(std::vector<brig::boost::box>& boxes)
+inline void normalize_hemisphere(std::vector<boost::box>& boxes)
 {
   using namespace brig::boost;
 

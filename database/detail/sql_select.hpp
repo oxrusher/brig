@@ -23,6 +23,7 @@ namespace brig { namespace database { namespace detail {
 inline void sql_select(dialect* dct, command* cmd, const table_def& tbl, std::string& sql, std::vector<column_def>& params)
 {
   using namespace std;
+  using namespace brig::boost;
 
   vector<column_def> cols = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
   string sql_infix, sql_counter, sql_suffix, sql_conditions;
@@ -49,7 +50,7 @@ inline void sql_select(dialect* dct, command* cmd, const table_def& tbl, std::st
   }
 
   // spatial
-  vector<brig::boost::box> boxes(1, brig::boost::envelope(brig::boost::geom_from_wkb(::boost::get<blob_t>(geom_col->query_value))));
+  vector<box> boxes(1, envelope(geom_from_wkb(::boost::get<blob_t>(geom_col->query_value))));
   if (dct->need_to_normalize_hemisphere(*geom_col)) normalize_hemisphere(boxes);
   string sql_keys;
   vector<column_def> keys;

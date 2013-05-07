@@ -28,17 +28,16 @@ public:
   std::vector<identifier> get_geometry_layers() override;
   std::vector<pyramid_def> get_raster_layers() override;
   table_def get_table_def(const identifier& tbl) override;
-  brig::boost::box get_extent(const table_def& tbl) override;
+  boost::box get_extent(const table_def& tbl) override;
   std::shared_ptr<rowset> select(const table_def& tbl) override;
 
+  bool is_readonly() override  { return true; }
   table_def fit_to_create(const table_def&) override  { throw std::runtime_error("GDAL error"); }
   void create(const table_def&) override  { throw std::runtime_error("GDAL error"); }
   void drop(const table_def&) override  { throw std::runtime_error("GDAL error"); }
-  
   pyramid_def fit_to_reg(const pyramid_def&) override  { throw std::runtime_error("GDAL error"); }
   void reg(const pyramid_def&) override  { throw std::runtime_error("GDAL error"); }
   void unreg(const pyramid_def&) override  { throw std::runtime_error("GDAL error"); }
-
   std::shared_ptr<inserter> get_inserter(const table_def&) override  { throw std::runtime_error("GDAL error"); }
 }; // provider
 
@@ -137,7 +136,7 @@ inline table_def provider::get_table_def(const identifier&)
   return res;
 }
 
-inline brig::boost::box provider::get_extent(const table_def&)
+inline boost::box provider::get_extent(const table_def&)
 {
   using namespace std;
   using namespace brig::boost;

@@ -42,7 +42,7 @@ class rowset : public brig::rowset
   void add_files();
 
 public:
-  rowset(std::shared_ptr<layer> lr, const std::vector<bool>& cols, int zoom, const brig::boost::box& env, int rows);
+  rowset(std::shared_ptr<layer> lr, const std::vector<bool>& cols, int zoom, const boost::box& env, int rows);
   ~rowset() override;
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
@@ -72,7 +72,7 @@ inline void rowset::check(CURLMcode r)
   throw std::runtime_error(msg);
 }
 
-inline rowset::rowset(std::shared_ptr<layer> lr, const std::vector<bool>& cols, int zoom, const brig::boost::box& env, int rows)
+inline rowset::rowset(std::shared_ptr<layer> lr, const std::vector<bool>& cols, int zoom, const boost::box& env, int rows)
   : m_lr(lr), m_cols(cols), m_rows(rows), m_iter(zoom, env), m_hnd(0)
 {
   if (lib::singleton().empty()) throw std::runtime_error("cURL error");

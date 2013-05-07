@@ -26,9 +26,9 @@ class rowset : public brig::rowset {
   std::vector<int> m_cols;
   int m_rows;
 
-  int m_next_feature_layer;
-  bool m_has_layers_non_empty;
-  std::shared_ptr<void> next_feature();
+  int m_interleaved_reading_lr;
+  bool m_interleaved_reading_non_empty;
+  std::shared_ptr<void> interleaved_reading_next();
 
 public:
   rowset(datasource_allocator allocator, const table_def& tbl);
@@ -38,7 +38,7 @@ public:
 
 inline rowset::rowset(datasource_allocator allocator, const table_def& tbl)
   : m_ds(allocator.allocate(false)), m_lr(0)
-  , m_next_feature_layer(0), m_has_layers_non_empty(false)
+  , m_interleaved_reading_lr(0), m_interleaved_reading_non_empty(false)
 {
   using namespace std;
   using namespace brig::boost;
@@ -112,30 +112,30 @@ inline std::vector<std::string> rowset::columns()
   return cols;
 }
 
-std::shared_ptr<void> rowset::next_feature()
+std::shared_ptr<void> rowset::interleaved_reading_next()
 {
   using namespace std;
   using namespace gdal::detail;
 
   while (true)
   {
-    if (m_next_feature_layer >= lib::singleton().p_OGR_DS_GetLayerCount(m_ds)) return std::shared_ptr<void>();
+    if (m_interleaved_reading_lr >= lib::singleton().p_OGR_DS_GetLayerCount(m_ds)) return std::shared_ptr<void>();
 
-    OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayer(m_ds, m_next_feature_layer));
+    OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayer(m_ds, m_interleaved_reading_lr));
     if (!lr) throw runtime_error("OGR error");
 
     std::shared_ptr<void> feature;
     while( bool(feature = shared_ptr<void>(lib::singleton().p_OGR_L_GetNextFeature(lr), [](void* ptr) { lib::singleton().p_OGR_F_Destroy(OGRFeatureH(ptr)); })) )
     {
-      m_has_layers_non_empty = true;
+      m_interleaved_reading_non_empty = true;
       if (lr == m_lr) return feature;
     }
 
-    ++m_next_feature_layer;
-    if (m_next_feature_layer >= lib::singleton().p_OGR_DS_GetLayerCount(m_ds) && m_has_layers_non_empty)
+    ++m_interleaved_reading_lr;
+    if (m_interleaved_reading_lr >= lib::singleton().p_OGR_DS_GetLayerCount(m_ds) && m_interleaved_reading_non_empty)
     {
-      m_next_feature_layer = 0;
-      m_has_layers_non_empty = false;
+      m_interleaved_reading_lr = 0;
+      m_interleaved_reading_non_empty = false;
     }
   }
 }
@@ -147,7 +147,7 @@ inline bool rowset::fetch(std::vector<variant>& row)
 
   if (!m_lr || m_rows == 0) return false;
   if (m_rows > 0) --m_rows;
-  auto feature(next_feature());
+  auto feature(interleaved_reading_next());
   if (!bool(feature)) return false;
   row.resize(m_cols.size());
   for (size_t i(0); i < m_cols.size(); ++i)
