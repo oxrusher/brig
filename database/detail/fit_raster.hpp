@@ -21,7 +21,7 @@ inline pyramid_def fit_raster(dialect* dct, const pyramid_def& raster, const std
   res.id.schema = schema;
   res.id.name = dct->fit_identifier(raster.id.name);
   vector<tilemap_def> levels(raster.levels);
-  sort(begin(levels), end(levels), [](const tilemap_def& a, const tilemap_def& b){ return a.pixel_area() < b.pixel_area(); });
+  sort(begin(levels), end(levels), [](const tilemap_def& a, const tilemap_def& b){ return a.get_pixel_area() < b.get_pixel_area(); });
   const int width(levels.size() < 10? 1: 2);
   for (size_t i(0); i < levels.size(); ++i)
   {

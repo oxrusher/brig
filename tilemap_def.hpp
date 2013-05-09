@@ -17,7 +17,7 @@ struct tilemap_def {
   std::vector<column_def> query_conditions;
 
   tilemap_def() : resolution_x(0), resolution_y(0)  {}
-  double pixel_area() const  { return resolution_x * resolution_y; }
+  double get_pixel_area() const  { return resolution_x * resolution_y; }
 }; // tilemap_def
 
 } // brig

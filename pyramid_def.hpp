@@ -24,7 +24,7 @@ inline size_t pyramid_def::snap_to_level(double pixel_area) const
   using namespace std;
   return distance(begin(levels), min_element(begin(levels), end(levels), [=](const tilemap_def& a, const tilemap_def& b)
   {
-    return fabs(a.pixel_area() - pixel_area) < fabs(b.pixel_area() - pixel_area);
+    return fabs(a.get_pixel_area() - pixel_area) < fabs(b.get_pixel_area() - pixel_area);
   }));
 } // pyramid_def::
 

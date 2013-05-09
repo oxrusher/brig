@@ -5,6 +5,8 @@
 
 namespace brig {
 
+const char LibVersion[] = "1305";
+
 const int CharsLimit = 250;
 const size_t PageSize = 250; // DB2 PUERTO_ROADS is slowdown after 447
 const size_t PoolSize = 4;
@@ -18,7 +20,7 @@ const char LibCubridWin[] = "cascci.dll";
 const char LibCubridLin[] = "libcascci.so";
 const char LibCurlWin[] = "libcurl.dll";
 const char LibCurlLin[] = "libcurl.so";
-const char LibGdalWin[] = "gdal110.dll"; // "libgdal-1.dll"
+const char LibGdalWin[] = "gdal110.dll";
 const char LibGdalLin[] = "libgdal.so";
 const char LibMysqlWin[] = "libmysql.dll";
 const char LibMysqlLin[] = "libmysqlclient.so";
@@ -26,11 +28,11 @@ const char LibOdbcWin[] = "odbc32.dll";
 const char LibOdbcLin[] = "libodbc.so";
 const char LibPostgresWin[] = "libpq.dll";
 const char LibPostgresLin[] = "libpq.so";
-const char LibProjWin[] = "proj.dll"; // "libproj-0.dll"
+const char LibProjWin[] = "proj.dll";
 const char LibProjLin[] = "libproj.so.0";
-const char LibSpatialiteWin[] = "spatialite.dll"; // "libspatialite.dll"
+const char LibSpatialiteWin[] = "spatialite.dll";
 const char LibSpatialiteLin[] = "libspatialite.so";
-const char LibSqliteWin[] = "sqlite3.dll"; // "libsqlite3-0.dll"
+const char LibSqliteWin[] = "sqlite3.dll";
 const char LibSqliteLin[] = "libsqlite3.so.0";
 
 } // brig
