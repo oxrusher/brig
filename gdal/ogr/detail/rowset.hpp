@@ -155,7 +155,7 @@ inline bool rowset::fetch(std::vector<variant>& row)
     if (m_cols[i] < 0)
     {
       OGRGeometryH geom(lib::singleton().p_OGR_F_GetGeometryRef(feature.get()));
-      int size(lib::singleton().p_OGR_G_WkbSize(geom));
+      int size(geom? lib::singleton().p_OGR_G_WkbSize(geom): 0);
       if (size > 0)
       {
         row[i] = blob_t();
