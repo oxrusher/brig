@@ -34,7 +34,7 @@ public:
   boost::box get_extent(const table_def& tbl) override;
   std::shared_ptr<rowset> select(const table_def& tbl) override;
 
-  bool is_readonly() override  { return false; }
+  bool is_readonly() override;
   table_def fit_to_create(const table_def& tbl) override;
   void create(const table_def& tbl) override;
   void drop(const table_def& tbl) override;
@@ -158,6 +158,20 @@ inline boost::box provider::get_extent(const table_def& tbl)
 inline std::shared_ptr<rowset> provider::select(const table_def& tbl)
 {
   return std::make_shared<detail::rowset>(m_allocator, tbl);
+}
+
+inline bool provider::is_readonly()
+{
+  try
+  {
+    m_allocator.allocate(true); // OGR_Dr_CreateDataSource() or OGROpen(writable)
+    m_allocator.allocate(true); // OGROpen(writable)
+    return false;
+  }
+  catch (const std::exception&)
+  {
+    return true;
+  }
 }
 
 inline table_def provider::fit_to_create(const table_def& tbl)
