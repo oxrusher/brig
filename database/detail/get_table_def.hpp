@@ -80,17 +80,17 @@ inline table_def get_table_def(dialect* dct, command* cmd, const identifier& tbl
   if (index_type::Void != idx.type) res.indexes.push_back(move(idx));
 
   // srid, epsg, type qualifier
-  for (auto col(begin(res.columns)); col != end(res.columns); ++col)
-    if (column_type::Geometry == col->type)
+  for (auto& col: res.columns)
+    if (column_type::Geometry == col.type)
     {
-      const string sql(dct->sql_spatial_detail(res, col->name));
+      const string sql(dct->sql_spatial_detail(res, col.name));
       cmd->exec(sql);
       if (cmd->fetch(row))
       {
-        numeric_cast(row[0], col->srid);
-        if (row.size() > 1) numeric_cast(row[1], col->epsg);
-        else col->epsg = col->srid;
-        if (row.size() > 2) col->type_lcase.qualifier = transform<char>(string_cast<char>(row[2]), lower_case);
+        numeric_cast(row[0], col.srid);
+        if (row.size() > 1) numeric_cast(row[1], col.epsg);
+        else col.epsg = col.srid;
+        if (row.size() > 2) col.type_lcase.qualifier = transform<char>(string_cast<char>(row[2]), lower_case);
       }
     }
   return res;

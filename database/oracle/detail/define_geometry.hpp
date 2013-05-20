@@ -24,8 +24,8 @@ class define_geometry : public define {
   uint32_t starting_offset(uint32_t info_beg) const  { return m_hnd->get_int(m_hnd->get_number(m_geom->elem_info, info_beg)) - 1; }
   uint32_t etype(uint32_t info_beg) const  { return m_hnd->get_int(m_hnd->get_number(m_geom->elem_info, info_beg + 1)); }
   uint32_t interpretation(uint32_t info_beg) const  { return m_hnd->get_int(m_hnd->get_number(m_geom->elem_info, info_beg + 2)); }
-  template <typename OutputIterator> void set_point(OutputIterator& iter, uint32_t ord_beg) const;
-  template <typename OutputIterator> void set_line(OutputIterator& iter, uint32_t ord_beg, uint32_t ord_end, uint32_t dim) const;
+  template <typename OutputIterator> void set_point(OutputIterator& itr, uint32_t ord_beg) const;
+  template <typename OutputIterator> void set_line(OutputIterator& itr, uint32_t ord_beg, uint32_t ord_end, uint32_t dim) const;
 
 public:
   define_geometry(handles* hnd, size_t order);
@@ -46,20 +46,20 @@ inline define_geometry::~define_geometry()
 }
 
 template <typename OutputIterator>
-void define_geometry::set_point(OutputIterator& iter, uint32_t ord_beg) const
+void define_geometry::set_point(OutputIterator& itr, uint32_t ord_beg) const
 {
   using namespace brig::detail::ogc;
 
-  write<double>(iter, m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg)));
-  write<double>(iter, m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg + 1)));
+  write<double>(itr, m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg)));
+  write<double>(itr, m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg + 1)));
 }
 
 template <typename OutputIterator>
-void define_geometry::set_line(OutputIterator& iter, uint32_t ord_beg, uint32_t ord_end, uint32_t dim) const
+void define_geometry::set_line(OutputIterator& itr, uint32_t ord_beg, uint32_t ord_end, uint32_t dim) const
 {
-  brig::detail::ogc::write<uint32_t>(iter, (ord_end - ord_beg) / dim); // numPoints
+  brig::detail::ogc::write<uint32_t>(itr, (ord_end - ord_beg) / dim); // numPoints
   for (uint32_t ord(ord_beg); ord < ord_end; ord += dim)
-    set_point(iter, ord);
+    set_point(itr, ord);
 }
 
 inline void define_geometry::operator()(variant& var)
@@ -96,14 +96,14 @@ inline void define_geometry::operator()(variant& var)
   const size_t header_size(sizeof(uint8_t) + 2 * sizeof(uint32_t));
   if (collection) blob.resize(header_size);
   blob.reserve((collection? 3: 1) * header_size + ((ords / dim) * 2 * sizeof(double)) ); // estimate size
-  auto iter = brig::detail::back_inserter(blob);
+  auto itr = brig::detail::back_inserter(blob);
 
   if (0 == infos)
   {
-    write_byte_order(iter);
-    write<uint32_t>(iter, Point);
-    write<double>(iter, m_hnd->get_real(&m_geom->point.x, m_ind->point.x));
-    write<double>(iter, m_hnd->get_real(&m_geom->point.y, m_ind->point.y));
+    write_byte_order(itr);
+    write<uint32_t>(itr, Point);
+    write<double>(itr, m_hnd->get_real(&m_geom->point.x, m_ind->point.x));
+    write<double>(itr, m_hnd->get_real(&m_geom->point.y, m_ind->point.y));
 
     ++num_geoms;
   }
@@ -123,9 +123,9 @@ inline void define_geometry::operator()(variant& var)
         const uint32_t ord_end (ord_beg + num_points * dim);
         for (uint32_t ord(ord_beg); ord < ord_end; ord += dim)
         {
-          write_byte_order(iter);
-          write<uint32_t>(iter, Point);
-          set_point(iter, ord);
+          write_byte_order(itr);
+          write<uint32_t>(itr, Point);
+          set_point(itr, ord);
         }
 
         num_geoms += num_points;
@@ -136,9 +136,9 @@ inline void define_geometry::operator()(variant& var)
     case 2: // line string
       {
         if (1 != interpretation(i)) throw runtime_error("OCI geometry error"); // not straight line segments
-        write_byte_order(iter);
-        write<uint32_t>(iter, LineString);
-        set_line(iter, starting_offset(i), i + 3 < infos? starting_offset(i + 3): ords, dim); // triplet
+        write_byte_order(itr);
+        write<uint32_t>(itr, LineString);
+        set_line(itr, starting_offset(i), i + 3 < infos? starting_offset(i + 3): ords, dim); // triplet
 
         ++num_geoms;
         i += 3; // triplet
@@ -154,9 +154,9 @@ inline void define_geometry::operator()(variant& var)
           ++num_rings;
         }
 
-        write_byte_order(iter);
-        write<uint32_t>(iter, Polygon);
-        write<uint32_t>(iter, num_rings);
+        write_byte_order(itr);
+        write<uint32_t>(itr, Polygon);
+        write<uint32_t>(itr, num_rings);
 
         const uint32_t info_end(i + num_rings * 3); // triplet
         for (; i < info_end; i += 3) // triplet
@@ -167,7 +167,7 @@ inline void define_geometry::operator()(variant& var)
           default: throw runtime_error("OCI geometry error");
 
           case 1: // simple polygon
-            set_line(iter, ord_beg, i + 3 < infos? starting_offset(i + 3): ords, dim); // triplet
+            set_line(itr, ord_beg, i + 3 < infos? starting_offset(i + 3): ords, dim); // triplet
             break;
 
           case 3: // optimized rectangle
@@ -177,21 +177,21 @@ inline void define_geometry::operator()(variant& var)
               const double right (m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg + dim)));
               const double upper (m_hnd->get_real(m_hnd->get_number(m_geom->ordinates, ord_beg + dim + 1)));
 
-              write<uint32_t>(iter, 5); // numPoints
-              write<double>(iter, left); write<double>(iter, lower);
+              write<uint32_t>(itr, 5); // numPoints
+              write<double>(itr, left); write<double>(itr, lower);
               if (i == i) // exterior ring
               {
-                write<double>(iter, right); write<double>(iter, lower);
-                write<double>(iter, right); write<double>(iter, upper);
-                write<double>(iter, left); write<double>(iter, upper);
+                write<double>(itr, right); write<double>(itr, lower);
+                write<double>(itr, right); write<double>(itr, upper);
+                write<double>(itr, left); write<double>(itr, upper);
               }
               else // interior ring
               {
-                write<double>(iter, left); write<double>(iter, upper);
-                write<double>(iter, right); write<double>(iter, upper);
-                write<double>(iter, right); write<double>(iter, lower);
+                write<double>(itr, left); write<double>(itr, upper);
+                write<double>(itr, right); write<double>(itr, upper);
+                write<double>(itr, right); write<double>(itr, lower);
               }
-              write<double>(iter, left); write<double>(iter, lower);
+              write<double>(itr, left); write<double>(itr, lower);
             }
             break;
           }

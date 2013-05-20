@@ -14,8 +14,8 @@ inline std::vector<column_def> get_columns(const std::vector<column_def>& cols, 
 {
   using namespace std;
   vector<column_def> res;
-  for (auto name(begin(names)); name != end(names); ++name)
-    res.push_back( *find_column(begin(cols), end(cols), *name) );
+  for (const auto& name: names)
+    res.push_back( *find_column(begin(cols), end(cols), name) );
   return res;
 }
 

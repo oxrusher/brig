@@ -23,10 +23,10 @@ class binding_geometry : public binding
   void free();
   void add_real(double val, OCIColl* coll) const;
   void add_info(uint32_t starting_offset, uint32_t etype, uint32_t interpretation) const;
-  template <typename InputIterator> void add_point(uint8_t byte_order, InputIterator& iter, uint32_t& offset) const;
-  template <typename InputIterator> void add_line(uint8_t byte_order, InputIterator& iter, uint32_t& offset, uint32_t etype) const;
-  template <typename InputIterator> void add_polygon(uint8_t byte_order, InputIterator& iter, uint32_t& offset) const;
-  template <typename InputIterator> void add_geom(InputIterator& iter, uint32_t& offset) const;
+  template <typename InputIterator> void add_point(uint8_t byte_order, InputIterator& itr, uint32_t& offset) const;
+  template <typename InputIterator> void add_line(uint8_t byte_order, InputIterator& itr, uint32_t& offset, uint32_t etype) const;
+  template <typename InputIterator> void add_polygon(uint8_t byte_order, InputIterator& itr, uint32_t& offset) const;
+  template <typename InputIterator> void add_geom(InputIterator& itr, uint32_t& offset) const;
 
 public:
   binding_geometry(handles* hnd, size_t order, const blob_t& blob, int srid);
@@ -59,88 +59,88 @@ inline void binding_geometry::add_info(uint32_t starting_offset, uint32_t etype,
 }
 
 template <typename InputIterator>
-void binding_geometry::add_point(uint8_t byte_order, InputIterator& iter, uint32_t& offset) const
+void binding_geometry::add_point(uint8_t byte_order, InputIterator& itr, uint32_t& offset) const
 {
   using namespace brig::detail::ogc;
 
-  add_real(read<double>(byte_order, iter), m_geom->ordinates);
-  add_real(read<double>(byte_order, iter), m_geom->ordinates);
+  add_real(read<double>(byte_order, itr), m_geom->ordinates);
+  add_real(read<double>(byte_order, itr), m_geom->ordinates);
   m_ind->ordinates = OCI_IND_NOTNULL;
   offset += 2;
 }
 
 template <typename InputIterator>
-void binding_geometry::add_line(uint8_t byte_order, InputIterator& iter, uint32_t& offset, uint32_t etype) const
+void binding_geometry::add_line(uint8_t byte_order, InputIterator& itr, uint32_t& offset, uint32_t etype) const
 {
   add_info(offset, etype, 1);
-  for (uint32_t i(0), count(brig::detail::ogc::read<uint32_t>(byte_order, iter)); i < count; ++i)
-    add_point(byte_order, iter, offset);
+  for (uint32_t i(0), count(brig::detail::ogc::read<uint32_t>(byte_order, itr)); i < count; ++i)
+    add_point(byte_order, itr, offset);
 }
 
 template <typename InputIterator>
-void binding_geometry::add_polygon(uint8_t byte_order, InputIterator& iter, uint32_t& offset) const
+void binding_geometry::add_polygon(uint8_t byte_order, InputIterator& itr, uint32_t& offset) const
 {
-  for (uint32_t i(0), count(brig::detail::ogc::read<uint32_t>(byte_order, iter)); i < count; ++i)
-    add_line(byte_order, iter, offset, i == 0? 1003: 2003);
+  for (uint32_t i(0), count(brig::detail::ogc::read<uint32_t>(byte_order, itr)); i < count; ++i)
+    add_line(byte_order, itr, offset, i == 0? 1003: 2003);
 }
 
 template <typename InputIterator>
-void binding_geometry::add_geom(InputIterator& iter, uint32_t& offset) const
+void binding_geometry::add_geom(InputIterator& itr, uint32_t& offset) const
 {
   using namespace std;
   using namespace brig::detail::ogc;
 
-  uint8_t byte_order(read_byte_order(iter));
+  uint8_t byte_order(read_byte_order(itr));
   uint32_t i(0), count(0);
-  switch (read<uint32_t>(byte_order, iter)) // type
+  switch (read<uint32_t>(byte_order, itr)) // type
   {
   default: throw runtime_error("WKB error");
 
   case Point:
     add_info(offset, 1, 1);
-    add_point(byte_order, iter, offset);
+    add_point(byte_order, itr, offset);
     break;
 
   case LineString:
-    add_line(byte_order, iter, offset, 2);
+    add_line(byte_order, itr, offset, 2);
     break;
 
   case Polygon:
-    add_polygon(byte_order, iter, offset);
+    add_polygon(byte_order, itr, offset);
     break;
 
   case MultiPoint:
-    count = read<uint32_t>(byte_order, iter);
+    count = read<uint32_t>(byte_order, itr);
     add_info(offset, 1, count);
     for (i = 0; i < count; ++i)
     {
-      byte_order = read_byte_order(iter);
-      if (Point != read<uint32_t>(byte_order, iter)) throw runtime_error("WKB error");
-      add_point(byte_order, iter, offset);
+      byte_order = read_byte_order(itr);
+      if (Point != read<uint32_t>(byte_order, itr)) throw runtime_error("WKB error");
+      add_point(byte_order, itr, offset);
     }
     break;
 
   case MultiLineString:
-    for (i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
+    for (i = 0, count = read<uint32_t>(byte_order, itr); i < count; ++i)
     {
-      byte_order = read_byte_order(iter);
-      if (LineString != read<uint32_t>(byte_order, iter)) throw runtime_error("WKB error");
-      add_line(byte_order, iter, offset, 2);
+      byte_order = read_byte_order(itr);
+      if (LineString != read<uint32_t>(byte_order, itr)) throw runtime_error("WKB error");
+      add_line(byte_order, itr, offset, 2);
     }
     break;
 
   case MultiPolygon:
-    for (i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
+    for (i = 0, count = read<uint32_t>(byte_order, itr); i < count; ++i)
     {
-      byte_order = read_byte_order(iter);
-      if (Polygon != read<uint32_t>(byte_order, iter)) throw runtime_error("WKB error");
-      add_polygon(byte_order, iter, offset);
+      byte_order = read_byte_order(itr);
+      if (Polygon != read<uint32_t>(byte_order, itr)) throw runtime_error("WKB error");
+      add_polygon(byte_order, itr, offset);
     }
     break;
 
   case GeometryCollection:
-    for (i = 0, count = read<uint32_t>(byte_order, iter); i < count; ++i)
-      add_geom(iter, offset);
+    for (i = 0, count = read<uint32_t>(byte_order, itr); i < count; ++i)
+      add_geom(itr, offset);
     break;
   }
 }

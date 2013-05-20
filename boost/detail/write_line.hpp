@@ -11,20 +11,20 @@
 namespace brig { namespace boost { namespace detail {
 
 template <typename OutputIterator, typename Line>
-void write_raw(OutputIterator& iter, const Line& line)
+void write_raw(OutputIterator& itr, const Line& line)
 {
-  brig::detail::ogc::write<uint32_t>(iter, static_cast<uint32_t>(line.size()));
+  brig::detail::ogc::write<uint32_t>(itr, static_cast<uint32_t>(line.size()));
   for (size_t i(0); i < line.size(); ++i)
-    write_raw<>(iter, line[i]);
+    write_raw<>(itr, line[i]);
 }
 
 template <typename OutputIterator>
-void write(OutputIterator& iter, const linestring& line)
+void write(OutputIterator& itr, const linestring& line)
 {
   using namespace brig::detail::ogc;
-  write_byte_order(iter);
-  brig::detail::ogc::write<uint32_t>(iter, uint32_t(LineString));
-  write_raw(iter, line);
+  write_byte_order(itr);
+  brig::detail::ogc::write<uint32_t>(itr, uint32_t(LineString));
+  write_raw(itr, line);
 }
 
 } } } // brig::boost::detail

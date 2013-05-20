@@ -14,7 +14,6 @@
 #include <brig/string_cast.hpp>
 #include <brig/table_def.hpp>
 #include <cstring>
-#include <iterator>
 #include <stdexcept>
 #include <vector>
 
@@ -49,36 +48,36 @@ inline rowset::rowset(datasource_allocator allocator, const table_def& tbl)
   OGRFeatureDefnH feature_def(lib::singleton().p_OGR_L_GetLayerDefn(lr));
   if (!feature_def) throw runtime_error("OGR error");
   vector<column_def> cols = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
-  for (auto col(begin(cols)); col != end(cols); ++col)
+  for (const auto& col: cols)
   {
-    if (column_type::Geometry == col->type)
+    if (column_type::Geometry == col.type)
       m_cols.push_back(-1);
     else
     {
-      m_cols.push_back(lib::singleton().p_OGR_FD_GetFieldIndex(feature_def, col->name.c_str()));
+      m_cols.push_back(lib::singleton().p_OGR_FD_GetFieldIndex(feature_def, col.name.c_str()));
       if (m_cols.back() < 0) throw runtime_error("OGR error");
     }
   }
   m_rows = tbl.query_rows;
 
   string attribute_filter;
-  for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
+  for (const auto& col: tbl.columns)
   {
-    if (column_type::Geometry == col->type)
+    if (column_type::Geometry == col.type)
     {
-      if (typeid(null_t) == col->query_value.type())
+      if (typeid(null_t) == col.query_value.type())
         lib::singleton().p_OGR_L_SetSpatialFilter(lr, 0);
       else
       {
-        const box env(envelope(geom_from_wkb(::boost::get<blob_t>(col->query_value))));
+        const box env(envelope(geom_from_wkb(::boost::get<blob_t>(col.query_value))));
         const double xmin(env.min_corner().get<0>()), ymin(env.min_corner().get<1>()), xmax(env.max_corner().get<0>()), ymax(env.max_corner().get<1>());
         lib::singleton().p_OGR_L_SetSpatialFilterRect(lr, xmin, ymin, xmax, ymax);
       }
     }
-    else if (typeid(null_t) != col->query_value.type())
+    else if (typeid(null_t) != col.query_value.type())
     {
       if (!attribute_filter.empty()) attribute_filter += " AND ";
-      attribute_filter += col->name + " = " + string_cast<char>(col->query_value);
+      attribute_filter += col.name + " = " + string_cast<char>(col.query_value);
     }
   }
   lib::check(lib::singleton().p_OGR_L_SetAttributeFilter(lr, attribute_filter.empty()? 0: attribute_filter.c_str()));

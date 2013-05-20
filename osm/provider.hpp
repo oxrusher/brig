@@ -16,7 +16,6 @@
 #include <brig/provider.hpp>
 #include <brig/variant.hpp>
 #include <cstdlib>
-#include <iterator>
 #include <locale>
 #include <memory>
 #include <sstream>
@@ -176,14 +175,14 @@ inline std::shared_ptr<rowset> provider::select(const table_def& tbl)
   vector<column_def> col_defs = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
   vector<bool> cols;
   bool lite(true);
-  for (auto iter(begin(col_defs)); iter != end(col_defs); ++iter)
+  for (const auto& col_def: col_defs)
   {
-    if (iter->name.compare(ColumnNamePng) == 0)
+    if (col_def.name.compare(ColumnNamePng) == 0)
     {
       cols.push_back(true);
       lite = false;
     }
-    else if (iter->name.compare(ColumnNameWkb) == 0)
+    else if (col_def.name.compare(ColumnNameWkb) == 0)
       cols.push_back(false);
     else
       throw runtime_error("OSM error");

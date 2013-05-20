@@ -14,19 +14,19 @@
 namespace brig { namespace boost { namespace detail {
 
 template <typename InputIterator>
-void read_geometry(InputIterator& iter, geometry& geom)
+void read_geometry(InputIterator& itr, geometry& geom)
 {
   using namespace ::boost;
   using namespace brig::detail::ogc;
-  uint8_t byte_order(read_byte_order(iter));
-  switch (read<uint32_t>(byte_order, iter))
+  uint8_t byte_order(read_byte_order(itr));
+  switch (read<uint32_t>(byte_order, itr))
   {
   default: throw std::runtime_error("WKB error");
   case Point:
     {
     geom = point();
     point& pt = get<point>(geom);
-    read_point(byte_order, iter, pt);
+    read_point(byte_order, itr, pt);
     }
     break;
 
@@ -34,7 +34,7 @@ void read_geometry(InputIterator& iter, geometry& geom)
     {
     geom = linestring();
     linestring& line = get<linestring>(geom);
-    read_line(byte_order, iter, line);
+    read_line(byte_order, itr, line);
     }
     break;
 
@@ -42,7 +42,7 @@ void read_geometry(InputIterator& iter, geometry& geom)
     {
     geom = polygon();
     polygon& poly = get<polygon>(geom);
-    read_polygon(byte_order, iter, poly);
+    read_polygon(byte_order, itr, poly);
     }
     break;
 
@@ -50,13 +50,13 @@ void read_geometry(InputIterator& iter, geometry& geom)
     {
     geom = multi_point();
     multi_point& mpt = get<multi_point>(geom);
-    const uint32_t count(read<uint32_t>(byte_order, iter));
+    const uint32_t count(read<uint32_t>(byte_order, itr));
     mpt.resize(count);
     for (uint32_t i = 0; i < count; ++i)
     {
-      byte_order = read_byte_order(iter);
-      if (Point != read<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
-      read_point(byte_order, iter, mpt[i]);
+      byte_order = read_byte_order(itr);
+      if (Point != read<uint32_t>(byte_order, itr)) throw std::runtime_error("WKB error");
+      read_point(byte_order, itr, mpt[i]);
     }
     }
     break;
@@ -65,13 +65,13 @@ void read_geometry(InputIterator& iter, geometry& geom)
     {
     geom = multi_linestring();
     multi_linestring& mline = get<multi_linestring>(geom);
-    const uint32_t count(read<uint32_t>(byte_order, iter));
+    const uint32_t count(read<uint32_t>(byte_order, itr));
     mline.resize(count);
     for (uint32_t i = 0; i < count; ++i)
     {
-      byte_order = read_byte_order(iter);
-      if (LineString != read<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
-      read_line(byte_order, iter, mline[i]);
+      byte_order = read_byte_order(itr);
+      if (LineString != read<uint32_t>(byte_order, itr)) throw std::runtime_error("WKB error");
+      read_line(byte_order, itr, mline[i]);
     }
     }
     break;
@@ -80,13 +80,13 @@ void read_geometry(InputIterator& iter, geometry& geom)
     {
     geom = multi_polygon();
     multi_polygon& mpoly = get<multi_polygon>(geom);
-    const uint32_t count(read<uint32_t>(byte_order, iter));
+    const uint32_t count(read<uint32_t>(byte_order, itr));
     mpoly.resize(count);
     for (uint32_t i = 0; i < count; ++i)
     {
-      byte_order = read_byte_order(iter);
-      if (Polygon != read<uint32_t>(byte_order, iter)) throw std::runtime_error("WKB error");
-      read_polygon(byte_order, iter, mpoly[i]);
+      byte_order = read_byte_order(itr);
+      if (Polygon != read<uint32_t>(byte_order, itr)) throw std::runtime_error("WKB error");
+      read_polygon(byte_order, itr, mpoly[i]);
     }
     }
     break;
@@ -95,10 +95,10 @@ void read_geometry(InputIterator& iter, geometry& geom)
     {
     geom = geometry_collection();
     geometry_collection& coll = get<geometry_collection>(geom);
-    const uint32_t count(read<uint32_t>(byte_order, iter));
+    const uint32_t count(read<uint32_t>(byte_order, itr));
     coll.resize(count);
     for (uint32_t i = 0; i < count; ++i)
-      read_geometry(iter, coll[i]);
+      read_geometry(itr, coll[i]);
     }
     break;
   }

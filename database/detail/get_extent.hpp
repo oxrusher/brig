@@ -9,7 +9,6 @@
 #include <brig/global.hpp>
 #include <brig/numeric_cast.hpp>
 #include <brig/table_def.hpp>
-#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -23,8 +22,8 @@ inline boost::box get_extent(dialect* dct, command* cmd, const table_def& tbl)
 
   vector<string> query_columns(tbl.query_columns);
   if (query_columns.empty())
-    for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
-      if (column_type::Geometry == col->type) query_columns.push_back(col->name);
+    for (const auto& col: tbl.columns)
+      if (column_type::Geometry == col.type) query_columns.push_back(col.name);
   if ( query_columns.size() != 1
     || column_type::Geometry != tbl[ query_columns.front() ]->type
      ) throw runtime_error("extent error");

@@ -12,7 +12,6 @@
 #include <brig/string_cast.hpp>
 #include <brig/table_def.hpp>
 #include <ios>
-#include <iterator>
 #include <locale>
 #include <sstream>
 #include <stdexcept>
@@ -41,28 +40,27 @@ inline void sql_register(dialect* dct, command* cmd, const pyramid_def& raster, 
     tbl = dct->fit_table(simple_rasters_table(!schema.empty()), schema);
     vector<string> strs;
     sql_create(dct, tbl, strs);
-    for (auto str(begin(strs)); str != end(strs); ++str)
-      cmd->exec(*str);
+    for (const auto& str: strs) cmd->exec(str);
   }
   auto cols(simple_rasters_columns(tbl));
 
-  for (auto lvl(begin(raster.levels)); lvl != end(raster.levels); ++lvl)
+  for (const auto& lvl: raster.levels)
   {
     ostringstream stream; stream.imbue(locale::classic()); stream << scientific; stream.precision(17);
     stream << "INSERT INTO " << dct->sql_identifier(tbl.id) << "(";
     bool first(true);
-    for (auto col(begin(cols)); col != end(cols); ++col)
+    for (const auto& col: cols)
     {
-      if (col->empty()) continue;
+      if (col.empty()) continue;
       if (first) first = false;
       else stream << ", ";
-      stream << dct->sql_identifier(*col);
+      stream << dct->sql_identifier(col);
     }
     stream << ") VALUES (";
-    if (!lvl->geometry.schema.empty()) stream << "'" << lvl->geometry.schema << "', ";
-    stream << "'" << lvl->geometry.name << "', '" << lvl->raster.name << "', ";
+    if (!lvl.geometry.schema.empty()) stream << "'" << lvl.geometry.schema << "', ";
+    stream << "'" << lvl.geometry.name << "', '" << lvl.raster.name << "', ";
     if (!raster.id.schema.empty()) stream << "'" << raster.id.schema << "', ";
-    stream << "'" << raster.id.name << "', '" << raster.id.qualifier << "', '" << lvl->geometry.qualifier << "', " << lvl->resolution_x << ", " << lvl->resolution_y << ")";
+    stream << "'" << raster.id.name << "', '" << raster.id.qualifier << "', '" << lvl.geometry.qualifier << "', " << lvl.resolution_x << ", " << lvl.resolution_y << ")";
     sql.push_back(stream.str());
   }
 }

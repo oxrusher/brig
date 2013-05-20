@@ -10,11 +10,11 @@
 namespace brig { namespace boost { namespace detail {
 
 template <typename InputIterator>
-void read_point(uint8_t byte_order, InputIterator& iter, point& pt)
+void read_point(uint8_t byte_order, InputIterator& itr, point& pt)
 {
   using namespace brig::detail::ogc;
-  pt.set<0>( read<double>(byte_order, iter) );
-  pt.set<1>( read<double>(byte_order, iter) );
+  pt.set<0>( read<double>(byte_order, itr) );
+  pt.set<1>( read<double>(byte_order, itr) );
 }
 
 } } } // brig::boost::detail

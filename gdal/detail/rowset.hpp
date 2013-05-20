@@ -18,7 +18,6 @@
 #include <brig/string_cast.hpp>
 #include <brig/table_def.hpp>
 #include <cstdint>
-#include <iterator>
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -43,11 +42,11 @@ inline rowset::rowset(dataset_allocator allocator, const table_def& tbl) : m_ds(
   using namespace brig::boost;
 
   vector<column_def> col_defs = tbl.query_columns.empty()? tbl.columns: brig::detail::get_columns(tbl.columns, tbl.query_columns);
-  for (auto iter(begin(col_defs)); iter != end(col_defs); ++iter)
+  for (const auto& col_def: col_defs)
   {
-    if (iter->name.compare(ColumnNamePng) == 0)
+    if (col_def.name.compare(ColumnNamePng) == 0)
       m_cols.push_back(true);
-    else if (iter->name.compare(ColumnNameWkb) == 0)
+    else if (col_def.name.compare(ColumnNameWkb) == 0)
       m_cols.push_back(false);
     else
       throw runtime_error("GDAL error");

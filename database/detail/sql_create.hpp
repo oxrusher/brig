@@ -23,13 +23,13 @@ inline void sql_create(dialect* dct, const table_def& tbl, std::vector<std::stri
     str += "CREATE TABLE " + dct->sql_identifier(tbl.id.name) + " (";
 
     bool first(true);
-    for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
+    for (const auto& col: tbl.columns)
     {
-      const string col_def(dct->sql_column_def(*col));
-      if (col_def.empty()) continue;
+      const string sql_col(dct->sql_column_def(col));
+      if (sql_col.empty()) continue;
       if (first) first = false;
       else str += ", ";
-      str += col_def;
+      str += sql_col;
     }
 
     auto idx(find_if(begin(tbl.indexes), end(tbl.indexes), [&](const index_def& idx_){ return index_type::Primary == idx_.type; }));
@@ -48,12 +48,12 @@ inline void sql_create(dialect* dct, const table_def& tbl, std::vector<std::stri
     sql.push_back(str);
   }
 
-  for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
-    if (column_type::Geometry == col->type)
-      dct->sql_register_spatial_column(tbl, col->name, sql);
+  for (const auto& col: tbl.columns)
+    if (column_type::Geometry == col.type)
+      dct->sql_register_spatial_column(tbl, col.name, sql);
 
-  for (auto idx(begin(tbl.indexes)); idx != end(tbl.indexes); ++idx)
-    switch (idx->type)
+  for (const auto& idx: tbl.indexes)
+    switch (idx.type)
     {
     default: throw runtime_error("index error");
     case index_type::Primary: break;
@@ -62,18 +62,18 @@ inline void sql_create(dialect* dct, const table_def& tbl, std::vector<std::stri
       {
       string str;
       str += "CREATE ";
-      if (index_type::Unique == idx->type) str += "UNIQUE ";
-      str += "INDEX " + dct->sql_identifier(idx->id.name) + " ON " + dct->sql_identifier(tbl.id.name) + " (";
-      for (auto col(begin(idx->columns)); col != end(idx->columns); ++col)
+      if (index_type::Unique == idx.type) str += "UNIQUE ";
+      str += "INDEX " + dct->sql_identifier(idx.id.name) + " ON " + dct->sql_identifier(tbl.id.name) + " (";
+      for (auto col(begin(idx.columns)); col != end(idx.columns); ++col)
       {
-        if (col != begin(idx->columns)) str += ", ";
+        if (col != begin(idx.columns)) str += ", ";
         str += dct->sql_identifier(*col);
       }
       str += ")";
       sql.push_back(str);
       }
       break;
-    case index_type::Spatial: sql.push_back(dct->sql_create_spatial_index(tbl, idx->columns.front())); break;
+    case index_type::Spatial: sql.push_back(dct->sql_create_spatial_index(tbl, idx.columns.front())); break;
     }
 }
 

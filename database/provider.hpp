@@ -22,7 +22,6 @@
 #include <brig/database/detail/sql_unregister.hpp>
 #include <brig/detail/deleter.hpp>
 #include <brig/provider.hpp>
-#include <iterator>
 #include <memory>
 #include <string>
 #include <vector>
@@ -116,9 +115,9 @@ table_def provider<Threading>::fit_to_create(const table_def& tbl)
   unique_ptr<command, deleter_t> cmd(m_pool->allocate(), deleter_t(m_pool));
   unique_ptr<dialect> dct(dialect_factory(cmd->system()));
   table_def res(dct->fit_table(tbl, get_schema(dct.get(), cmd.get())));
-  for (auto col(begin(res.columns)); col != end(res.columns); ++col)
-    if (col->epsg >= 0)
-      col->srid = get_srid(dct.get(), cmd.get(), col->epsg);
+  for (auto& col: res.columns)
+    if (col.epsg >= 0)
+      col.srid = get_srid(dct.get(), cmd.get(), col.epsg);
   return res;
 }
 
@@ -141,8 +140,7 @@ void provider<Threading>::create(const table_def& tbl)
   unique_ptr<dialect> dct(dialect_factory(cmd->system()));
   vector<string> sql;
   sql_create(dct.get(), tbl, sql);
-  for (auto str(begin(sql)); str != end(sql); ++str)
-    cmd->exec(*str);
+  for (const auto& str: sql) cmd->exec(str);
 }
 
 template <bool Threading>
@@ -154,8 +152,7 @@ void provider<Threading>::drop(const table_def& tbl)
   unique_ptr<dialect> dct(dialect_factory(cmd->system()));
   vector<string> sql;
   sql_drop(dct.get(), tbl, sql);
-  for (auto str(begin(sql)); str != end(sql); ++str)
-    cmd->exec(*str);
+  for (const auto& str: sql) cmd->exec(str);
 }
 
 template <bool Threading>
@@ -197,8 +194,7 @@ void provider<Threading>::reg(const pyramid_def& raster)
   unique_ptr<dialect> dct(dialect_factory(cmd->system()));
   vector<string> sql;
   sql_register(dct.get(), cmd.get(), raster, sql);
-  for (auto str(begin(sql)); str != end(sql); ++str)
-    cmd->exec(*str);
+  for (const auto& str: sql) cmd->exec(str);
 }
 
 template <bool Threading>
@@ -210,8 +206,7 @@ void provider<Threading>::unreg(const pyramid_def& raster)
   unique_ptr<dialect> dct(dialect_factory(cmd->system()));
   vector<string> sql;
   sql_unregister(dct.get(), cmd.get(), raster, sql);
-  for (auto str(begin(sql)); str != end(sql); ++str)
-    cmd->exec(*str);
+  for (const auto& str: sql) cmd->exec(str);
 }
 
 template <bool Threading>

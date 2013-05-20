@@ -176,27 +176,26 @@ inline bool provider::is_readonly()
 
 inline table_def provider::fit_to_create(const table_def& tbl)
 {
-  using namespace std;
   using namespace gdal::detail;
 
   table_def res;
   res.id.name = m_fitted_id.empty()? tbl.id.name: m_fitted_id;
-  for (auto col_iter(begin(tbl.columns)); col_iter != end(tbl.columns); ++col_iter)
+  for (const auto& col: tbl.columns)
   {
-    column_def col;
-    col.type = col_iter->type;
-    switch (col.type)
+    column_def fitted_col;
+    fitted_col.type = col.type;
+    switch (fitted_col.type)
     {
     case column_type::Geometry:
-      col.name = ColumnNameWkb;
-      col.epsg = col_iter->epsg;
-      col.proj = col_iter->proj;
+      fitted_col.name = ColumnNameWkb;
+      fitted_col.epsg = col.epsg;
+      fitted_col.proj = col.proj;
       break;
     default:
-      col.name = col_iter->name;
+      fitted_col.name = col.name;
       break;
     }
-    res.columns.push_back(col);
+    res.columns.push_back(fitted_col);
   }
   return res;
 }
@@ -228,11 +227,11 @@ inline void provider::create(const table_def& tbl)
   OGRLayerH lr(lib::singleton().p_OGR_DS_CreateLayer(ds, tbl.id.name.c_str(), srs.get(), wkbUnknown, 0));
   if (!lr) throw runtime_error("OGR error");
 
-  for (auto col(begin(tbl.columns)); col != end(tbl.columns); ++col)
+  for (const auto& col: tbl.columns)
   {
-    if (column_type::Geometry == col->type) continue;
+    if (column_type::Geometry == col.type) continue;
     OGRFieldType type(OFTString);
-    switch (col->type)
+    switch (col.type)
     {
     case column_type::Void:
     case column_type::Geometry: throw runtime_error("OGR error");
@@ -242,7 +241,7 @@ inline void provider::create(const table_def& tbl)
     case column_type::String: type = OFTString; break;
     };
     auto del = [](void* ptr) { lib::singleton().p_OGR_Fld_Destroy(OGRFieldDefnH(ptr)); };
-    unique_ptr<void, decltype(del)> fld(lib::singleton().p_OGR_Fld_Create(col->name.c_str(), type), del);
+    unique_ptr<void, decltype(del)> fld(lib::singleton().p_OGR_Fld_Create(col.name.c_str(), type), del);
     lib::check(lib::singleton().p_OGR_L_CreateField(lr, fld.get(), true));
   }
   lib::check(lib::singleton().p_OGR_L_SyncToDisk(lr));

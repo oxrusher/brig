@@ -10,21 +10,21 @@
 namespace brig { namespace boost { namespace detail {
 
 template <typename OutputIterator>
-void write_raw(OutputIterator& iter, const point& pt)
+void write_raw(OutputIterator& itr, const point& pt)
 {
   using namespace brig::detail;
-  ogc::write<double>(iter, pt.get<0>());
-  ogc::write<double>(iter, pt.get<1>());
+  ogc::write<double>(itr, pt.get<0>());
+  ogc::write<double>(itr, pt.get<1>());
 }
 
 template <typename OutputIterator>
-void write(OutputIterator& iter, const point& pt)
+void write(OutputIterator& itr, const point& pt)
 {
   using namespace brig::detail;
   using namespace brig::detail::ogc;
-  write_byte_order(iter);
-  ogc::write<uint32_t>(iter, uint32_t(Point));
-  write_raw<>(iter, pt);
+  write_byte_order(itr);
+  ogc::write<uint32_t>(itr, uint32_t(Point));
+  write_raw<>(itr, pt);
 }
 
 } } } // brig::boost::detail

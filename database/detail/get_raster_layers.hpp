@@ -62,8 +62,8 @@ inline std::vector<pyramid_def> get_raster_layers(dialect* dct, command* cmd)
     {
       cmd->exec(dct->sql_rasters());
       native = get_rasters(cmd);
-      for (auto raster(begin(native)); raster != end(native); ++raster)
-        dct->init_raster(*raster);
+      for (auto& raster: native)
+        dct->init_raster(raster);
     }
   }
 

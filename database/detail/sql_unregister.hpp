@@ -10,7 +10,6 @@
 #include <brig/pyramid_def.hpp>
 #include <brig/string_cast.hpp>
 #include <brig/table_def.hpp>
-#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -31,12 +30,12 @@ inline void sql_unregister(dialect* dct, command* cmd, const pyramid_def& raster
   tbl = get_table_def(dct, cmd, tbl.id);
   auto cols(simple_rasters_columns(tbl));
 
-  for (auto lvl(begin(raster.levels)); lvl != end(raster.levels); ++lvl)
+  for (const auto& lvl: raster.levels)
   {
     string str;
     str += "DELETE FROM " + dct->sql_identifier(tbl.id) + " WHERE ";
-    if (!lvl->geometry.schema.empty()) str += dct->sql_identifier(cols[0]) + " = '" + lvl->geometry.schema + "' AND ";
-    str += dct->sql_identifier(cols[1]) + " = '" + lvl->geometry.name + "' AND " + dct->sql_identifier(cols[2]) + " = '" + lvl->raster.name + "'";
+    if (!lvl.geometry.schema.empty()) str += dct->sql_identifier(cols[0]) + " = '" + lvl.geometry.schema + "' AND ";
+    str += dct->sql_identifier(cols[1]) + " = '" + lvl.geometry.name + "' AND " + dct->sql_identifier(cols[2]) + " = '" + lvl.raster.name + "'";
     sql.push_back(str);
   }
 }

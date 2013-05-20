@@ -33,8 +33,8 @@ inline geometry correct_visitor::operator()(const ::boost::recursive_wrapper<geo
 {
   geometry_collection res;
   detail::correct_visitor visitor;
-  for (auto iter(std::begin(r.get())); iter != std::end(r.get()); ++iter)
-    res.push_back( ::boost::apply_visitor(visitor, *iter) );
+  for (const auto& g: r.get())
+    res.push_back( ::boost::apply_visitor(visitor, g) );
   return res;
 } // correct_visitor::
 

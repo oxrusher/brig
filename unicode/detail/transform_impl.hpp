@@ -14,13 +14,13 @@ std::basic_string<OutputCodeUnit> transform_impl(const InputCodeUnit* ptr, Mappi
 {
   std::basic_string<OutputCodeUnit> str;
   if (ptr == 0) return str;
-  auto iter(brig::detail::back_inserter(str));
+  auto itr(brig::detail::back_inserter(str));
   while (true)
   {
     auto cp(utf<const InputCodeUnit*>::type::read_code_point(ptr));
     if (cp == 0) break;
     cp = mapping(cp);
-    utf<decltype(iter)>::type::write_code_point(iter, cp);
+    utf<decltype(itr)>::type::write_code_point(itr, cp);
   }
   return str;
 }

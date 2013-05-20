@@ -12,19 +12,19 @@
 namespace brig { namespace qt { namespace detail {
 
 template <typename InputIterator>
-QPointF read_point(uint8_t byte_order, InputIterator& iter, const frame& fr)
+QPointF read_point(uint8_t byte_order, InputIterator& itr, const frame& fr)
 {
   using namespace brig::detail::ogc;
   QPointF point;
-  point.setX(read<double>(byte_order, iter));
-  point.setY(read<double>(byte_order, iter));
+  point.setX(read<double>(byte_order, itr));
+  point.setY(read<double>(byte_order, itr));
   return fr.proj_to_pixel(point);
 }
 
 template <typename InputIterator>
-void draw_point(uint8_t byte_order, InputIterator& iter, const frame& fr, QPainter& painter)
+void draw_point(uint8_t byte_order, InputIterator& itr, const frame& fr, QPainter& painter)
 {
-  const QPointF point( read_point(byte_order, iter, fr) );
+  const QPointF point( read_point(byte_order, itr, fr) );
   painter.drawRect(point.x(), point.y(), 3, 3);
 }
 

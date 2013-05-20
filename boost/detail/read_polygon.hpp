@@ -11,14 +11,14 @@
 namespace brig { namespace boost { namespace detail {
 
 template <typename InputIterator>
-void read_polygon(uint8_t byte_order, InputIterator& iter, polygon& poly)
+void read_polygon(uint8_t byte_order, InputIterator& itr, polygon& poly)
 {
-  const size_t count(brig::detail::ogc::read<uint32_t>(byte_order, iter));
+  const size_t count(brig::detail::ogc::read<uint32_t>(byte_order, itr));
   if (count == 0) return;
-  read_line(byte_order, iter, poly.outer());
+  read_line(byte_order, itr, poly.outer());
   poly.inners().resize(count - 1);
   for (size_t i(0); i < poly.inners().size(); ++i)
-    read_line(byte_order, iter, poly.inners()[i]);
+    read_line(byte_order, itr, poly.inners()[i]);
 }
 
 } } } // brig::boost::detail

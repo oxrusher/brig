@@ -10,7 +10,6 @@
 #include <brig/global.hpp>
 #include <brig/string_cast.hpp>
 #include <ios>
-#include <iterator>
 #include <locale>
 #include <sstream>
 #include <stdexcept>
@@ -230,14 +229,12 @@ ORDER BY base_scm, base_tbl, base_col, res_x, res_y";
 
 inline void dialect_postgres::init_raster(pyramid_def& raster)
 {
-  using namespace std;
-
   raster.id.qualifier += "_as_png";
-  for (auto lvl(begin(raster.levels)); lvl != end(raster.levels); ++lvl)
+  for (auto& lvl: raster.levels)
   {
-    const std::string col_name(lvl->raster.name);
-    lvl->raster.name = col_name + "_as_png";
-    lvl->raster.query_expression = "ST_AsPNG(" + sql_identifier(col_name) + ")";
+    const std::string col_name(lvl.raster.name);
+    lvl.raster.name = col_name + "_as_png";
+    lvl.raster.query_expression = "ST_AsPNG(" + sql_identifier(col_name) + ")";
   }
 }
 

@@ -30,8 +30,8 @@ inline bool is_ogc_type(const std::string& type_lcase)
   , "surface" // non-instantiable
   };
   const string prefix("st_");
-  auto iter(find_if(begin(types), end(types), [&](const char* type){ return type_lcase.compare(type) == 0 || type_lcase.compare(prefix + type) == 0; }));
-  return iter != end(types);
+  auto itr(find_if(begin(types), end(types), [&](const char* type){ return type_lcase.compare(type) == 0 || type_lcase.compare(prefix + type) == 0; }));
+  return itr != end(types);
 }
 
 } } } // brig::database::detail

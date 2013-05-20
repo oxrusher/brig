@@ -34,13 +34,13 @@ template <typename T>
 box envelope_visitor::envelope_multi(const T& r) const
 {
   box res;
-  auto iter(std::begin(r)), end(std::end(r));
-  if (iter == end) throw std::runtime_error("envelope error");
-  ::boost::geometry::envelope(*iter, res); ++iter;
-  for (; iter != end; ++iter)
+  auto itr(std::begin(r)), end(std::end(r));
+  if (itr == end) throw std::runtime_error("envelope error");
+  ::boost::geometry::envelope(*itr, res); ++itr;
+  for (; itr != end; ++itr)
   {
     box env;
-    ::boost::geometry::envelope(*iter, env);
+    ::boost::geometry::envelope(*itr, env);
     ::boost::geometry::expand(res, env);
   }
   return res;
@@ -48,12 +48,12 @@ box envelope_visitor::envelope_multi(const T& r) const
 
 inline box envelope_visitor::operator()(const ::boost::recursive_wrapper<geometry_collection>& r) const
 {
-  auto iter(std::begin(r.get())), end(std::end(r.get()));
-  if (iter == end) throw std::runtime_error("envelope error");
+  auto itr(std::begin(r.get())), end(std::end(r.get()));
+  if (itr == end) throw std::runtime_error("envelope error");
   envelope_visitor visitor;
-  box res(::boost::apply_visitor(visitor, *iter)); ++iter;
-  for (; iter != end; ++iter)
-    ::boost::geometry::expand(res, ::boost::apply_visitor(visitor, *iter));
+  box res(::boost::apply_visitor(visitor, *itr)); ++itr;
+  for (; itr != end; ++itr)
+    ::boost::geometry::expand(res, ::boost::apply_visitor(visitor, *itr));
   return res;
 } // envelope_visitor::
 

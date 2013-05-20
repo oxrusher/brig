@@ -9,7 +9,6 @@
 #include <brig/pyramid_def.hpp>
 #include <brig/string_cast.hpp>
 #include <brig/table_def.hpp>
-#include <iterator>
 
 namespace brig { namespace database { namespace detail {
 
@@ -64,36 +63,34 @@ inline std::string dialect::sql_identifier(const identifier& id)
 
 inline table_def dialect::fit_table(const table_def& tbl, const std::string& schema)
 {
-  using namespace std;
-
   table_def res;
   res.id.schema = schema;
   res.id.name = fit_identifier(tbl.id.name);
   res.indexes = tbl.indexes;
-  for (auto col_iter(begin(tbl.columns)); col_iter != end(tbl.columns); ++col_iter)
+  for (const auto& col: tbl.columns)
   {
-    res.columns.push_back(fit_column(*col_iter));
-    if (column_type::Geometry == col_iter->type && !tbl.rtree(col_iter->name))
+    res.columns.push_back(fit_column(col));
+    if (column_type::Geometry == col.type && !tbl.rtree(col.name))
     {
       index_def idx;
       idx.type = index_type::Spatial;
-      idx.columns.push_back(col_iter->name);
+      idx.columns.push_back(col.name);
       res.indexes.push_back(idx);
     }
   }
 
   size_t suffix(0);
-  for (auto idx_iter(begin(res.indexes)); idx_iter != end(res.indexes); ++idx_iter)
+  for (auto& idx: res.indexes)
   {
-    idx_iter->id = identifier();
-    if (index_type::Primary != idx_iter->type) idx_iter->id.name = fit_identifier(res.id.name + "_idx_" + string_cast<char>(++suffix));
-    for (auto col_iter(begin(idx_iter->columns)); col_iter != end(idx_iter->columns); ++col_iter)
+    idx.id = identifier();
+    if (index_type::Primary != idx.type) idx.id.name = fit_identifier(res.id.name + "_idx_" + string_cast<char>(++suffix));
+    for (auto& col: idx.columns)
     {
-      *col_iter = fit_identifier(*col_iter);
+      col = fit_identifier(col);
       // DB2: When UNIQUE is used, null values are treated as any other values. For example, if the key is a single column that may contain null values, that column may contain no more than one null value.
       // Informix: Null values are never allowed in a primary-key column
       // Ingres: All columns in a UNIQUE constraint MUST be created as NOT NULL
-      if (index_type::Primary == idx_iter->type || index_type::Unique == idx_iter->type) res[*col_iter]->not_null = true;
+      if (index_type::Primary == idx.type || index_type::Unique == idx.type) res[col]->not_null = true;
     }
   }
 

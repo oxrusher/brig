@@ -18,15 +18,15 @@ template <> struct traits<multi_point>  { static const uint32_t ogc_type = brig:
 template <> struct traits<multi_polygon>  { static const uint32_t ogc_type = brig::detail::ogc::MultiPolygon; };
 
 template <typename OutputIterator, typename Sequence>
-void write(OutputIterator& iter, const Sequence& seq)
+void write(OutputIterator& itr, const Sequence& seq)
 {
   using namespace brig::detail;
   using namespace brig::detail::ogc;
-  write_byte_order(iter);
-  ogc::write<uint32_t>(iter, traits<Sequence>::ogc_type);
-  ogc::write<uint32_t>(iter, uint32_t(seq.size()));
+  write_byte_order(itr);
+  ogc::write<uint32_t>(itr, traits<Sequence>::ogc_type);
+  ogc::write<uint32_t>(itr, uint32_t(seq.size()));
   for (size_t i(0); i < seq.size(); ++i)
-    write<>(iter, seq[i]);
+    write<>(itr, seq[i]);
 }
 
 } } } // brig::boost::detail

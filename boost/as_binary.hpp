@@ -14,8 +14,8 @@ namespace brig { namespace boost {
 inline blob_t as_binary(const geometry& g)
 {
   blob_t wkb;
-  auto iter(brig::detail::back_inserter(wkb));
-  detail::write<>(iter, g);
+  auto itr(brig::detail::back_inserter(wkb));
+  detail::write<>(itr, g);
   return wkb;
 }
 

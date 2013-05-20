@@ -1070,8 +1070,8 @@ inline uint32_t upper_case(const uint32_t cp)
   make_pair(0x1044e, 0x10426), // DESERET SMALL LETTER OI
   make_pair(0x1044f, 0x10427), // DESERET SMALL LETTER EW
   };
-  auto iter(lower_bound(begin(mapping), end(mapping), make_pair(cp, uint32_t(0))));
-  return (iter != end(mapping) && iter->first == cp)? iter->second: cp;
+  auto itr(lower_bound(begin(mapping), end(mapping), make_pair(cp, uint32_t(0))));
+  return (itr != end(mapping) && itr->first == cp)? itr->second: cp;
 }
 
 } } // brig::unicode

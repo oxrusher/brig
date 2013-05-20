@@ -14,11 +14,11 @@
 namespace brig { namespace qt { namespace detail {
 
 template <typename InputIterator>
-void draw_polygon(uint8_t byte_order, InputIterator& iter, const frame& fr, QPainter& painter)
+void draw_polygon(uint8_t byte_order, InputIterator& itr, const frame& fr, QPainter& painter)
 {
   QPainterPath path;
-  for (uint32_t i(0), count(brig::detail::ogc::read<uint32_t>(byte_order, iter)); i < count; ++i)
-    path.addPolygon( read_line(byte_order, iter, fr) );
+  for (uint32_t i(0), count(brig::detail::ogc::read<uint32_t>(byte_order, itr)); i < count; ++i)
+    path.addPolygon( read_line(byte_order, itr, fr) );
   painter.drawPath(path);
 }
 
