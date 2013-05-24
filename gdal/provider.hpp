@@ -48,8 +48,7 @@ inline std::vector<identifier> provider::get_tables()
 
   dataset ds(m_allocator.allocate());
   vector<identifier> res;
-  identifier id;
-  id.name = TableName;
+  identifier id = { "", TableName };
   res.push_back(id);
   return res;
 }
@@ -61,9 +60,7 @@ inline std::vector<identifier> provider::get_geometry_layers()
 
   dataset ds(m_allocator.allocate());
   vector<identifier> res;
-  identifier id;
-  id.name = TableName;
-  id.qualifier = ColumnNameWkb;
+  identifier id = { "", TableName, ColumnNameWkb };
   res.push_back(id);
   return res;
 }

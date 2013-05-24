@@ -31,7 +31,7 @@ class rowset : public brig::rowset
   std::shared_ptr<layer> m_lr;
   const std::vector<bool> m_cols;
   int m_rows;
-  tiles m_iter;
+  tiles m_tls;
   CURLM* m_hnd;
   std::unordered_map<CURL*, data_t> m_pg;
 
@@ -73,7 +73,7 @@ inline void rowset::check(CURLMcode r)
 }
 
 inline rowset::rowset(std::shared_ptr<layer> lr, const std::vector<bool>& cols, int zoom, const boost::box& env, int rows)
-  : m_lr(lr), m_cols(cols), m_rows(rows), m_iter(zoom, env), m_hnd(0)
+  : m_lr(lr), m_cols(cols), m_rows(rows), m_tls(zoom, env), m_hnd(0)
 {
   if (lib::singleton().empty()) throw std::runtime_error("cURL error");
   m_hnd = lib::singleton().p_curl_multi_init();
@@ -108,7 +108,7 @@ inline void rowset::add_files()
   {
     if (m_rows == 0) break;
     tile tl(0, 0, 0);
-    if (!m_iter.fetch(tl)) break;
+    if (!m_tls.fetch(tl)) break;
     if (m_rows > 0) --m_rows;
 
     CURL* hnd(lib::singleton().p_curl_easy_init());

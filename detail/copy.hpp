@@ -9,16 +9,16 @@
 namespace brig { namespace detail {
 
 template <typename T, typename InputIterator, typename OutputIterator>
-void copy(InputIterator& in_iter, OutputIterator& out_iter)
+void copy(InputIterator& in_itr, OutputIterator& out_itr)
 {
   static_assert(sizeof(typename std::iterator_traits<InputIterator>::value_type) == sizeof(uint8_t), "size error");
   static_assert(sizeof(typename std::iterator_traits<OutputIterator>::value_type) == sizeof(uint8_t), "size error");
 
   for (size_t i(0); i < sizeof(T); ++i)
   {
-    *out_iter = static_cast<uint8_t>(*in_iter);
-    ++in_iter;
-    ++out_iter;
+    *out_itr = static_cast<uint8_t>(*in_itr);
+    ++in_itr;
+    ++out_itr;
   }
 }
 
@@ -34,15 +34,15 @@ void copy(InputType*& in_ptr, OutputType*& out_ptr) // optimization
 }
 
 template <typename T, typename InputIterator, typename OutputType>
-void reverse_copy(InputIterator& in_iter, OutputType*& out_ptr)
+void reverse_copy(InputIterator& in_itr, OutputType*& out_ptr)
 {
   static_assert(sizeof(typename std::iterator_traits<InputIterator>::value_type) == sizeof(uint8_t), "size error");
   static_assert(sizeof(OutputType) == sizeof(uint8_t), "size error");
 
   for (size_t i(0); i < sizeof(T); ++i)
   {
-    out_ptr[sizeof(T) - i - 1] = static_cast<uint8_t>(*in_iter);
-    ++in_iter;
+    out_ptr[sizeof(T) - i - 1] = static_cast<uint8_t>(*in_itr);
+    ++in_itr;
   }
   out_ptr += sizeof(T);
 }

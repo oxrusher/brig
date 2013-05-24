@@ -20,9 +20,7 @@ inline std::vector<identifier> get_tables(dialect* dct, command* cmd)
   vector<variant> row;
   while (cmd->fetch(row))
   {
-    identifier tbl;
-    tbl.schema = string_cast<char>(row[0]);
-    tbl.name = string_cast<char>(row[1]);
+    identifier tbl = { string_cast<char>(row[0]), string_cast<char>(row[1]) };
     res.push_back(tbl);
   }
   return res;

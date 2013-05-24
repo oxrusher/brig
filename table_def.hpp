@@ -43,8 +43,8 @@ inline const column_def* table_def::operator [](const std::string& col_name) con
 inline const index_def* table_def::rtree(const std::string& col_name) const
 {
   using namespace std;
-  auto idx_iter(find_if(begin(indexes), end(indexes), [&col_name](const index_def& idx){ return index_type::Spatial == idx.type && idx.columns.size() == 1 && col_name.compare(idx.columns.front()) == 0; }));
-  return idx_iter == end(indexes)? 0: &*idx_iter;
+  auto idx_itr(find_if(begin(indexes), end(indexes), [&col_name](const index_def& idx){ return index_type::Spatial == idx.type && idx.columns.size() == 1 && col_name.compare(idx.columns.front()) == 0; }));
+  return idx_itr == end(indexes)? 0: &*idx_itr;
 } // table_def::
 
 } // brig

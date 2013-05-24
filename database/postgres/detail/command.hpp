@@ -11,7 +11,6 @@
 #include <brig/database/postgres/detail/get_value_factory.hpp>
 #include <brig/database/postgres/detail/lib.hpp>
 #include <brig/global.hpp>
-#include <brig/identifier.hpp>
 #include <brig/string_cast.hpp>
 #include <brig/unicode/lower_case.hpp>
 #include <brig/unicode/transform.hpp>

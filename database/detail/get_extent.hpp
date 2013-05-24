@@ -20,16 +20,19 @@ inline boost::box get_extent(dialect* dct, command* cmd, const table_def& tbl)
   using namespace std;
   using namespace brig::boost;
 
-  vector<string> query_columns(tbl.query_columns);
-  if (query_columns.empty())
-    for (const auto& col: tbl.columns)
-      if (column_type::Geometry == col.type) query_columns.push_back(col.name);
-  if ( query_columns.size() != 1
-    || column_type::Geometry != tbl[ query_columns.front() ]->type
-     ) throw runtime_error("extent error");
+  vector<string> query_columns;
+  for (const auto& col: tbl.columns)
+    if (column_type::Geometry == col.type) query_columns.push_back(col.name);
+
+  if (query_columns.size() > 1)
+    query_columns = tbl.query_columns;
+
+  if (query_columns.size() != 1 || column_type::Geometry != tbl[ query_columns.front() ]->type)
+    throw runtime_error("extent error");
 
   const string sql(dct->sql_extent(tbl, query_columns.front()));
-  if (sql.empty()) return box(point(-180, -90), point(180, 90)); // geodetic
+  if (sql.empty()) // geodetic
+    return box(point(-180, -90), point(180, 90));
 
   cmd->exec(sql);
   vector<variant> row;

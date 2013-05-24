@@ -18,9 +18,9 @@ namespace brig { namespace osm { namespace detail {
 class rowset_lite : public brig::rowset {
   const size_t m_cols;
   int m_rows;
-  tiles m_iter;
+  tiles m_tls;
 public:
-  rowset_lite(size_t cols, int zoom, const boost::box& env, int rows) : m_cols(cols), m_rows(rows), m_iter(zoom, env)  {}
+  rowset_lite(size_t cols, int zoom, const boost::box& env, int rows) : m_cols(cols), m_rows(rows), m_tls(zoom, env)  {}
   std::vector<std::string> columns() override;
   bool fetch(std::vector<variant>& row) override;
 }; // rowset
@@ -37,7 +37,7 @@ inline bool rowset_lite::fetch(std::vector<variant>& row)
 {
   if (m_rows == 0) return false;
   tile tl(0, 0, 0);
-  if (!m_iter.fetch(tl)) return false;
+  if (!m_tls.fetch(tl)) return false;
   if (m_rows > 0) --m_rows;
 
   const blob_t blob(brig::boost::as_binary(tl.get_box()));

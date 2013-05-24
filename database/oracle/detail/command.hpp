@@ -158,9 +158,7 @@ inline std::vector<std::string> command::columns()
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_schema, &type_schema_len, OCI_ATTR_SCHEMA_NAME, m_hnd.err));
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_name, &type_name_len, OCI_ATTR_TYPE_NAME, m_hnd.err));
 
-      identifier type_lcase;
-      type_lcase.schema = transform<char>(type_schema, lower_case);
-      type_lcase.name = transform<char>(type_name, lower_case);
+      identifier type_lcase = { transform<char>(type_schema, lower_case), transform<char>(type_name, lower_case) };
 
       m_cols.push_back(define_factory(&m_hnd, i + 1, data_type, size, precision, scale, type_lcase));
       cols.push_back(transform<char>(name));

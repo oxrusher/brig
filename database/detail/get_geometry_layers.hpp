@@ -14,7 +14,6 @@ namespace brig { namespace database { namespace detail {
 inline std::vector<identifier> get_geometry_layers(dialect* dct, command* cmd)
 {
   using namespace std;
-
   const string sql(dct->sql_geometries());
   if (sql.empty()) return vector<identifier>();
   cmd->exec(sql);
@@ -22,10 +21,7 @@ inline std::vector<identifier> get_geometry_layers(dialect* dct, command* cmd)
   vector<variant> row;
   while (cmd->fetch(row))
   {
-    identifier lr;
-    lr.schema = string_cast<char>(row[0]);
-    lr.name = string_cast<char>(row[1]);
-    lr.qualifier = string_cast<char>(row[2]);
+    identifier lr = { string_cast<char>(row[0]), string_cast<char>(row[1]), string_cast<char>(row[2]) };
     res.push_back(lr);
   }
   return res;

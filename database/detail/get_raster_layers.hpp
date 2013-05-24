@@ -24,10 +24,7 @@ inline std::vector<pyramid_def> get_rasters(rowset* rs)
   identifier prev_id;
   while (rs->fetch(row))
   {
-    identifier cur_id;
-    cur_id.schema = string_cast<char>(row[0]);
-    cur_id.name = string_cast<char>(row[1]);
-    cur_id.qualifier = string_cast<char>(row[2]);
+    identifier cur_id = { string_cast<char>(row[0]), string_cast<char>(row[1]), string_cast<char>(row[2]) };
     if (cur_id.schema != prev_id.schema || cur_id.name != prev_id.name || cur_id.qualifier != prev_id.qualifier)
     {
       res.push_back(pyramid_def());

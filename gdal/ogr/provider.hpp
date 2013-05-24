@@ -55,8 +55,7 @@ inline std::vector<identifier> provider::get_tables()
   {
     OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayer(ds, i));
     if (!lr) throw runtime_error("OGR error");
-    identifier id;
-    id.name = lib::singleton().p_OGR_L_GetName(lr);
+    identifier id = { "", lib::singleton().p_OGR_L_GetName(lr) };
     res.push_back(id);
   }
   return res;
@@ -73,9 +72,7 @@ inline std::vector<identifier> provider::get_geometry_layers()
   {
     OGRLayerH lr(lib::singleton().p_OGR_DS_GetLayer(ds, i));
     if (!lr) throw runtime_error("OGR error");
-    identifier id;
-    id.name = lib::singleton().p_OGR_L_GetName(lr);
-    id.qualifier = ColumnNameWkb;
+    identifier id = { "", lib::singleton().p_OGR_L_GetName(lr), ColumnNameWkb };
     res.push_back(id);
   }
   return res;

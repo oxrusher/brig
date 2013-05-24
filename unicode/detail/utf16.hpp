@@ -15,13 +15,13 @@ class utf16 {
 
 public:
   template <typename InputIterator>
-  static uint32_t read_code_point(InputIterator& in_iter)
+  static uint32_t read_code_point(InputIterator& in_itr)
   {
     static_assert(sizeof(typename std::iterator_traits<InputIterator>::value_type) == sizeof(uint16_t), "UTF-16 error");
-    const uint16_t cu1(static_cast<uint16_t>(*in_iter)); ++in_iter;
+    const uint16_t cu1(static_cast<uint16_t>(*in_itr)); ++in_itr;
     if (high(cu1))
     {
-      const uint16_t cu2(static_cast<uint16_t>(*in_iter)); ++in_iter;
+      const uint16_t cu2(static_cast<uint16_t>(*in_itr)); ++in_itr;
       if (low(cu2)) return (static_cast<uint32_t>(cu1) << 10) + cu2 + (0x10000 - (0xd800 << 10) - 0xdc00);
     }
     else if (!low(cu1)) return static_cast<uint32_t>(cu1);
@@ -29,18 +29,18 @@ public:
   }
 
   template <typename OutputIterator>
-  static void write_code_point(OutputIterator& out_iter, const uint32_t cp)
+  static void write_code_point(OutputIterator& out_itr, const uint32_t cp)
   {
     static_assert(sizeof(typename std::iterator_traits<OutputIterator>::value_type) == sizeof(uint16_t), "UTF-16 error");
     if (cp < 0xffff)
     {
       if (low(cp)) throw std::runtime_error("UTF-16 error");
-      *out_iter = static_cast<uint16_t>(cp); ++out_iter;
+      *out_itr = static_cast<uint16_t>(cp); ++out_itr;
     }
     else if (cp < 0x10ffff)
     {
-      *out_iter = static_cast<uint16_t>(0xd800 - (0x10000 >> 10) + (cp >> 10)); ++out_iter;
-      *out_iter = static_cast<uint16_t>(0xdc00 + (cp & 0x3ff)); ++out_iter;
+      *out_itr = static_cast<uint16_t>(0xd800 - (0x10000 >> 10) + (cp >> 10)); ++out_itr;
+      *out_itr = static_cast<uint16_t>(0xdc00 + (cp & 0x3ff)); ++out_itr;
     }
     else throw std::runtime_error("UTF-16 error");
   }

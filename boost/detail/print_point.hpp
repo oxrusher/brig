@@ -10,19 +10,19 @@
 namespace brig { namespace boost { namespace detail {
 
 template <typename InputIterator>
-void print_point_raw(uint8_t byte_order, InputIterator& in_iter, std::ostringstream& out_stream)
+void print_point_raw(uint8_t byte_order, InputIterator& in_itr, std::ostringstream& out_stream)
 {
   using namespace brig::detail::ogc;
-  out_stream << read<double>(byte_order, in_iter);
+  out_stream << read<double>(byte_order, in_itr);
   out_stream << " ";
-  out_stream << read<double>(byte_order, in_iter);
+  out_stream << read<double>(byte_order, in_itr);
 }
 
 template <typename InputIterator>
-void print_point(uint8_t byte_order, InputIterator& in_iter, std::ostringstream& out_stream)
+void print_point(uint8_t byte_order, InputIterator& in_itr, std::ostringstream& out_stream)
 {
   out_stream << "(";
-  print_point_raw(byte_order, in_iter, out_stream);
+  print_point_raw(byte_order, in_itr, out_stream);
   out_stream << ")";
 }
 

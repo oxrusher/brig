@@ -45,15 +45,12 @@ public:
   std::shared_ptr<rowset> select(const table_def& tbl) override;
 
   bool is_readonly() override  { return false; }
-
   table_def fit_to_create(const table_def& tbl) override;
   void create(const table_def& tbl) override;
   void drop(const table_def& tbl) override;
-
   pyramid_def fit_to_reg(const pyramid_def& raster) override;
   void reg(const pyramid_def& raster) override;
   void unreg(const pyramid_def& raster) override;
-
   std::shared_ptr<inserter> get_inserter(const table_def& tbl) override;
 
   std::shared_ptr<command> get_command();
