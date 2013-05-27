@@ -50,7 +50,7 @@ inline table_def get_table_def(dialect* dct, command* cmd, const identifier& tbl
   index_def idx;
   while (cmd->fetch(row))
   {
-    identifier id = { string_cast<char>(row[0]), string_cast<char>(row[1]) };
+    identifier id = { string_cast<char>(row[0]), string_cast<char>(row[1]), "" };
 
     if (id.schema != idx.id.schema || id.name != idx.id.name)
     {

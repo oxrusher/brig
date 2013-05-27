@@ -82,7 +82,7 @@ inline std::vector<identifier> provider::get_tables()
   std::vector<identifier> res;
   for (int z(m_lr->get_max_zoom()); z >= 0; --z)
   {
-    identifier id = { "", zoom_to_table(z) };
+    identifier id = { "", zoom_to_table(z), "" };
     res.push_back(id);
   }
   return res;

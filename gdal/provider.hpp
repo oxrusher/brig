@@ -48,7 +48,7 @@ inline std::vector<identifier> provider::get_tables()
 
   dataset ds(m_allocator.allocate());
   vector<identifier> res;
-  identifier id = { "", TableName };
+  identifier id = { "", TableName, "" };
   res.push_back(id);
   return res;
 }
