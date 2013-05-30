@@ -6,10 +6,11 @@
 #include <boost/spirit/include/phoenix.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <brig/boost/geometry.hpp>
+#include <iterator>
 
 namespace brig { namespace boost { namespace detail {
 
-inline linestring to_line(const linearring& r)  { linestring l; l.assign(std::begin(r), std::end(r)); return l; }
+inline linestring to_line(const linearring& r)  { return linestring(std::begin(r), std::end(r)); }
 inline void assign_outer(polygon& p, const polygon::ring_type& r)  { p.outer().assign(std::begin(r), std::end(r)); }
 inline void add_inner(polygon& p, const polygon::ring_type& r)  { p.inners().push_back(r); }
 
