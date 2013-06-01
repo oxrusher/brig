@@ -69,7 +69,7 @@ inline void command::close_result()
   if (m_res)
   {
     PGresult* res(0); std::swap(res, m_res);
-    if (res) lib::singleton().p_PQclear(res);
+    lib::singleton().p_PQclear(res);
   }
   if (m_fetch)
   {
