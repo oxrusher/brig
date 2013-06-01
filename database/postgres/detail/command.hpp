@@ -58,7 +58,7 @@ inline void command::check(bool r)
 inline void command::check_command(PGresult* res)
 {
   const ExecStatusType r(lib::singleton().p_PQresultStatus(res));
-  lib::singleton().p_PQclear(res);
+  if (res) lib::singleton().p_PQclear(res);
   check(r == PGRES_COMMAND_OK);
 }
 
@@ -69,12 +69,13 @@ inline void command::close_result()
   if (m_res)
   {
     PGresult* res(0); std::swap(res, m_res);
-    lib::singleton().p_PQclear(res);
+    if (res) lib::singleton().p_PQclear(res);
   }
   if (m_fetch)
   {
     m_fetch = false;
-    lib::singleton().p_PQclear(lib::singleton().p_PQexec(m_con, "CLOSE BrigCursor; END;"));
+    PGresult* res(lib::singleton().p_PQexec(m_con, "CLOSE BrigCursor; END;"));
+    if (res) lib::singleton().p_PQclear(res);
   }
 }
 
