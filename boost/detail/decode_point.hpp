@@ -1,7 +1,7 @@
 // Andrew Naplavkov
 
-#ifndef BRIG_BOOST_DETAIL_PRINT_POINT_HPP
-#define BRIG_BOOST_DETAIL_PRINT_POINT_HPP
+#ifndef BRIG_BOOST_DETAIL_DECODE_POINT_HPP
+#define BRIG_BOOST_DETAIL_DECODE_POINT_HPP
 
 #include <brig/detail/ogc.hpp>
 #include <cstdint>
@@ -10,7 +10,7 @@
 namespace brig { namespace boost { namespace detail {
 
 template <typename InputIterator>
-void print_point_raw(uint8_t byte_order, InputIterator& in_itr, std::ostringstream& out_stream)
+void decode_point_raw(uint8_t byte_order, InputIterator& in_itr, std::ostringstream& out_stream)
 {
   using namespace brig::detail::ogc;
   out_stream << read<double>(byte_order, in_itr);
@@ -19,13 +19,13 @@ void print_point_raw(uint8_t byte_order, InputIterator& in_itr, std::ostringstre
 }
 
 template <typename InputIterator>
-void print_point(uint8_t byte_order, InputIterator& in_itr, std::ostringstream& out_stream)
+void decode_point(uint8_t byte_order, InputIterator& in_itr, std::ostringstream& out_stream)
 {
   out_stream << "(";
-  print_point_raw(byte_order, in_itr, out_stream);
+  decode_point_raw(byte_order, in_itr, out_stream);
   out_stream << ")";
 }
 
 } } } // brig::boost::detail
 
-#endif // BRIG_BOOST_DETAIL_PRINT_POINT_HPP
+#endif // BRIG_BOOST_DETAIL_DECODE_POINT_HPP
