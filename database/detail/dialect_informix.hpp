@@ -32,7 +32,7 @@ struct dialect_informix : dialect {
   std::string sql_srid(int epsg) override;
 
   void sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql) override;
-  void sql_unregister_spatial_column(const identifier& layer, std::vector<std::string>& sql) override;
+  void sql_unregister_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql) override;
   std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
 
   std::string sql_parameter(command* cmd, const column_def& param, size_t order) override;
@@ -216,14 +216,14 @@ INSERT INTO sde.geometry_columns (f_table_catalog, f_table_schema, f_table_name,
 VALUES (" + sql_catalog() + ", RTRIM(USER), '" + tbl.id.name + "', '" + col + "', 0, 2, " + string_cast<char>(tbl[col]->srid) + ")");
 }
 
-inline void dialect_informix::sql_unregister_spatial_column(const identifier& layer, std::vector<std::string>& sql)
+inline void dialect_informix::sql_unregister_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql)
 {
   sql.push_back("\
 DELETE FROM sde.geometry_columns \
 WHERE RTRIM(f_table_catalog) = " + sql_catalog() + " \
-AND RTRIM(f_table_schema) = '" + layer.schema + "' \
-AND f_table_name = '" + layer.name + "' \
-AND f_geometry_column = '" + layer.qualifier + "'");
+AND RTRIM(f_table_schema) = '" + tbl.id.schema + "' \
+AND f_table_name = '" + tbl.id.name + "' \
+AND f_geometry_column = '" + col + "'");
 }
 
 inline std::string dialect_informix::sql_create_spatial_index(const table_def& tbl, const std::string& col)

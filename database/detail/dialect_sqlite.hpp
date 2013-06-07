@@ -43,7 +43,7 @@ struct dialect_sqlite : dialect {
 
   std::string sql_column_def(const column_def& col) override;
   void sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql) override;
-  void sql_unregister_spatial_column(const identifier& layer, std::vector<std::string>& sql) override;
+  void sql_unregister_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql) override;
   std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
   void sql_drop_spatial_index(const identifier& layer, std::vector<std::string>& sql) override;
 
@@ -117,9 +117,9 @@ inline void dialect_sqlite::sql_register_spatial_column(const table_def& tbl, co
   sql.push_back("SELECT AddGeometryColumn('" + tbl.id.name + "', '" + col + "', " + string_cast<char>(tbl[col]->srid) + ", 'GEOMETRY', 2)");
 }
 
-inline void dialect_sqlite::sql_unregister_spatial_column(const identifier& layer, std::vector<std::string>& sql)
+inline void dialect_sqlite::sql_unregister_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql)
 {
-  sql.push_back("SELECT DiscardGeometryColumn('" + layer.name + "', '" + layer.qualifier + "')");
+  sql.push_back("SELECT DiscardGeometryColumn('" + tbl.id.name + "', '" + col + "')");
 }
 
 inline std::string dialect_sqlite::sql_create_spatial_index(const table_def& tbl, const std::string& col)

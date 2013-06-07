@@ -36,7 +36,7 @@ struct dialect_postgres : dialect {
 
   std::string sql_column_def(const column_def& col) override;
   void sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql) override;
-  void sql_unregister_spatial_column(const identifier& layer, std::vector<std::string>& sql) override;
+  void sql_unregister_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql) override;
   std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
 
   std::string sql_parameter(command* cmd, const column_def& param, size_t order) override;
@@ -191,9 +191,10 @@ inline void dialect_postgres::sql_register_spatial_column(const table_def& tbl, 
   sql.push_back("SELECT AddGeometryColumn('" + tbl.id.name + "', '" + col + "', " + string_cast<char>(tbl[col]->srid) + ", 'GEOMETRY', 2)");
 }
 
-inline void dialect_postgres::sql_unregister_spatial_column(const identifier& layer, std::vector<std::string>& sql)
+inline void dialect_postgres::sql_unregister_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql)
 {
-  sql.push_back("SELECT DropGeometryColumn('" + layer.schema + "', '" + layer.name + "', '" + layer.qualifier + "')");
+  if (tbl[col]->type_lcase.name.compare("geometry") == 0)
+    sql.push_back("SELECT DropGeometryColumn('" + tbl.id.schema + "', '" + tbl.id.name + "', '" + col + "')");
 }
 
 inline std::string dialect_postgres::sql_create_spatial_index(const table_def& tbl, const std::string& col)

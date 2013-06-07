@@ -32,7 +32,7 @@ struct dialect_db2 : dialect {
   std::string sql_srid(int epsg) override;
 
   void sql_register_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql) override;
-  void sql_unregister_spatial_column(const identifier& layer, std::vector<std::string>& sql) override;
+  void sql_unregister_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql) override;
   std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) override;
 
   std::string sql_parameter(command* cmd, const column_def& param, size_t order) override;
@@ -152,13 +152,13 @@ call DB2GSE.ST_register_spatial_column( \
 END");
 }
 
-inline void dialect_db2::sql_unregister_spatial_column(const identifier& layer, std::vector<std::string>& sql)
+inline void dialect_db2::sql_unregister_spatial_column(const table_def& tbl, const std::string& col, std::vector<std::string>& sql)
 {
   sql.push_back("\
 BEGIN ATOMIC \
 DECLARE msg_code INTEGER; \
 DECLARE msg_text VARCHAR(1024); \
-call DB2GSE.ST_unregister_spatial_column('" + sql_identifier(layer.schema) + "', '" + sql_identifier(layer.name) + "', '" + sql_identifier(layer.qualifier) + "', msg_code, msg_text); \
+call DB2GSE.ST_unregister_spatial_column('" + sql_identifier(tbl.id.schema) + "', '" + sql_identifier(tbl.id.name) + "', '" + sql_identifier(col) + "', msg_code, msg_text); \
 END");
 }
 

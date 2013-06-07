@@ -22,11 +22,7 @@ inline void sql_drop(dialect* dct, const table_def& tbl, std::vector<std::string
     }
   for (const auto& col: tbl.columns)
     if (column_type::Geometry == col.type)
-    {
-      identifier lr(tbl.id);
-      lr.qualifier = col.name;
-      dct->sql_unregister_spatial_column(lr, sql);
-    }
+      dct->sql_unregister_spatial_column(tbl, col.name, sql);
   sql.push_back("DROP TABLE " + dct->sql_identifier(tbl.id));
 }
 

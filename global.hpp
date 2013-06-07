@@ -5,7 +5,7 @@
 
 namespace brig {
 
-const char LibVersion[] = "1306";
+const char LibVersion[] = "1306+";
 
 const int CharsLimit = 250;
 const size_t PageSize = 250; // DB2 PUERTO_ROADS is slowdown after 447

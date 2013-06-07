@@ -39,7 +39,7 @@ struct dialect {
   virtual std::string sql_column_def(const column_def& col);
   virtual std::string sql_table_options()  { return ""; }
   virtual void sql_register_spatial_column(const table_def& /*tbl*/, const std::string& /*col*/, std::vector<std::string>& /*sql*/)  {}
-  virtual void sql_unregister_spatial_column(const identifier& /*layer*/, std::vector<std::string>& /*sql*/)  {}
+  virtual void sql_unregister_spatial_column(const table_def& /*tbl*/, const std::string& /*col*/, std::vector<std::string>& /*sql*/)  {}
   virtual std::string sql_create_spatial_index(const table_def& tbl, const std::string& col) = 0;
   virtual void sql_drop_spatial_index(const identifier& /*layer*/, std::vector<std::string>& /*sql*/)  {}
 
