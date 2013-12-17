@@ -147,20 +147,22 @@ inline std::vector<std::string> command::columns()
       ub2 data_type(0), size(0);
       sb2 precision(0);
       sb1 scale(-1);
-      utext *name(0), *type_schema(0), *type_name(0);
-      ub4 name_len(0), type_schema_len(0), type_name_len(0);
+      ub1 charset_form(SQLCS_NCHAR);
+      utext *name(0), *nty_schema(0), *nty(0);
+      ub4 name_len(0), nty_schema_len(0), nty_len(0);
 
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &name, &name_len, OCI_ATTR_NAME, m_hnd.err));
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &data_type, 0, OCI_ATTR_DATA_TYPE, m_hnd.err));
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &size, 0, OCI_ATTR_DATA_SIZE, m_hnd.err));
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &precision, 0, OCI_ATTR_PRECISION, m_hnd.err));
       m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &scale, 0, OCI_ATTR_SCALE, m_hnd.err));
-      m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_schema, &type_schema_len, OCI_ATTR_SCHEMA_NAME, m_hnd.err));
-      m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &type_name, &type_name_len, OCI_ATTR_TYPE_NAME, m_hnd.err));
+      m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &charset_form, 0, OCI_ATTR_CHARSET_FORM, m_hnd.err));
+      m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &nty_schema, &nty_schema_len, OCI_ATTR_SCHEMA_NAME, m_hnd.err));
+      m_hnd.check(lib::singleton().p_OCIAttrGet(dsc, OCI_DTYPE_PARAM, &nty, &nty_len, OCI_ATTR_TYPE_NAME, m_hnd.err));
 
-      identifier type_lcase = { transform<char>(type_schema, lower_case), transform<char>(type_name, lower_case), "" };
+      identifier nty_lcase = { transform<char>(nty_schema, lower_case), transform<char>(nty, lower_case), "" };
 
-      m_cols.push_back(define_factory(&m_hnd, i + 1, data_type, size, precision, scale, type_lcase));
+      m_cols.push_back(define_factory(&m_hnd, i + 1, data_type, size, precision, scale, charset_form, nty_lcase));
       cols.push_back(transform<char>(name));
 
     }

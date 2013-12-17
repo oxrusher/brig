@@ -9,7 +9,6 @@
 #include <brig/database/oracle/detail/define_geometry.hpp>
 #include <brig/database/oracle/detail/define_impl.hpp>
 #include <brig/database/oracle/detail/define_string.hpp>
-#include <brig/database/oracle/detail/get_charset_form.hpp>
 #include <brig/database/oracle/detail/handles.hpp>
 #include <brig/database/oracle/detail/lib.hpp>
 #include <brig/identifier.hpp>
@@ -18,7 +17,7 @@
 
 namespace brig { namespace database { namespace oracle { namespace detail {
 
-inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 size, sb2 precision, sb1 scale, const identifier& type_lcase)
+inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 size, sb2 precision, sb1 scale, ub1 charset_form, const identifier& nty_lcase)
 {
   switch (data_type)
   {
@@ -51,7 +50,7 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 siz
   case SQLT_LVC:
   case SQLT_CFILE:
   case SQLT_CLOB:
-    return new define_string(hnd, order, size, get_charset_form(type_lcase));
+    return new define_string(hnd, order, size, charset_form);
 
   // numeric
   case SQLT_INT:
@@ -69,7 +68,7 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 siz
       {
         if (precision <= 5) return new define_impl<int16_t, SQLT_INT>(hnd, order);
         else if (precision <= 10) return new define_impl<int32_t, SQLT_INT>(hnd, order);
-        else if (precision <= 19) return new define_impl<int64_t, SQLT_INT>(hnd, order);
+        else return new define_impl<int64_t, SQLT_INT>(hnd, order);
       }
       else if (precision <= 6) return new define_impl<float, SQLT_FLT>(hnd, order);
     }
@@ -85,7 +84,7 @@ inline define* define_factory(handles* hnd, size_t order, ub2 data_type, ub2 siz
 
   // named data type
   case SQLT_NTY:
-    if (type_lcase.schema.compare("mdsys") == 0 && type_lcase.name.compare("sdo_geometry") == 0) return new define_geometry(hnd, order);
+    if (nty_lcase.schema.compare("mdsys") == 0 && nty_lcase.name.compare("sdo_geometry") == 0) return new define_geometry(hnd, order);
     break;
   }
 
